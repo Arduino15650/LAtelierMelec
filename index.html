@@ -15,18 +15,19 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="stylesheet" href="styles.css?v=20260911-1">
-  <link rel="stylesheet" href="bo.css?v=20260912-2">
+  <link rel="stylesheet" href="bo.css?v=20260922-1">
 </head>
 <body>
   <header class="topbar">
     <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="show('home')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();show('home')}"><span class="brand-logo"><img src="logo-bac-pro-melec-v3.webp?v=1" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
-    <nav class="header-nav">
+    <details class="menu-dropdown"><summary aria-label="Ouvrir le menu de navigation"><span aria-hidden="true">☷</span> Menu <span class="menu-chevron" aria-hidden="true">⌄</span></summary><nav class="header-nav" aria-label="Navigation principale">
       <button class="nav nav-home" data-view="home"><span>⌂</span> Accueil</button>
       <button class="nav active" data-view="activities"><span>▦</span> Activités</button>
       <button class="nav" data-view="activity-list"><span>☷</span> Liste des activités</button>
       <button class="nav" data-view="students"><span>♙</span> Élèves</button>
+      <button class="nav" data-view="results"><span>▥</span> Résultats</button>
       <button class="nav" data-view="referential"><span>◎</span> Référentiel</button>
-    </nav>
+    </nav></details>
   </header>
 
   <main class="shell">
@@ -35,6 +36,7 @@
       <div id="activitiesView" class="view"></div>
       <div id="activity-listView" class="view hidden"></div>
       <div id="studentsView" class="view hidden"></div>
+      <div id="resultsView" class="view hidden"></div>
       <div id="referentialView" class="view hidden"></div>
       <div id="editorView" class="view hidden"></div>
     </section>
@@ -45,11 +47,12 @@
   <script src="performance.js?v=20260911-1"></script>
   <script src="workshop-activities-v2.js?v=20260912-2"></script>
   <script src="evaluation-atelier-v2.js?v=20260912-2"></script>
-  <script src="home.js?v=20260911-2"></script>
+  <script src="home.js?v=20260922-1"></script>
+  <script src="results.js?v=20260922-1"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='53';
+      const swVersion='54';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         const key='melec-sw-version';
         if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}

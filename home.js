@@ -5,6 +5,7 @@
     {view:'activities',icon:'▦',title:'Activités',text:'Créer et évaluer les activités en atelier.'},
     {view:'activity-list',icon:'☷',title:'Liste des activités',text:'Retrouver les activités classées par niveau.'},
     {view:'students',icon:'♙',title:'Élèves',text:'Gérer les classes et le suivi des élèves.'},
+    {view:'results',icon:'▥',title:'Résultats',text:'Consulter les notes et les moyennes par élève.'},
     {view:'referential',icon:'◎',title:'Référentiel',text:'Consulter les compétences, tâches et connaissances.'}
   ];
 
@@ -23,6 +24,15 @@
     if(location.hash!==route)history.replaceState(null,'',`${location.pathname}${location.search}${route}`);
     document.body.classList.toggle('home-active',name==='home');
     document.body.classList.toggle('subpage-active',name!=='home');
+    const menu=document.querySelector('.menu-dropdown');
+    if(menu)menu.open=false;
+    if(name==='results'){
+      document.querySelectorAll('.view').forEach(view=>view.classList.add('hidden'));
+      document.querySelector('#resultsView')?.classList.remove('hidden');
+      document.querySelectorAll('.header-nav .nav').forEach(button=>button.classList.toggle('active',button.dataset.view==='results'));
+      window.renderResults?.();
+      return;
+    }
     if(name!=='home')return applicationShow(name);
     document.querySelectorAll('.view').forEach(view=>view.classList.add('hidden'));
     document.querySelector('#homeView')?.classList.remove('hidden');
