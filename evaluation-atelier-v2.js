@@ -26,3 +26,39 @@
   };
   window.grade=grade;window.scoreResult=scoreResult;window.studentScore=studentScore;
 })();
+
+/* Le verrou est propre à chaque élève et reste enregistré avec l'activité. */
+(function(){
+  const renderGrade=window.grade;
+  window.grade=grade=function(id){
+    renderGrade(id);
+    const activity=state.activities.find(item=>item.id===id);
+    const student=state.students.find(item=>item.id===gradeStudent);
+    const panel=document.querySelector('#editorView .evaluation-student');
+    if(!activity||!student||!panel)return;
+    const locked=Boolean(activity.evaluationLocks?.[student.id]);
+    panel.querySelectorAll('[data-eval-score],[data-feedback]').forEach(control=>{
+      control.disabled=locked;
+      control.setAttribute('aria-disabled',String(locked));
+    });
+    const action=document.createElement('div');
+    action.className='evaluation-lock-action no-print';
+    const status=document.createElement('p');
+    status.className='evaluation-lock-status';
+    status.textContent=locked?'Évaluation verrouillée : les notes et commentaires sont protégés.':'Évaluation modifiable : verrouillez-la une fois terminée.';
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='button evaluation-lock-button'+(locked?' is-locked':'');
+    button.textContent=locked?'Déverrouiller l’évaluation':'Verrouiller l’évaluation';
+    button.setAttribute('aria-pressed',String(locked));
+    button.addEventListener('click',()=>{
+      if(locked&&!window.confirm('Déverrouiller l’évaluation de cet élève pour pouvoir la modifier ?'))return;
+      activity.evaluationLocks??={};
+      activity.evaluationLocks[student.id]=!locked;
+      save();
+      window.grade(id);
+    });
+    action.append(status,button);
+    panel.append(action);
+  };
+})();
