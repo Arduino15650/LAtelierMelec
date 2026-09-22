@@ -15,12 +15,20 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="stylesheet" href="styles.css?v=20260911-1">
-  <link rel="stylesheet" href="bo.css?v=20260922-2">
+  <link rel="stylesheet" href="bo.css?v=20260922-3">
 </head>
 <body>
   <header class="topbar">
     <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="show('home')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();show('home')}"><span class="brand-logo"><img src="logo-bac-pro-melec-v3.webp?v=1" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
   </header>
+  <nav class="header-nav quick-nav" aria-label="Navigation principale">
+    <button class="nav nav-home" data-view="home"><span aria-hidden="true">⌂</span> Accueil</button>
+    <button class="nav" data-view="activities"><span aria-hidden="true">▦</span> Activités</button>
+    <button class="nav" data-view="activity-list"><span aria-hidden="true">☷</span> Liste des activités</button>
+    <button class="nav" data-view="students"><span aria-hidden="true">♙</span> Élèves</button>
+    <button class="nav" data-view="results"><span aria-hidden="true">▥</span> Résultats</button>
+    <button class="nav" data-view="referential"><span aria-hidden="true">◎</span> Référentiel</button>
+  </nav>
 
   <main class="shell">
     <section class="content">
@@ -44,7 +52,7 @@
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='55';
+      const swVersion='56';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         const key='melec-sw-version';
         if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}
