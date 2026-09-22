@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="theme-color" content="#06182d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="MELEC">
+  <title>BAC PRO MELEC</title>
+  <style>html,body{min-height:100%;background:#06182d;color:#fff}body{margin:0}</style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+  <link rel="stylesheet" href="styles.css?v=20260911-1">
+  <link rel="stylesheet" href="bo.css?v=20260912-2">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="show('home')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();show('home')}"><span class="brand-logo"><img src="logo-bac-pro-melec-v3.webp?v=1" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
+    <nav class="header-nav">
+      <button class="nav nav-home" data-view="home"><span>⌂</span> Accueil</button>
+      <button class="nav active" data-view="activities"><span>▦</span> Activités</button>
+      <button class="nav" data-view="activity-list"><span>☷</span> Liste des activités</button>
+      <button class="nav" data-view="students"><span>♙</span> Élèves</button>
+      <button class="nav" data-view="referential"><span>◎</span> Référentiel</button>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <section class="content">
+      <div id="homeView" class="view hidden"></div>
+      <div id="activitiesView" class="view"></div>
+      <div id="activity-listView" class="view hidden"></div>
+      <div id="studentsView" class="view hidden"></div>
+      <div id="referentialView" class="view hidden"></div>
+      <div id="editorView" class="view hidden"></div>
+    </section>
+  </main>
+  <div id="toast" class="toast"></div>
+  <script src="referential.js?v=20260911-1"></script>
+  <script src="app.js?v=20260911-1"></script>
+  <script src="performance.js?v=20260911-1"></script>
+  <script src="workshop-activities-v2.js?v=20260912-2"></script>
+  <script src="evaluation-atelier-v2.js?v=20260912-2"></script>
+  <script src="home.js?v=20260911-2"></script>
+  <script src="pdf-generator-v2.js?v=20260911-1"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      const swVersion='53';
+      navigator.serviceWorker.addEventListener('controllerchange',()=>{
+        const key='melec-sw-version';
+        if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}
+      });
+      window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).then(registration=>registration.update()).catch(console.error));
+    }
+  </script>
+</body>
+</html>
