@@ -11,7 +11,7 @@
     return activity.audience!=='selected';
   }
 
-  function renderResults(){
+  function renderResults(keepStudentListOpen=false){
     const target=document.querySelector('#resultsView');
     if(!target)return;
     const classes=[...new Set(state.students.map(student=>student.className).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr',{numeric:true}));
@@ -20,7 +20,7 @@
     const selected=pupils.filter(student=>selectedStudentIds.includes(student.id));
     target.innerHTML=`<div class="page-head results-heading"><div><h1>Résultats des élèves</h1><p>Notes et moyennes des activités évaluées, par classe et par élève.</p></div></div>
       <section class="panel results-filters"><div class="field"><label for="resultsClass">Classe</label><select id="resultsClass"><option value="">Choisir une classe…</option>${classes.map(name=>`<option value="${esc(name)}" ${selectedClass===name?'selected':''}>${esc(name)}</option>`).join('')}</select></div>
-      ${selectedClass?`<fieldset class="results-students"><legend>Élèves à afficher</legend><div class="results-filter-actions"><button type="button" class="button small" id="resultsSelectAll">Tout sélectionner</button><button type="button" class="button small" id="resultsSelectNone">Tout désélectionner</button></div><div class="results-student-choices">${pupils.map(student=>`<label class="results-student-choice"><input type="checkbox" value="${esc(student.id)}" ${selectedStudentIds.includes(student.id)?'checked':''}><span>${esc(student.name)}</span></label>`).join('')}</div></fieldset>`:''}</section>
+      ${selectedClass?`<div class="results-students"><span class="results-student-label">Élèves à afficher</span><details class="results-student-dropdown" ${keepStudentListOpen?'open':''}><summary>${selectedStudentIds.length?`${selectedStudentIds.length} élève(s) sélectionné(s)`:'Choisir un ou plusieurs élèves'} <span aria-hidden="true">⌄</span></summary><div class="results-student-panel"><div class="results-filter-actions"><button type="button" class="button small" id="resultsSelectAll">Toute la classe</button><button type="button" class="button small" id="resultsSelectNone">Effacer la sélection</button></div><div class="results-student-choices">${pupils.map(student=>`<label class="results-student-choice"><input type="checkbox" value="${esc(student.id)}" ${selectedStudentIds.includes(student.id)?'checked':''}><span>${esc(student.name)}</span></label>`).join('')}</div></div></details></div>`:''}</section>
       ${selectedClass?selected.length?`<div class="results-grid">${selected.map(student=>{
         const grades=state.activities.filter(activity=>assigned(activity,student)).map(activity=>({activity,result:scoreResult(activity,student)})).filter(item=>Number.isFinite(item.result.note));
         const average=grades.length?grades.reduce((sum,item)=>sum+item.result.note,0)/grades.length:null;
@@ -29,12 +29,12 @@
 
     target.querySelector('#resultsClass')?.addEventListener('change',event=>{
       selectedClass=event.target.value;
-      selectedStudentIds=state.students.filter(student=>student.className===selectedClass).map(student=>student.id);
+      selectedStudentIds=[];
       renderResults();
     });
     target.querySelectorAll('.results-student-choice input').forEach(input=>input.addEventListener('change',()=>{
       selectedStudentIds=[...target.querySelectorAll('.results-student-choice input:checked')].map(box=>box.value);
-      renderResults();
+      renderResults(true);
     }));
     target.querySelector('#resultsSelectAll')?.addEventListener('click',()=>{selectedStudentIds=pupils.map(student=>student.id);renderResults()});
     target.querySelector('#resultsSelectNone')?.addEventListener('click',()=>{selectedStudentIds=[];renderResults()});

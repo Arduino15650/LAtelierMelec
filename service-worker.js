@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v54-results-navigation';
+const CACHE_NAME = 'bac-pro-melec-v55-visual-results';
 const APP_FILES = [
   './','./index.html','./styles.css','./bo.css','./referential.js','./app.js',
   './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./home.js','./results.js','./pdf-generator-v2.js',
