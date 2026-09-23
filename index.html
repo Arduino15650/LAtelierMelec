@@ -15,7 +15,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="stylesheet" href="styles.css?v=20260911-1">
-  <link rel="stylesheet" href="bo.css?v=20260923-2">
+  <link rel="stylesheet" href="bo.css?v=20260923-3">
 </head>
 <body>
   <header class="topbar">
@@ -49,11 +49,11 @@
   <script src="evaluation-atelier-v2.js?v=20260923-1"></script>
   <script src="student-groups.js?v=20260923-2"></script>
   <script src="home.js?v=20260923-2"></script>
-  <script src="results.js?v=20260923-2"></script>
+  <script src="results.js?v=20260923-3"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='58';
+      const swVersion='59';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         const key='melec-sw-version';
         if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}
