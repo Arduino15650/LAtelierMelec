@@ -5,7 +5,7 @@
 
   function membersFor(className){return state.students.filter(student=>student.className===className).sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}))}
   function groupsFor(className){return state.studentGroups.filter(group=>group.className===className).sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}))}
-  function choices(students,selected=[]){return students.map(student=>`<label class="group-student-choice"><input type="checkbox" value="${esc(student.id)}" ${selected.includes(student.id)?'checked':''}><span>${esc(student.name)}</span></label>`).join('')}
+  function choices(students,selected=[]){return students.map(student=>`<label class="group-member-row" style="display:grid;grid-template-columns:20px minmax(0,1fr);align-items:center;gap:12px;min-height:46px;padding:9px 12px"><input type="checkbox" style="display:block;width:20px;height:20px;min-width:20px;min-height:20px;margin:0;padding:0" value="${esc(student.id)}" ${selected.includes(student.id)?'checked':''}><span>${esc(student.name)}</span></label>`).join('')}
 
   renderStudents=function(){
     originalRenderStudents();
@@ -17,7 +17,7 @@
     section.innerHTML=`<h2 class="panel-title">Groupes d’élèves</h2><p>Créez des groupes à partir d’une classe pour retrouver leurs résultats ensemble.</p>
       <form id="studentGroupForm" class="student-group-form"><div class="field"><label for="studentGroupClass">Classe</label><select id="studentGroupClass" required><option value="">Choisir une classe…</option>${classes.map(name=>`<option value="${esc(name)}">${esc(name)}</option>`).join('')}</select></div>
       <div class="field"><label for="studentGroupName">Nom du groupe</label><input id="studentGroupName" maxlength="80" required placeholder="Ex. Groupe A"></div>
-      <div class="field full"><span class="group-field-label">Élèves du groupe</span><div id="studentGroupChoices" class="group-student-choices"><p>Choisissez d’abord une classe.</p></div></div><button type="submit" class="button primary">Créer le groupe</button></form>
+      <div class="group-member-field"><span class="group-field-label">Élèves du groupe</span><div id="studentGroupChoices" class="group-member-list" style="display:grid;grid-template-columns:minmax(0,1fr);gap:7px"><p>Choisissez d’abord une classe.</p></div></div><button type="submit" class="button primary">Créer le groupe</button></form>
       <div id="studentGroupsList" class="student-groups-list"></div>`;
     title.before(section);
     const classSelect=section.querySelector('#studentGroupClass');
@@ -29,7 +29,7 @@
       memberChoices.innerHTML=className?choices(students)||'<p>Aucun élève dans cette classe.</p>':'<p>Choisissez d’abord une classe.</p>';
       groupList.innerHTML=className?`<h3>Groupes de ${esc(className)}</h3>${groupsFor(className).map(group=>{
         const selected=Array.isArray(group.studentIds)?group.studentIds:[];
-        return `<details class="student-group-item" data-group-id="${esc(group.id)}"><summary><strong>${esc(group.name)}</strong><span>${selected.filter(id=>students.some(student=>student.id===id)).length} élève(s) · Gérer</span></summary><div class="student-group-item-body"><div class="group-student-choices">${choices(students,selected)}</div><div class="group-item-actions"><button type="button" class="button small group-save">Enregistrer les membres</button><button type="button" class="button small danger group-delete">Supprimer le groupe</button></div></div></details>`
+        return `<details class="student-group-item" data-group-id="${esc(group.id)}"><summary><strong>${esc(group.name)}</strong><span>${selected.filter(id=>students.some(student=>student.id===id)).length} élève(s) · Gérer</span></summary><div class="student-group-item-body"><div class="group-member-list" style="display:grid;grid-template-columns:minmax(0,1fr);gap:7px">${choices(students,selected)}</div><div class="group-item-actions"><button type="button" class="button small group-save">Enregistrer les membres</button><button type="button" class="button small danger group-delete">Supprimer le groupe</button></div></div></details>`
       }).join('')||'<p>Aucun groupe créé pour cette classe.</p>'}`:'';
     };
     classSelect.addEventListener('change',update);
