@@ -1,7 +1,7 @@
-const CACHE_NAME = 'bac-pro-melec-v57-evaluation-lock-mobile-grid';
+const CACHE_NAME = 'bac-pro-melec-v58-student-groups';
 const APP_FILES = [
   './','./index.html','./styles.css','./bo.css','./referential.js','./app.js',
-  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./home.js','./results.js','./pdf-generator-v2.js',
+  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./home.js','./results.js','./pdf-generator-v2.js',
   './background-melec-tools.webp','./logo-bac-pro-melec-v3.webp',
   './manifest.webmanifest','./icon-180.png','./icon-192.png'
 ];
