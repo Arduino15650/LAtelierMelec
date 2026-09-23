@@ -1571,8 +1571,8 @@ html,body{max-width:100%;overflow-x:hidden}
 /* Liste de membres autonome : aucune règle de champ ne touche ses cases. */
 #studentsView .student-groups-panel .group-member-field{grid-column:1/-1;min-width:0}
 #studentsView .student-groups-panel .group-member-list{width:100%;max-width:720px;max-height:min(44vh,380px);margin-inline:auto;padding:8px;overflow-y:auto;overflow-x:hidden;border:1px solid #b6d2eb;border-radius:16px;background:#edf7ff;box-sizing:border-box}
-#studentsView .student-groups-panel .group-member-row{width:100%;min-width:0;margin:0;box-sizing:border-box;border:1px solid #bad5eb;border-radius:12px;background:#f8fcff;color:#173754;font-weight:700;line-height:1.35;text-align:left;cursor:pointer}
+#studentsView .student-groups-panel .group-member-row{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;width:100%;min-width:0;margin:0;box-sizing:border-box;border:1px solid #bad5eb;border-radius:12px;background:#f8fcff;color:#173754;font-weight:700;line-height:1.35;text-align:left;cursor:pointer}
 #studentsView .student-groups-panel .group-member-row:has(input:checked){background:#dff0ff;border-color:#4f9ace}
-#studentsView .student-groups-panel .group-member-row input[type="checkbox"]{appearance:auto;accent-color:#1769b7;justify-self:start;align-self:center;max-width:20px;max-height:20px;box-sizing:border-box}
+#studentsView .student-groups-panel .group-member-row input[type="checkbox"]{appearance:auto;accent-color:#1769b7;align-self:center;flex:0 0 20px!important;width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;max-width:20px!important;max-height:20px!important;margin:0!important;padding:0!important;box-sizing:border-box}
 #studentsView .student-groups-panel .group-member-row span{display:block;min-width:0;margin:0;padding:0;overflow-wrap:anywhere}
 @media(max-width:600px){#studentsView .student-groups-panel .group-member-list{padding:6px;max-height:min(48vh,420px)}#studentsView .student-groups-panel .group-member-row{min-height:48px}}
