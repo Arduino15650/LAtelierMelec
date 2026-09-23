@@ -1514,3 +1514,56 @@ html,body{max-width:100%;overflow-x:hidden}
   .group-item-actions{display:grid;grid-template-columns:minmax(0,1fr)}.group-item-actions .button{width:100%}
 }
 @media(max-width:370px){.quick-nav .nav,.quick-nav .nav:not(.active){font-size:11px!important;padding:6px 4px!important}.quick-nav .nav span{margin-right:3px!important}.brand-copy strong,.brand-copy strong span{font-size:16px!important}.brand-copy p{font-size:9px!important}.home-metric{gap:7px!important;padding:10px!important}}
+
+/* Cases de groupe : annule les dimensions des champs de formulaire héritées. */
+#studentsView .student-groups-panel .group-student-choices{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:7px!important;
+  width:100%;
+  max-width:720px;
+  max-height:min(44vh,380px);
+  margin-inline:auto;
+  padding:8px;
+}
+#studentsView .student-groups-panel .group-student-choice{
+  display:grid!important;
+  grid-template-columns:20px minmax(0,1fr)!important;
+  align-items:center!important;
+  justify-content:start!important;
+  column-gap:12px!important;
+  width:100%;
+  min-height:46px!important;
+  margin:0!important;
+  padding:9px 12px!important;
+  box-sizing:border-box;
+  text-align:left!important;
+  line-height:1.35;
+}
+#studentsView .student-groups-panel .group-student-choice input[type="checkbox"]{
+  appearance:auto!important;
+  display:block!important;
+  justify-self:start!important;
+  align-self:center!important;
+  width:20px!important;
+  min-width:20px!important;
+  max-width:20px!important;
+  height:20px!important;
+  min-height:20px!important;
+  max-height:20px!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:4px!important;
+  flex:none!important;
+}
+#studentsView .student-groups-panel .group-student-choice span{
+  display:block!important;
+  min-width:0;
+  margin:0!important;
+  padding:0!important;
+  overflow-wrap:anywhere;
+}
+@media(max-width:600px){
+  #studentsView .student-groups-panel .group-student-choices{max-height:min(48vh,420px);padding:6px}
+  #studentsView .student-groups-panel .group-student-choice{min-height:48px!important;padding:9px 10px!important}
+}
