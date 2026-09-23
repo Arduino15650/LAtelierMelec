@@ -1,64 +1,34 @@
 (function(){
   'use strict';
-  if(!Array.isArray(state.studentGroups))state.studentGroups=[];
-  const originalRenderStudents=renderStudents;
-
-  function membersFor(className){return state.students.filter(student=>student.className===className).sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}))}
-  function groupsFor(className){return state.studentGroups.filter(group=>group.className===className).sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}))}
-  function choices(students,selected=[]){return students.map(student=>`<label class="group-member-row" style="display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;min-height:46px;padding:9px 12px"><input type="checkbox" style="appearance:auto!important;display:block!important;flex:0 0 20px!important;width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;max-width:20px!important;max-height:20px!important;margin:0!important;padding:0!important" value="${esc(student.id)}" ${selected.includes(student.id)?'checked':''}><span style="display:block;min-width:0;line-height:1.35">${esc(student.name)}</span></label>`).join('')}
-
+  state.studentGroups=Array.isArray(state.studentGroups)?state.studentGroups:[];
+  const baseRender=renderStudents;
+  const members=name=>state.students.filter(s=>s.className===name).sort((a,b)=>a.name.localeCompare(b.name,'fr'));
+  const groups=name=>state.studentGroups.filter(g=>g.className===name).sort((a,b)=>a.name.localeCompare(b.name,'fr'));
+  const choices=(students,selected=[])=>students.map(s=>`<label class="group-member-row"><input type="checkbox" value="${esc(s.id)}" ${selected.includes(s.id)?'checked':''}><span>${esc(s.name)}</span></label>`).join('');
+  function showStudentGroups(){
+    document.querySelectorAll('#studentsView .class-fold table').forEach(table=>{
+      const headings=table.querySelectorAll('thead th');
+      if(!table.querySelector('thead th.group-column')){const th=document.createElement('th');th.className='group-column';th.textContent='Groupe(s) lié(s)';headings[1]?.after(th)}
+      table.querySelectorAll('tbody tr').forEach(row=>{
+        const cells=row.querySelectorAll('td'),student=state.students.find(s=>s.name===cells[0]?.textContent&&s.className===cells[1]?.textContent);
+        if(!student)return;
+        let cell=row.querySelector('td.group-column');if(!cell){cell=document.createElement('td');cell.className='group-column';cells[1]?.after(cell)}
+        const linked=groups(student.className).filter(g=>g.studentIds.includes(student.id));
+        cell.innerHTML=linked.length?linked.map(g=>`<span class="student-group-chip">${esc(g.name)}</span>`).join(''):'<span class="muted">Aucun groupe</span>';
+      });
+    });
+  }
   renderStudents=function(){
-    originalRenderStudents();
-    const title=document.querySelector('#studentsView .classes-title');
-    if(!title)return;
-    const classes=classNames();
-    const section=document.createElement('section');
-    section.className='panel student-groups-panel';
-    section.innerHTML=`<h2 class="panel-title">Groupes d’élèves</h2><p>Créez des groupes à partir d’une classe pour retrouver leurs résultats ensemble.</p>
-      <form id="studentGroupForm" class="student-group-form"><div class="field"><label for="studentGroupClass">Classe</label><select id="studentGroupClass" required><option value="">Choisir une classe…</option>${classes.map(name=>`<option value="${esc(name)}">${esc(name)}</option>`).join('')}</select></div>
-      <div class="field"><label for="studentGroupName">Nom du groupe</label><input id="studentGroupName" maxlength="80" required placeholder="Ex. Groupe A"></div>
-      <div class="group-member-field"><span class="group-field-label">Élèves du groupe</span><div id="studentGroupChoices" class="group-member-list" style="display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:7px"><p>Choisissez d’abord une classe.</p></div></div><button type="submit" class="button primary">Créer le groupe</button></form>
-      <div id="studentGroupsList" class="student-groups-list"></div>`;
-    title.before(section);
-    const classSelect=section.querySelector('#studentGroupClass');
-    const memberChoices=section.querySelector('#studentGroupChoices');
-    const groupList=section.querySelector('#studentGroupsList');
-    const update=()=>{
-      const className=classSelect.value;
-      const students=membersFor(className);
-      memberChoices.innerHTML=className?choices(students)||'<p>Aucun élève dans cette classe.</p>':'<p>Choisissez d’abord une classe.</p>';
-      groupList.innerHTML=className?`<h3>Groupes de ${esc(className)}</h3>${groupsFor(className).map(group=>{
-        const selected=Array.isArray(group.studentIds)?group.studentIds:[];
-        return `<details class="student-group-item" data-group-id="${esc(group.id)}"><summary><strong>${esc(group.name)}</strong><span>${selected.filter(id=>students.some(student=>student.id===id)).length} élève(s) · Gérer</span></summary><div class="student-group-item-body"><div class="group-member-list" style="display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:7px">${choices(students,selected)}</div><div class="group-item-actions"><button type="button" class="button small group-save">Enregistrer les membres</button><button type="button" class="button small danger group-delete">Supprimer le groupe</button></div></div></details>`
-      }).join('')||'<p>Aucun groupe créé pour cette classe.</p>'}`:'';
-    };
-    classSelect.addEventListener('change',update);
-    section.querySelector('#studentGroupForm').addEventListener('submit',event=>{
-      event.preventDefault();
-      const className=classSelect.value,name=section.querySelector('#studentGroupName').value.trim();
-      const studentIds=[...memberChoices.querySelectorAll('input:checked')].map(input=>input.value);
-      if(!className||!name||!studentIds.length)return toast('Choisissez une classe, un nom et au moins un élève.');
-      if(groupsFor(className).some(group=>group.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')))return toast('Ce groupe existe déjà dans cette classe.');
-      state.studentGroups.push({id:createId(),className,name,studentIds});
-      save();
-      section.querySelector('#studentGroupName').value='';
-      update();
-      toast('Groupe créé.');
-    });
-    groupList.addEventListener('click',event=>{
-      const row=event.target.closest('.student-group-item');
-      const group=state.studentGroups.find(item=>item.id===row?.dataset.groupId);
-      if(!group)return;
-      if(event.target.closest('.group-save')){
-        group.studentIds=[...row.querySelectorAll('input:checked')].map(input=>input.value);
-        if(!group.studentIds.length)return toast('Sélectionnez au moins un élève.');
-        save();update();toast('Groupe mis à jour.');
-      }
-      if(event.target.closest('.group-delete')&&confirm(`Supprimer le groupe « ${group.name} » ? Les résultats des élèves seront conservés.`)){
-        state.studentGroups=state.studentGroups.filter(item=>item.id!==group.id);
-        save();update();toast('Groupe supprimé.');
-      }
-    });
+    baseRender();
+    showStudentGroups();
+    const section=document.createElement('section');section.className='panel student-groups-panel';
+    section.innerHTML=`<h2 class="panel-title">Groupes d’élèves</h2><div class="group-form-grid"><div class="field"><label for="studentGroupClass">Classe</label><select id="studentGroupClass"><option value="">Choisir une classe…</option>${classNames().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select></div><div class="field"><label for="studentGroupName">Nom du groupe</label><input id="studentGroupName" maxlength="80" placeholder="Ex. Groupe A"></div></div><details id="newGroupMembers" class="selection-dropdown" hidden><summary>Choisir les élèves du groupe</summary><div id="studentGroupChoices" class="group-member-list"></div></details><button type="button" id="createStudentGroup" class="button primary">Créer le groupe</button><div id="studentGroupsList" class="student-groups-list"></div>`;
+    document.querySelector('#studentsView .classes-title')?.before(section);
+    const classSelect=section.querySelector('#studentGroupClass'),list=section.querySelector('#studentGroupsList'),choice=section.querySelector('#studentGroupChoices'),fold=section.querySelector('#newGroupMembers');
+    const update=()=>{const name=classSelect.value,students=members(name);fold.hidden=!name;choice.innerHTML=choices(students)||'<p>Aucun élève dans cette classe.</p>';list.innerHTML=name?`<h3>Groupes de ${esc(name)}</h3>${groups(name).map(g=>{const selected=students.filter(s=>g.studentIds.includes(s.id)),others=students.filter(s=>!g.studentIds.includes(s.id));return `<details class="student-group-item" data-group-id="${esc(g.id)}"><summary><strong>${esc(g.name)}</strong><span>${selected.length} élève(s)</span></summary><div class="student-group-item-body"><details class="selection-dropdown"><summary>Élèves du groupe</summary><ul class="group-name-list">${selected.map(s=>`<li>${esc(s.name)}</li>`).join('')}</ul></details><details class="selection-dropdown"><summary>Modifier les membres</summary><div class="group-member-list">${choices(selected,g.studentIds)}</div>${others.length?`<div class="field"><label>Ajouter un élève</label><select class="group-add-student"><option value="">Choisir…</option>${others.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select></div>`:''}</details><div class="group-item-actions"><button type="button" class="button small group-save">Enregistrer</button><button type="button" class="button small danger group-delete">Supprimer</button></div></div></details>`}).join('')||'<p>Aucun groupe créé.</p>'}`:'';showStudentGroups()};
+    classSelect.onchange=update;
+    section.querySelector('#createStudentGroup').onclick=()=>{const className=classSelect.value,name=section.querySelector('#studentGroupName').value.trim(),studentIds=[...choice.querySelectorAll('input:checked')].map(x=>x.value);if(!className||!name||!studentIds.length)return toast('Choisissez une classe, un nom et des élèves.');if(groups(className).some(g=>g.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')))return toast('Ce groupe existe déjà.');state.studentGroups.push({id:createId(),className,name,studentIds});save();section.querySelector('#studentGroupName').value='';fold.open=false;update();toast('Groupe créé.');};
+    list.onclick=e=>{const row=e.target.closest('[data-group-id]'),g=state.studentGroups.find(x=>x.id===row?.dataset.groupId);if(!g)return;if(e.target.closest('.group-save')){const ids=[...row.querySelectorAll('.group-member-list input:checked')].map(x=>x.value),added=row.querySelector('.group-add-student')?.value;if(added)ids.push(added);if(!ids.length)return toast('Sélectionnez au moins un élève.');g.studentIds=ids;state.activities.filter(a=>a.groupId===g.id).forEach(a=>a.studentIds=[...ids]);save();update();toast('Groupe mis à jour.')}if(e.target.closest('.group-delete')&&confirm(`Supprimer le groupe « ${g.name} » ?`)){state.studentGroups=state.studentGroups.filter(x=>x.id!==g.id);state.activities.filter(a=>a.groupId===g.id).forEach(a=>delete a.groupId);save();update();toast('Groupe supprimé.')}};
   };
   window.renderStudents=renderStudents;
 })();

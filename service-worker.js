@@ -1,7 +1,7 @@
-const CACHE_NAME = 'bac-pro-melec-v62-fresh-code';
+const CACHE_NAME = 'bac-pro-melec-v55-ccf-groups';
 const APP_FILES = [
   './','./index.html','./styles.css','./bo.css','./referential.js','./app.js',
-  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./home.js','./results.js','./pdf-generator-v2.js',
+  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js',
   './background-melec-tools.webp','./logo-bac-pro-melec-v3.webp',
   './manifest.webmanifest','./icon-180.png','./icon-192.png'
 ];
@@ -30,23 +30,6 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => caches.match('./index.html'))
-    );
-    return;
-  }
-
-  // Le code de l'application doit venir du réseau avant toute copie en cache.
-  // Une recherche ignoreSearch sur les scripts versionnés pouvait renvoyer une ancienne interface.
-  if (event.request.destination === 'script' || event.request.destination === 'style') {
-    event.respondWith(
-      fetch(event.request, { cache: 'no-store' })
-        .then(response => {
-          if (response.ok) {
-            const copy = response.clone();
-            event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)));
-          }
-          return response;
-        })
-        .catch(async () => (await caches.match(event.request)) || caches.match(event.request, { ignoreSearch: true }))
     );
     return;
   }
