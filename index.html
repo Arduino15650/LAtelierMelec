@@ -17,12 +17,9 @@
   <link rel="stylesheet" href="styles.css?v=20260911-1">
   <link rel="stylesheet" href="bo.css?v=20260924-5">
   <style>
-    .backup-tools{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:10px 24px;background:#08233f;color:#fff}
-    .backup-button{min-height:44px;padding:9px 18px;border:2px solid #ffc36b;border-radius:999px;background:linear-gradient(120deg,#b95512,#df8b25);color:#fff;font-family:inherit;font-size:14px;font-weight:700;line-height:1.2;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.22)}
+    .backup-button{width:100%;min-height:44px;padding:9px 18px;border:2px solid #ffc36b;border-radius:999px;background:linear-gradient(120deg,#b95512,#df8b25);color:#fff;font-family:inherit;font-size:14px;font-weight:700;line-height:1.2;cursor:pointer}
     .backup-button:hover,.backup-button:focus-visible{background:linear-gradient(120deg,#a5480a,#c87513);outline:2px solid #fff;outline-offset:2px}
-    .backup-status{font-size:13px;line-height:1.35;overflow-wrap:anywhere}
-    @media(min-width:981px){.backup-tools{margin-left:248px}}
-    @media(max-width:700px){.backup-tools{flex-wrap:wrap;justify-content:center;padding:8px 14px;text-align:center}.backup-button{width:100%;max-width:420px}}
+    .backup-status{display:block;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
   </style>
   <style>
     body.cloud-locked > :not(#cloudGate):not(script){visibility:hidden!important}
@@ -36,10 +33,16 @@
     .cloud-card button.secondary{background:#dcecff;color:#123661;border:1px solid #8cb7ec}.cloud-card button:disabled{opacity:.55;cursor:wait}
     .cloud-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}.cloud-status{min-height:20px;margin:12px 0 0;font-size:14px;overflow-wrap:anywhere}
     .cloud-status.error{color:#ad2525}.cloud-status.success{color:#125d36}
-    .cloud-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end;padding:8px 24px;background:#08233f;color:#fff;font:13px Arial,sans-serif}
+    .cloud-toolbar{display:flex;align-items:center;justify-content:flex-end;padding:8px 24px;background:transparent;color:#fff;font:13px Arial,sans-serif}
     .cloud-toolbar[hidden]{display:none!important}
-    .cloud-toolbar button{padding:6px 12px;border:1px solid #9bd0ff;border-radius:99px;background:#155395;color:#fff;cursor:pointer}
-    .cloud-toolbar .cloud-sync-error{color:#ffd295}
+    .cloud-menu{position:relative}
+    .cloud-menu>summary{display:flex;align-items:center;justify-content:center;min-height:42px;padding:0 17px;border:1px solid #e3a34c;border-radius:999px;background:#174878;color:#fff;font-weight:700;cursor:pointer;list-style:none}
+    .cloud-menu>summary::-webkit-details-marker{display:none}
+    .cloud-menu>summary:hover,.cloud-menu>summary:focus-visible{background:#2366a2;outline:2px solid #fff;outline-offset:2px}
+    .cloud-menu-panel{position:absolute;right:0;top:calc(100% + 7px);z-index:1000;box-sizing:border-box;width:min(310px,calc(100vw - 28px));display:grid;gap:11px;padding:16px;border:1px solid #93b9df;border-radius:17px;background:#edf5ff;color:#18324c;box-shadow:0 12px 30px #0007}
+    .cloud-menu-panel button{min-height:42px;padding:8px 14px;border:1px solid #8eb5de;border-radius:999px;background:#155395;color:#fff;font:700 14px Arial,sans-serif;cursor:pointer}
+    .cloud-menu-panel button:hover,.cloud-menu-panel button:focus-visible{filter:brightness(1.12);outline:2px solid #174878;outline-offset:2px}
+    .cloud-menu-panel .cloud-sync-error{color:#a12626}
     @media(min-width:981px){.cloud-toolbar{margin-left:248px}}
   </style>
 </head>
@@ -84,11 +87,18 @@
       <button class="nav" data-view="ccf"><span>◉</span> Récap Des CCF</button>
       <button class="nav" data-view="referential"><span>◎</span> Référentiel</button>
     </nav>
-  <div class="backup-tools">
-    <button id="backupDownload" class="backup-button" type="button">⬇ Sauvegarder mes données</button>
-    <span id="backupStatus" class="backup-status" role="status" aria-live="polite"></span>
+  <div class="cloud-toolbar" hidden>
+    <details class="cloud-menu">
+      <summary>⚙ Mon compte</summary>
+      <div class="cloud-menu-panel">
+        <span id="cloudSyncStatus" role="status" aria-live="polite">Connexion…</span>
+        <button id="cloudSyncNow" type="button">Actualiser les données</button>
+        <button id="backupDownload" class="backup-button" type="button">⬇ Sauvegarder mes données</button>
+        <span id="backupStatus" class="backup-status" role="status" aria-live="polite"></span>
+        <button id="cloudSignOut" type="button">Déconnexion</button>
+      </div>
+    </details>
   </div>
-  <div class="cloud-toolbar" hidden><span id="cloudSyncStatus" role="status" aria-live="polite">Connexion…</span><button id="cloudSyncNow" type="button">Actualiser</button><button id="cloudSignOut" type="button">Déconnexion</button></div>
 
   <main class="shell">
     <section class="content">
@@ -108,7 +118,7 @@
   <script src="performance.js?v=20260911-1"></script>
   <script src="workshop-activities-v2.js?v=20260924-1"></script>
   <script src="evaluation-atelier-v2.js?v=20260912-2"></script>
-  <script src="student-groups.js?v=20260924-3"></script>
+  <script src="student-groups.js?v=20260925-1"></script>
   <script src="ccf-dashboard.js?v=20260924-5"></script>
   <script src="home.js?v=20260924-2"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
@@ -116,7 +126,7 @@
   <script src="cloud-sync.js?v=20260924-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='62';
+      const swVersion='63';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         const key='melec-sw-version';
         if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}
