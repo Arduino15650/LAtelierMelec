@@ -16,6 +16,14 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="stylesheet" href="styles.css?v=20260911-1">
   <link rel="stylesheet" href="bo.css?v=20260924-5">
+  <style>
+    .backup-tools{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:10px 24px;background:#08233f;color:#fff}
+    .backup-button{min-height:44px;padding:9px 18px;border:2px solid #ffc36b;border-radius:999px;background:linear-gradient(120deg,#b95512,#df8b25);color:#fff;font-family:inherit;font-size:14px;font-weight:700;line-height:1.2;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.22)}
+    .backup-button:hover,.backup-button:focus-visible{background:linear-gradient(120deg,#a5480a,#c87513);outline:2px solid #fff;outline-offset:2px}
+    .backup-status{font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+    @media(min-width:981px){.backup-tools{margin-left:248px}}
+    @media(max-width:700px){.backup-tools{flex-wrap:wrap;justify-content:center;padding:8px 14px;text-align:center}.backup-button{width:100%;max-width:420px}}
+  </style>
 </head>
 <body>
   <header class="topbar">
@@ -31,6 +39,10 @@
       <button class="nav" data-view="ccf"><span>◉</span> Récap Des CCF</button>
       <button class="nav" data-view="referential"><span>◎</span> Référentiel</button>
     </nav>
+  <div class="backup-tools">
+    <button id="backupDownload" class="backup-button" type="button">⬇ Sauvegarder mes données</button>
+    <span id="backupStatus" class="backup-status" role="status" aria-live="polite"></span>
+  </div>
 
   <main class="shell">
     <section class="content">
@@ -54,9 +66,10 @@
   <script src="ccf-dashboard.js?v=20260924-5"></script>
   <script src="home.js?v=20260924-2"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
+  <script src="backup-data.js?v=20260924-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='60';
+      const swVersion='61';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         const key='melec-sw-version';
         if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}

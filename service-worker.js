@@ -1,7 +1,7 @@
-const CACHE_NAME = 'bac-pro-melec-v60-grouped-activities';
+const CACHE_NAME = 'bac-pro-melec-v61-backup';
 const APP_FILES = [
   './','./index.html','./styles.css','./bo.css','./referential.js','./app.js',
-  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js',
+  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js','./backup-data.js',
   './background-melec-tools.webp','./logo-bac-pro-melec-v3.webp',
   './manifest.webmanifest','./icon-180.png','./icon-192.png'
 ];
