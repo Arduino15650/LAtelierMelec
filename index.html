@@ -24,8 +24,53 @@
     @media(min-width:981px){.backup-tools{margin-left:248px}}
     @media(max-width:700px){.backup-tools{flex-wrap:wrap;justify-content:center;padding:8px 14px;text-align:center}.backup-button{width:100%;max-width:420px}}
   </style>
+  <style>
+    body.cloud-locked > :not(#cloudGate):not(script){visibility:hidden!important}
+    #cloudGate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;overflow:auto;padding:20px;background:#06182d;color:#172b45;font-family:Arial,sans-serif}
+    #cloudGate[hidden]{display:none}
+    .cloud-card{width:min(100%,500px);box-sizing:border-box;padding:clamp(20px,5vw,34px);border:2px solid #ef9e31;border-radius:24px;background:#eff6ff;box-shadow:0 20px 60px #0008}
+    .cloud-brand{display:flex;align-items:center;gap:14px;margin-bottom:18px}.cloud-brand img{width:72px;height:72px;object-fit:contain}.cloud-brand strong{font-size:clamp(21px,5vw,29px)}
+    .cloud-card h1{font-size:24px;margin:0 0 10px}.cloud-card p{line-height:1.5}.cloud-card label{display:block;margin:14px 0 6px;font-weight:700}
+    .cloud-card input[type=email],.cloud-card input[type=password],.cloud-card input[type=file]{box-sizing:border-box;width:100%;min-height:46px;padding:10px;border:1px solid #8ca9c9;border-radius:12px;background:#fff;color:#172b45;font-size:16px}
+    .cloud-card button{min-height:46px;padding:10px 17px;border:0;border-radius:999px;background:#145cb5;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+    .cloud-card button.secondary{background:#dcecff;color:#123661;border:1px solid #8cb7ec}.cloud-card button:disabled{opacity:.55;cursor:wait}
+    .cloud-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}.cloud-status{min-height:20px;margin:12px 0 0;font-size:14px;overflow-wrap:anywhere}
+    .cloud-status.error{color:#ad2525}.cloud-status.success{color:#125d36}
+    .cloud-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end;padding:8px 24px;background:#08233f;color:#fff;font:13px Arial,sans-serif}
+    .cloud-toolbar[hidden]{display:none!important}
+    .cloud-toolbar button{padding:6px 12px;border:1px solid #9bd0ff;border-radius:99px;background:#155395;color:#fff;cursor:pointer}
+    .cloud-toolbar .cloud-sync-error{color:#ffd295}
+    @media(min-width:981px){.cloud-toolbar{margin-left:248px}}
+  </style>
 </head>
-<body>
+<body class="cloud-locked">
+  <div id="cloudGate" role="dialog" aria-modal="true" aria-label="Connexion à LAtelierMelec">
+    <div class="cloud-card">
+      <div class="cloud-brand"><img src="logo-bac-pro-melec-v3.webp" alt=""><strong>BAC PRO MELEC</strong></div>
+      <section id="cloudLoginPane">
+        <h1>Accès personnel</h1>
+        <p>Connectez-vous avec le compte créé dans votre nouveau projet Supabase.</p>
+        <form id="cloudLoginForm">
+          <label for="cloudEmail">Adresse e-mail</label><input id="cloudEmail" type="email" autocomplete="username" required>
+          <label for="cloudPassword">Mot de passe</label><input id="cloudPassword" type="password" autocomplete="current-password" required>
+          <div class="cloud-actions"><button type="submit">Se connecter</button></div>
+        </form>
+      </section>
+      <section id="cloudImportPane" hidden>
+        <h1>Première synchronisation</h1>
+        <p>Aucune donnée n’est encore enregistrée dans ce compte. Importez votre sauvegarde JSON, ou utilisez les données conservées dans ce navigateur. Rien ne sera envoyé sans votre confirmation.</p>
+        <label for="cloudBackupFile">Sauvegarde JSON téléchargée précédemment</label>
+        <input id="cloudBackupFile" type="file" accept=".json,application/json">
+        <div class="cloud-actions">
+          <button id="cloudImportFile" type="button">Importer ce fichier</button>
+          <button id="cloudImportLocal" class="secondary" type="button">Utiliser les données de ce navigateur</button>
+          <button id="cloudStartEmpty" class="secondary" type="button">Commencer sans données</button>
+        </div>
+      </section>
+      <p id="cloudGateStatus" class="cloud-status" role="status" aria-live="polite"></p>
+      <button id="cloudSignOutGate" class="secondary" type="button" hidden>Changer de compte</button>
+    </div>
+  </div>
   <header class="topbar">
     <button id="appBackButton" class="app-back-button" type="button" aria-label="Revenir à la page précédente" onclick="appBack()" hidden>← <span>Retour</span></button>
     <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome()}"><span class="brand-logo"><img src="logo-bac-pro-melec-v3.webp?v=1" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
@@ -43,6 +88,7 @@
     <button id="backupDownload" class="backup-button" type="button">⬇ Sauvegarder mes données</button>
     <span id="backupStatus" class="backup-status" role="status" aria-live="polite"></span>
   </div>
+  <div class="cloud-toolbar" hidden><span id="cloudSyncStatus" role="status" aria-live="polite">Connexion…</span><button id="cloudSyncNow" type="button">Actualiser</button><button id="cloudSignOut" type="button">Déconnexion</button></div>
 
   <main class="shell">
     <section class="content">
@@ -67,9 +113,10 @@
   <script src="home.js?v=20260924-2"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script src="backup-data.js?v=20260924-1"></script>
+  <script src="cloud-sync.js?v=20260924-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='61';
+      const swVersion='62';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         const key='melec-sw-version';
         if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}

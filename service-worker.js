@@ -1,7 +1,7 @@
-const CACHE_NAME = 'bac-pro-melec-v61-backup';
+const CACHE_NAME = 'bac-pro-melec-v62-cloud-sync';
 const APP_FILES = [
   './','./index.html','./styles.css','./bo.css','./referential.js','./app.js',
-  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js','./backup-data.js',
+  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js','./backup-data.js','./cloud-sync.js',
   './background-melec-tools.webp','./logo-bac-pro-melec-v3.webp',
   './manifest.webmanifest','./icon-180.png','./icon-192.png'
 ];
@@ -21,6 +21,8 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  // Ne jamais mettre en cache les réponses privées de Supabase.
+  if (new URL(event.request.url).origin !== self.location.origin) return;
 
   if (event.request.mode === 'navigate') {
     event.respondWith(
