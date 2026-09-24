@@ -41,9 +41,46 @@
 
   const baseEditorBody=editorBody,baseBindEditor=bindEditor,baseNextStep=nextStep;
   editorBody=function(){let html=baseEditorBody();if(step!==1)return html;const pending=draft.pendingPeriod||{};const periodHtml=`<section class="period-panel"><h3>Période de formation</h3><div class="field"><label for="periodChoice">Période</label><select id="periodChoice"><option value="">Sans période</option>${state.trainingPeriods.map(x=>`<option value="${esc(x.id)}" ${draft.periodId===x.id?'selected':''}>${esc(x.name)} · ${esc(x.startDate)} → ${esc(x.endDate)}</option>`).join('')}<option value="__new__" ${draft.pendingPeriod?'selected':''}>Créer une période…</option></select></div><div id="newPeriodFields" class="period-fields" ${draft.pendingPeriod?'':'hidden'}><div class="field"><label for="periodName">Nom</label><input id="periodName" maxlength="80" value="${esc(pending.name||'')}" placeholder="SEMESTRE 1"></div><div class="field"><label for="periodStart">Début</label><input id="periodStart" type="date" value="${esc(pending.startDate||'')}"></div><div class="field"><label for="periodEnd">Fin</label><input id="periodEnd" type="date" value="${esc(pending.endDate||'')}"></div></div></section>`;html+=periodHtml;const pupils=state.students.filter(s=>s.className===draft.className);const groups=state.studentGroups.filter(g=>g.className===draft.className);if(draft.groupId&&!groups.some(g=>g.id===draft.groupId))draft.groupId='';if(groups.length&&pupils.length){html=html.replace('<section class="workplace-students">',`<section class="workplace-students"><div class="field"><label for="activityGroup">Sélectionner un groupe</label><select id="activityGroup"><option value="">Choisir librement les élèves</option>${groups.map(g=>`<option value="${esc(g.id)}" ${draft.groupId===g.id?'selected':''}>${esc(g.name)}</option>`).join('')}</select></div>`)}return html};
-  bindEditor=function(){baseBindEditor();if(step!==1)return;const choice=$('#periodChoice');if(choice)choice.onchange=()=>{draft.periodId=choice.value==='__new__'?'':choice.value;draft.pendingPeriod=choice.value==='__new__'?{name:'',startDate:'',endDate:''}:null;$('#newPeriodFields').hidden=!draft.pendingPeriod};['Name','Start','End'].forEach(k=>{const el=$('#period'+k);if(el)el.oninput=()=>{draft.pendingPeriod??={};draft.pendingPeriod[{Name:'name',Start:'startDate',End:'endDate'}[k]]=el.value}});const group=$('#activityGroup'),toggle=$('#toggleWorkplaceStudents');if(group)group.onchange=()=>{draft.groupId=group.value;const selected=state.studentGroups.find(g=>g.id===group.value);const allowed=new Set(selected?.studentIds||[]);$$('[name=workplaceStudent]').forEach(el=>{el.closest('label').hidden=!!selected&&!allowed.has(el.value);el.checked=!!selected&&allowed.has(el.value);el.disabled=!!selected});draft.studentIds=selected?[...allowed]:[];if(toggle)toggle.hidden=!!selected;const label=$('.workplace-student-dropdown summary span');if(label)label.textContent=`${draft.studentIds.length} élève(s) sélectionné(s)`};if(group?.value){const selected=state.studentGroups.find(g=>g.id===group.value),allowed=new Set(selected?.studentIds||[]);$$('[name=workplaceStudent]').forEach(el=>{el.closest('label').hidden=!!selected&&!allowed.has(el.value);el.disabled=!!selected});if(toggle)toggle.hidden=!!selected}};
+  bindEditor=function(){
+    baseBindEditor();
+    if(step!==1)return;
+    const choice=$('#periodChoice');
+    if(choice)choice.onchange=()=>{draft.periodId=choice.value==='__new__'?'':choice.value;draft.pendingPeriod=choice.value==='__new__'?{name:'',startDate:'',endDate:''}:null;$('#newPeriodFields').hidden=!draft.pendingPeriod};
+    ['Name','Start','End'].forEach(k=>{const el=$('#period'+k);if(el)el.oninput=()=>{draft.pendingPeriod??={};draft.pendingPeriod[{Name:'name',Start:'startDate',End:'endDate'}[k]]=el.value}});
+    const group=$('#activityGroup');
+    if(group){
+      group.insertAdjacentHTML('afterend','<small class="activity-group-help">Le groupe repère ses membres ; cochez librement un ou plusieurs élèves de la classe, y compris hors du groupe.</small>');
+      const highlightGroup=()=>{
+        draft.groupId=group.value;
+        const members=new Set(state.studentGroups.find(g=>g.id===group.value)?.studentIds||[]);
+        $$('[name=workplaceStudent]').forEach(el=>{
+          el.disabled=false;
+          el.closest('label').hidden=false;
+          el.closest('label').classList.toggle('activity-group-member',members.has(el.value));
+        });
+      };
+      group.onchange=highlightGroup;
+      highlightGroup();
+    }
+  };
   nextStep=function(){if(step===1&&draft.pendingPeriod){const p=draft.pendingPeriod;if(!p.name?.trim()||!p.startDate||!p.endDate||p.endDate<p.startDate)return toast('Renseignez une période et des dates valides.')}if(step===5&&draft.pendingPeriod){const p=draft.pendingPeriod;let existing=state.trainingPeriods.find(x=>x.name.toLocaleLowerCase('fr')===p.name.trim().toLocaleLowerCase('fr')&&x.startDate===p.startDate&&x.endDate===p.endDate);if(!existing){existing={id:createId(),name:p.name.trim(),startDate:p.startDate,endDate:p.endDate};state.trainingPeriods.push(existing)}draft.periodId=existing.id;delete draft.pendingPeriod;save()}baseNextStep()};
   window.editorBody=editorBody;window.bindEditor=bindEditor;window.nextStep=nextStep;
+  const renderActivitiesWithAssignments=renderActivities;
+  renderActivities=function(){
+    renderActivitiesWithAssignments();
+    document.querySelectorAll('#activitiesView .online-activity-card').forEach(card=>{
+      const editButton=card.querySelector('button[onclick^="editActivity("]');
+      if(!editButton)return;
+      const match=editButton.getAttribute('onclick').match(/editActivity\('([^']+)'\)/);
+      if(!match)return;
+      const button=document.createElement('button');
+      button.type='button';button.className='button small assign-students-button';
+      button.textContent='Associer des élèves';
+      button.onclick=()=>{editActivity(match[1]);document.querySelector('.workplace-student-dropdown')?.setAttribute('open','');document.querySelector('.workplace-students')?.scrollIntoView({block:'center'})};
+      editButton.before(button);
+    });
+  };
+  window.renderActivities=renderActivities;
   const baseReferential=renderReferential;
   renderReferential=function(){baseReferential();document.querySelectorAll('#referentialView details.competence>summary').forEach(summary=>{const node=[...summary.childNodes].find(n=>n.nodeType===Node.TEXT_NODE&&/^C\d+\s/.test(n.textContent.trim()));if(!node)return;const match=node.textContent.match(/^\s*(C\d+)\s*[—-]\s*/);if(!match)return;const badge=document.createElement('span');badge.className='ref-comp-badge';badge.textContent=match[1];node.textContent=node.textContent.slice(match[0].length);summary.insertBefore(badge,node)})};window.renderReferential=renderReferential;
 })();

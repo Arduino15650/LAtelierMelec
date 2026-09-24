@@ -1591,3 +1591,8 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 .activity-class-group>summary>div>span{font-size:clamp(13px,1.2vw,16px)!important;font-weight:750!important}
 .group-edit-hint{margin:10px 12px;color:#244760;line-height:1.4}
 @media(max-width:700px){.topbar{align-items:center!important}.app-back-button{min-height:40px;padding:7px 10px;font-size:13px}.app-back-button span{display:none}.activity-class-group>summary>div{align-items:flex-start}}
+.activity-group-help{display:block;margin:7px 0;color:#244766;font-size:13px;line-height:1.4}
+.workplace-student-dropdown .select-row.activity-group-member{border-left:4px solid #27816a;background:#e1f4e9!important}
+.workplace-student-dropdown .select-row:has(input:checked){background:#d8eaff!important;border-color:#4389c3!important}
+.assign-students-button{background:#d9f2e7!important;border-color:#57ab85!important;color:#174e3b!important;font-weight:800!important}
+.assign-students-button:hover,.assign-students-button:focus-visible{background:#bce4cf!important}
