@@ -15,11 +15,12 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="stylesheet" href="styles.css?v=20260911-1">
-  <link rel="stylesheet" href="bo.css?v=20260924-2">
+  <link rel="stylesheet" href="bo.css?v=20260924-3">
 </head>
 <body>
   <header class="topbar">
-    <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="show('home')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();show('home')}"><span class="brand-logo"><img src="logo-bac-pro-melec-v3.webp?v=1" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
+    <button id="appBackButton" class="app-back-button" type="button" aria-label="Revenir à la page précédente" onclick="appBack()" hidden>← <span>Retour</span></button>
+    <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome()}"><span class="brand-logo"><img src="logo-bac-pro-melec-v3.webp?v=1" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
   </header>
     <nav class="header-nav quick-nav" aria-label="Navigation principale">
       <button class="nav nav-home" data-view="home"><span>⌂</span> Accueil</button>
@@ -49,13 +50,13 @@
   <script src="performance.js?v=20260911-1"></script>
   <script src="workshop-activities-v2.js?v=20260912-2"></script>
   <script src="evaluation-atelier-v2.js?v=20260912-2"></script>
-  <script src="student-groups.js?v=20260923-3"></script>
-  <script src="ccf-dashboard.js?v=20260924-1"></script>
-  <script src="home.js?v=20260923-3"></script>
+  <script src="student-groups.js?v=20260924-2"></script>
+  <script src="ccf-dashboard.js?v=20260924-2"></script>
+  <script src="home.js?v=20260924-2"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='56';
+      const swVersion='57';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         const key='melec-sw-version';
         if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}

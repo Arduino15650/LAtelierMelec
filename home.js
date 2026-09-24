@@ -35,11 +35,29 @@
   }
 
   const applicationShow=window.show;
+  const applicationShowRaw=window.showRaw;
+  const validRoutes=new Set(['home','editor',...homeItems.map(item=>item.view)]);
+  let restoring=false;
+  let resettingHome=false;
+  let historyEpoch=Date.now();
+  let historyDepth=0;
+  const routeUrl=name=>`${location.pathname}${location.search}${name==='home'?'':`#${name}`}`;
+  const currentRoute=()=>location.hash.slice(1)||'home';
+  function updateBackButton(name){
+    const button=document.querySelector('#appBackButton');
+    if(button)button.hidden=name==='home';
+  }
+  function recordRoute(name){
+    if(restoring||currentRoute()===name)return;
+    historyDepth++;
+    history.pushState({melecRoute:name,melecDepth:historyDepth,melecEpoch:historyEpoch},'',routeUrl(name));
+  }
   window.show=show=function(name){
-    const route=name==='home'?'':`#${name}`;
-    if(location.hash!==route)history.replaceState(null,'',`${location.pathname}${location.search}${route}`);
+    if(!validRoutes.has(name)||name==='editor')return;
+    recordRoute(name);
     document.body.classList.toggle('home-active',name==='home');
     document.body.classList.toggle('subpage-active',name!=='home');
+    updateBackButton(name);
     if(name!=='home')return applicationShow(name);
     document.querySelectorAll('.view').forEach(view=>view.classList.add('hidden'));
     document.querySelector('#homeView')?.classList.remove('hidden');
@@ -49,8 +67,54 @@
     window.scrollTo({top:0,behavior:'smooth'});
   };
 
+  window.showRaw=showRaw=function(name){
+    if(name==='editor'){
+      recordRoute(name);
+      document.body.classList.remove('home-active');
+      document.body.classList.add('subpage-active');
+      updateBackButton(name);
+    }
+    applicationShowRaw(name);
+  };
+
+  function restoreRoute(name){
+    restoring=true;
+    try{
+      if(name==='editor'&&draft)renderEditor();
+      else show(name==='editor'?'activities':name);
+    }finally{restoring=false}
+  }
+  window.appBack=function(){
+    if(historyDepth>0)history.back();
+    else if(currentRoute()!=='home'){
+      history.replaceState({melecRoute:'home',melecDepth:0,melecEpoch:historyEpoch},'',routeUrl('home'));
+      restoreRoute('home');
+    }
+  };
+  window.resetToHome=function(){
+    if(historyDepth>0){resettingHome=true;history.go(-historyDepth)}
+    else{
+      history.replaceState({melecRoute:'home',melecDepth:0,melecEpoch:++historyEpoch},'',routeUrl('home'));
+      restoreRoute('home');
+    }
+  };
+  window.addEventListener('popstate',event=>{
+    if(resettingHome||event.state?.melecEpoch!==historyEpoch){
+      resettingHome=false;
+      historyDepth=0;
+      history.replaceState({melecRoute:'home',melecDepth:0,melecEpoch:++historyEpoch},'',routeUrl('home'));
+      restoreRoute('home');
+      return;
+    }
+    historyDepth=Number(event.state.melecDepth)||0;
+    const route=event.state.melecRoute;
+    restoreRoute(validRoutes.has(route)?route:'home');
+  });
+
   window.renderHome=renderHome;
   renderHome();
   const requestedView=location.hash.slice(1);
-  show(homeItems.some(item=>item.view===requestedView)?requestedView:'home');
+  const initialRoute=homeItems.some(item=>item.view===requestedView)?requestedView:'home';
+  history.replaceState({melecRoute:initialRoute,melecDepth:0,melecEpoch:historyEpoch},'',routeUrl(initialRoute));
+  restoreRoute(initialRoute);
 })();

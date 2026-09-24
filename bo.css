@@ -1579,3 +1579,15 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 .dashboard-table-wrap{padding:0!important}
 .home-section-title button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:38px;padding:7px 14px!important;border:1px solid #94c6e8!important;border-radius:999px!important;background:#d5edff!important;color:#123e63!important;line-height:1.2;white-space:normal;text-align:center}
 .home-section-title button:hover,.home-section-title button:focus-visible{background:#fff2d7!important;border-color:#e9b86f!important;color:#50320b!important}
+.topbar{gap:12px}
+.app-back-button{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:9px 15px;border:2px solid #99c7e8;border-radius:999px;background:#d8edff;color:#103c64;font:inherit;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(0,15,35,.2)}
+.app-back-button[hidden]{display:none!important}
+.app-back-button:hover,.app-back-button:focus-visible{background:#fff0d4;border-color:#e3ad5d;color:#54340c}
+.bottom-stats>.new-activity-stat .plus,.home-class-actions .home-new-activity>span{display:grid!important;place-items:center!important;flex:0 0 42px;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;border:2px solid #fff!important;border-radius:13px!important;background:#0d4176!important;color:#fff!important;font-size:28px!important;font-weight:800!important;line-height:1!important;text-shadow:none!important}
+.activity-class-group>summary,.activity-class-group>summary :is(strong,span){color:#153e65!important;text-shadow:none!important}
+.activity-class-group:nth-child(4n+2)>summary,.activity-class-group:nth-child(4n+2)>summary :is(strong,span){color:#14523e!important}
+.activity-class-group>summary>div{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;width:100%}
+.activity-class-group>summary>div>strong{font-size:clamp(17px,2vw,22px)!important;font-weight:850!important}
+.activity-class-group>summary>div>span{font-size:clamp(13px,1.2vw,16px)!important;font-weight:750!important}
+.group-edit-hint{margin:10px 12px;color:#244760;line-height:1.4}
+@media(max-width:700px){.topbar{align-items:center!important}.app-back-button{min-height:40px;padding:7px 10px;font-size:13px}.app-back-button span{display:none}.activity-class-group>summary>div{align-items:flex-start}}
