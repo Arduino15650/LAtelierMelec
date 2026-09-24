@@ -17,9 +17,6 @@
   <link rel="stylesheet" href="styles.css?v=20260911-1">
   <link rel="stylesheet" href="bo.css?v=20260924-5">
   <style>
-    .backup-button{width:100%;min-height:44px;padding:9px 18px;border:2px solid #ffc36b;border-radius:999px;background:linear-gradient(120deg,#b95512,#df8b25);color:#fff;font-family:inherit;font-size:14px;font-weight:700;line-height:1.2;cursor:pointer}
-    .backup-button:hover,.backup-button:focus-visible{background:linear-gradient(120deg,#a5480a,#c87513);outline:2px solid #fff;outline-offset:2px}
-    .backup-status{display:block;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
   </style>
   <style>
     body.cloud-locked > :not(#cloudGate):not(script){visibility:hidden!important}
@@ -93,8 +90,6 @@
       <div class="cloud-menu-panel">
         <span id="cloudSyncStatus" role="status" aria-live="polite">Connexion…</span>
         <button id="cloudSyncNow" type="button">Actualiser les données</button>
-        <button id="backupDownload" class="backup-button" type="button">⬇ Sauvegarder mes données</button>
-        <span id="backupStatus" class="backup-status" role="status" aria-live="polite"></span>
         <button id="cloudSignOut" type="button">Déconnexion</button>
       </div>
     </details>
@@ -122,11 +117,10 @@
   <script src="ccf-dashboard.js?v=20260924-5"></script>
   <script src="home.js?v=20260924-2"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
-  <script src="backup-data.js?v=20260924-1"></script>
   <script src="cloud-sync.js?v=20260924-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='63';
+      const swVersion='64';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         const key='melec-sw-version';
         if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}
