@@ -94,7 +94,17 @@
       const button=document.createElement('button');
       button.type='button';button.className='button small assign-students-button';
       button.textContent='Associer des élèves';
-      button.onclick=()=>{editActivity(match[1]);document.querySelector('.workplace-student-dropdown')?.setAttribute('open','');document.querySelector('.workplace-students')?.scrollIntoView({block:'center'})};
+      button.onclick=()=>{
+        editActivity(match[1]);
+        const groupSelect=document.querySelector('#activityGroup');
+        const groupId=card.dataset.activityGroupId||'';
+        if(groupSelect&&[...groupSelect.options].some(option=>option.value===groupId)){
+          groupSelect.value=groupId;
+          groupSelect.dispatchEvent(new Event('change',{bubbles:true}));
+        }
+        document.querySelector('.workplace-student-dropdown')?.setAttribute('open','');
+        document.querySelector('.workplace-students')?.scrollIntoView({block:'center'});
+      };
       editButton.before(button);
     });
   };

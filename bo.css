@@ -1596,3 +1596,14 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 .workplace-student-dropdown .select-row:has(input:checked){background:#d8eaff!important;border-color:#4389c3!important}
 .assign-students-button{background:#d9f2e7!important;border-color:#57ab85!important;color:#174e3b!important;font-weight:800!important}
 .assign-students-button:hover,.assign-students-button:focus-visible{background:#bce4cf!important}
+.activity-group-fold{min-width:0;overflow:hidden;border:2px solid #76bfa5;border-radius:16px;background:#d7f1e4}
+.activity-group-fold:nth-child(3n+2){border-color:#83ade1;background:#dcecff}
+.activity-group-fold:nth-child(3n+3){border-color:#d8aa78;background:#fae5cd}
+.activity-group-fold>summary{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px 12px;min-height:58px;padding:12px 16px;cursor:pointer;list-style:none;color:#174b39;font-weight:800}
+.activity-group-fold:nth-child(3n+2)>summary{color:#174771}.activity-group-fold:nth-child(3n+3)>summary{color:#774012}
+.activity-group-fold>summary::-webkit-details-marker{display:none}
+.activity-group-fold>summary span{font-size:13px;font-weight:750}
+.activity-group-fold[open]>summary{border-bottom:1px solid rgba(28,75,102,.25)}
+.activity-group-content{display:grid;gap:10px;min-width:0;padding:12px}
+.activity-group-empty{margin:0;padding:12px;color:#34546b}
+@media(max-width:700px){.activity-group-fold>summary{min-height:52px;padding:10px 12px}.activity-group-content{padding:8px}}

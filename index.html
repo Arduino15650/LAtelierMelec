@@ -15,7 +15,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="stylesheet" href="styles.css?v=20260911-1">
-  <link rel="stylesheet" href="bo.css?v=20260924-4">
+  <link rel="stylesheet" href="bo.css?v=20260924-5">
 </head>
 <body>
   <header class="topbar">
@@ -48,15 +48,15 @@
   <script src="referential.js?v=20260911-1"></script>
   <script src="app.js?v=20260911-1"></script>
   <script src="performance.js?v=20260911-1"></script>
-  <script src="workshop-activities-v2.js?v=20260912-2"></script>
+  <script src="workshop-activities-v2.js?v=20260924-1"></script>
   <script src="evaluation-atelier-v2.js?v=20260912-2"></script>
   <script src="student-groups.js?v=20260924-3"></script>
-  <script src="ccf-dashboard.js?v=20260924-4"></script>
+  <script src="ccf-dashboard.js?v=20260924-5"></script>
   <script src="home.js?v=20260924-2"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='59';
+      const swVersion='60';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         const key='melec-sw-version';
         if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}
