@@ -49,18 +49,36 @@
     ['Name','Start','End'].forEach(k=>{const el=$('#period'+k);if(el)el.oninput=()=>{draft.pendingPeriod??={};draft.pendingPeriod[{Name:'name',Start:'startDate',End:'endDate'}[k]]=el.value}});
     const group=$('#activityGroup');
     if(group){
-      group.insertAdjacentHTML('afterend','<small class="activity-group-help">Le groupe repère ses membres ; cochez librement un ou plusieurs élèves de la classe, y compris hors du groupe.</small>');
-      const highlightGroup=()=>{
+      group.insertAdjacentHTML('afterend','<small class="activity-group-help" aria-live="polite"></small>');
+      const help=group.nextElementSibling;
+      const updateGroupList=()=>{
         draft.groupId=group.value;
-        const members=new Set(state.studentGroups.find(g=>g.id===group.value)?.studentIds||[]);
+        const selectedGroup=state.studentGroups.find(g=>g.id===group.value);
+        const members=new Set(selectedGroup?.studentIds||[]);
+        let visibleCount=0;
         $$('[name=workplaceStudent]').forEach(el=>{
           el.disabled=false;
-          el.closest('label').hidden=false;
-          el.closest('label').classList.toggle('activity-group-member',members.has(el.value));
+          const visible=!selectedGroup||members.has(el.value);
+          el.closest('label').hidden=!visible;
+          if(visible)visibleCount++;
         });
+        const total=$$('[name=workplaceStudent]:checked').length;
+        const summary=$('.workplace-student-dropdown summary span');
+        if(summary)summary.textContent=`${total} élève(s) associé(s) à cette activité`;
+        help.textContent=selectedGroup?`${visibleCount} élève(s) dans « ${selectedGroup.name} ». Les ${total} élève(s) déjà associé(s) restent conservé(s) si vous changez de groupe.`:'Tous les élèves de la classe sont affichés. Choisissez un groupe pour limiter la liste.';
       };
-      group.onchange=highlightGroup;
-      highlightGroup();
+      group.onchange=updateGroupList;
+      $$('[name=workplaceStudent]').forEach(el=>el.addEventListener('change',updateGroupList));
+      const toggle=$('#toggleWorkplaceStudents');
+      if(toggle)toggle.onclick=()=>{
+        const visible=$$('[name=workplaceStudent]').filter(el=>!el.closest('label').hidden);
+        const allSelected=visible.length>0&&visible.every(el=>el.checked);
+        visible.forEach(el=>el.checked=!allSelected);
+        draft.studentIds=$$('[name=workplaceStudent]:checked').map(el=>el.value);
+        toggle.textContent=allSelected?'Tout sélectionner':'Tout désélectionner';
+        updateGroupList();
+      };
+      updateGroupList();
     }
   };
   nextStep=function(){if(step===1&&draft.pendingPeriod){const p=draft.pendingPeriod;if(!p.name?.trim()||!p.startDate||!p.endDate||p.endDate<p.startDate)return toast('Renseignez une période et des dates valides.')}if(step===5&&draft.pendingPeriod){const p=draft.pendingPeriod;let existing=state.trainingPeriods.find(x=>x.name.toLocaleLowerCase('fr')===p.name.trim().toLocaleLowerCase('fr')&&x.startDate===p.startDate&&x.endDate===p.endDate);if(!existing){existing={id:createId(),name:p.name.trim(),startDate:p.startDate,endDate:p.endDate};state.trainingPeriods.push(existing)}draft.periodId=existing.id;delete draft.pendingPeriod;save()}baseNextStep()};
