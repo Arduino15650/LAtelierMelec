@@ -4,7 +4,7 @@
   let classes = [], chapters = [], items = [], students = [], messages = [];
   let classId = '', tab = 'course', editing = null, blocks = [], draftAssets = [], activeItem = null, originalAssets = [];
   let selectedChapterId = '', selectedItemId = '';
-  let tpAssignments = [], classStudents = [], selectedTpId = 'all', draftRoles = [];
+  let tpAssignments = [], classStudents = [], pendingStudents = [], selectedTpId = 'all', draftRoles = [];
   let previewCleanup = null;
   let loadedSession = '', lastLoaded = 0, loadInFlight = null;
   const kindNames = { course: 'Cours', td: 'Travaux dirigés', tp: 'Travaux pratiques' };
@@ -83,10 +83,15 @@
       ]);
       items = items.filter(i => chapters.some(c => c.id === i.chapter_id));
       if (tab === 'tp') {
-        [classStudents,tpAssignments] = await Promise.all([
-          api.rest('student_profiles?class_id=eq.' + encodeURIComponent(classId) + '&select=user_id,last_name,first_name&order=last_name.asc,first_name.asc'),
+        [students,tpAssignments] = await Promise.all([
+          api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc'),
           api.rest('tp_assignments?select=*')
         ]);
+        const selectedClass = classes.find(candidate => candidate.id === classId);
+        classStudents = students.filter(student => student.class_id === classId);
+        pendingStudents = students.filter(student =>
+          (!student.approved_at || !student.class_id) &&
+          (student.class_id === classId || (!student.class_id && student.requested_class?.trim().toLocaleLowerCase('fr') === selectedClass?.name.trim().toLocaleLowerCase('fr'))));
       }
     } else { chapters = []; items = []; }
     if (auxiliary) {
@@ -141,8 +146,14 @@
     const tps = items.filter(item => item.kind === 'tp');
     if (selectedTpId !== 'all' && !tps.some(item => item.id === selectedTpId)) selectedTpId = 'all';
     const displayed = selectedTpId === 'all' ? tps : tps.filter(item => item.id === selectedTpId);
+    const selectedClassName = classes.find(candidate => candidate.id === classId)?.name || '';
+    const roster = (state?.students || []).filter(student => student.className === selectedClassName);
+    const missingAccounts = roster.filter(student => !students.some(profile =>
+      `${profile.last_name} ${profile.first_name}`.trim().toLocaleLowerCase('fr') === student.name.trim().toLocaleLowerCase('fr')));
+    const accountNotice = `<div class="teach-card"><strong>Comptes élèves de ${esc(selectedClassName)}</strong><p class="teach-help">${classStudents.length} compte(s) rattaché(s) à la classe · ${pendingStudents.length} inscription(s) à valider${missingAccounts.length ? ` · ${missingAccounts.length} élève(s) de votre liste sans compte de connexion` : ''}.</p><p class="teach-help">Pour attribuer un TP chronométré, l’élève doit créer son compte dans l’espace élève. Validez sa classe et remettez-lui un code d’accès. La simple présence dans la liste des élèves ne crée pas de compte.</p><button type="button" id="openStudentAccess" class="subtle">Gérer les accès élèves</button></div>`;
     body.innerHTML = `<div class="teach-card teach-content-manager"><h2>TP en atelier</h2><p class="teach-help">Ajoutez un TP PDF, puis choisissez les élèves autorisés. Chaque dossier technique reste lié à son TP.</p><div class="teach-row"><button type="button" id="createTp">＋ Ajouter un TP</button><label for="tpFilter">Afficher<select id="tpFilter"><option value="all">Tous les TP (${tps.length})</option>${tps.map(item => `<option value="${item.id}" ${item.id === selectedTpId ? 'selected' : ''}>${esc(item.title)}</option>`).join('')}</select></label></div></div>
-      ${displayed.map(item => { const assignments = tpAssignments.filter(row => row.tp_id === item.id); return `<article class="teach-card teach-tp-card" data-tp="${item.id}"><div class="teach-section-heading"><div><h3>${esc(item.title)}</h3><span class="teach-meta">${assignments.length} élève(s) associé(s)</span></div><div class="teach-row"><button type="button" data-preview-tp="${item.id}" class="subtle">Voir</button><button type="button" data-edit-tp="${item.id}" class="subtle">Modifier</button><button type="button" data-publish-tp="${item.id}" class="subtle">${item.published ? 'Masquer' : 'Publier'}</button><button type="button" data-delete-tp="${item.id}" class="warn">Supprimer</button></div></div><details><summary>Associer des élèves et gérer le temps</summary><div class="teach-tp-students">${classStudents.map(student => { const assignment = assignments.find(row => row.student_id === student.user_id); const active = assignment && tpIsActive(assignment); const locked = assignment?.started_at && !active; return `<div class="teach-tp-student"><label><input type="checkbox" data-tp-student="${student.user_id}" ${assignment ? 'checked' : ''}><span>${esc(student.last_name)} ${esc(student.first_name)}</span></label><div class="teach-tp-time">${assignment ? active ? 'En cours' : locked ? 'Terminé / verrouillé' : 'Non commencé' : 'Non associé'}${locked ? `<select data-extend-time="${assignment.id}" aria-label="Prolongation"><option value="30">30 min</option><option value="60">1 h</option><option value="90">1 h 30</option><option value="120">2 h</option><option value="180">3 h</option></select><button type="button" data-extend="${assignment.id}">Réactiver</button>` : ''}</div></div>`; }).join('') || '<p>Aucun élève dans cette classe.</p>'}</div><button type="button" data-save-tp="${item.id}">Enregistrer les associations</button></details></article>`; }).join('') || '<div class="teach-card">Aucun TP pour cette classe. Cliquez sur « Ajouter un TP ».</div>'}<div id="teachEditor"></div>`;
+      ${accountNotice}${displayed.map(item => { const assignments = tpAssignments.filter(row => row.tp_id === item.id); return `<article class="teach-card teach-tp-card" data-tp="${item.id}"><div class="teach-section-heading"><div><h3>${esc(item.title)}</h3><span class="teach-meta">${assignments.length} élève(s) associé(s)</span></div><div class="teach-row"><button type="button" data-preview-tp="${item.id}" class="subtle">Voir</button><button type="button" data-edit-tp="${item.id}" class="subtle">Modifier</button><button type="button" data-publish-tp="${item.id}" class="subtle">${item.published ? 'Masquer' : 'Publier'}</button><button type="button" data-delete-tp="${item.id}" class="warn">Supprimer</button></div></div><details><summary>Associer des élèves et gérer le temps</summary><div class="teach-tp-students">${classStudents.map(student => { const assignment = assignments.find(row => row.student_id === student.user_id); const active = assignment && tpIsActive(assignment); const locked = assignment?.started_at && !active; return `<div class="teach-tp-student"><label><input type="checkbox" data-tp-student="${student.user_id}" ${assignment ? 'checked' : ''}><span>${esc(student.last_name)} ${esc(student.first_name)}</span></label><div class="teach-tp-time">${assignment ? active ? 'En cours' : locked ? 'Terminé / verrouillé' : 'Non commencé' : 'Non associé'}${locked ? `<select data-extend-time="${assignment.id}" aria-label="Prolongation"><option value="30">30 min</option><option value="60">1 h</option><option value="90">1 h 30</option><option value="120">2 h</option><option value="180">3 h</option></select><button type="button" data-extend="${assignment.id}">Réactiver</button>` : ''}</div></div>`; }).join('') || '<p>Aucun compte élève rattaché à cette classe.</p>'}</div><button type="button" data-save-tp="${item.id}" ${classStudents.length ? '' : 'disabled'}>Enregistrer les associations</button></details></article>`; }).join('') || '<div class="teach-card">Aucun TP pour cette classe. Cliquez sur « Ajouter un TP ».</div>'}<div id="teachEditor"></div>`;
+    body.querySelector('#openStudentAccess').onclick = () => { tab = 'students'; render(); refreshAuxiliary('students').catch(error => status(error.message,true)); };
     body.querySelector('#tpFilter').onchange = event => { selectedTpId = event.target.value; renderTp(); };
     body.querySelector('#createTp').onclick = async () => {
       try {
