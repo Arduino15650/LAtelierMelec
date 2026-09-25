@@ -90,7 +90,7 @@ body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active) span{
 .teach-preview>header h1{font-size:clamp(1.5rem,3vw,2rem);margin:.3rem 0;overflow-wrap:anywhere}
 .teach-preview-content{max-width:210mm;margin:auto}
 .teach-preview-content.teach-preview-with-pdf{max-width:none;width:100%}
-.teach-preview .lesson-block{margin:.6rem 0;break-inside:avoid-page}
+.teach-preview .lesson-block{margin:.6rem 0;break-inside:auto}
 .teach-preview .lesson-file{display:grid;gap:.5rem;max-width:100%}
 .teach-preview .lesson-image,.student-readonly .lesson-image{display:block;max-width:100%;max-height:230mm;width:auto;height:auto;object-fit:contain;border-radius:.35rem;page-break-inside:avoid}
 .teach-preview iframe{max-width:100%;width:100%;min-height:20rem}
@@ -117,13 +117,17 @@ body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active) span{
 .teach-tp-time select{min-width:6rem}
 @media(max-width:600px){.teach-preview{inset:.3rem;padding:.65rem}.teach-preview-actions{position:sticky;top:0}.teach-pdf-card{padding:.55rem}.teach-pdf-card .teach-pdf-frame{height:72dvh;min-height:320px}.teaching-space .teach-editor-toolbar select{max-width:8rem}}
 @media print{
-  @page{size:A4;margin:0}
-  body.print-lesson,body.print-lesson *{visibility:hidden!important}
-  body.print-lesson #teachPreview,body.print-lesson #teachPreview *{visibility:visible!important}
-  body.print-lesson #teachPreview{position:absolute!important;inset:0!important;width:100%!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:16mm!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;color:#111!important}
+  @page{size:A4;margin:14mm}
+  body.print-lesson{background:#fff!important;color:#111!important}
+  body.print-lesson > :not(#teachPreview){display:none!important}
+  body.print-lesson #teachPreview{position:static!important;inset:auto!important;display:block!important;width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;color:#111!important}
   body.print-lesson .teach-preview-actions{display:none!important}
   body.print-lesson .teach-pdf-attachments{display:none!important}
   body.print-lesson .lesson-file>strong{display:none!important}
-  body.print-lesson .lesson-block{break-inside:avoid-page}
+  body.print-lesson .teach-preview>header{margin:0 0 5mm;padding:0 0 3mm}
+  body.print-lesson .teach-preview-content{max-width:none;width:100%;margin:0}
+  body.print-lesson .lesson-content,body.print-lesson .lesson-block,body.print-lesson .lesson-block>div{break-inside:auto!important;page-break-inside:auto!important}
+  body.print-lesson .lesson-content p,body.print-lesson .lesson-content h1,body.print-lesson .lesson-content h2,body.print-lesson .lesson-content h3{orphans:2;widows:2}
+  body.print-lesson .lesson-content img,body.print-lesson .lesson-content table,body.print-lesson .lesson-content tr{break-inside:avoid-page!important}
   body.print-lesson .lesson-image{max-height:220mm}
 }
