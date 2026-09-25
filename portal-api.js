@@ -87,6 +87,21 @@
     if (!response.ok) throw new Error('Document indisponible ou accès expiré.');
     return response.blob();
   }
+  async function removeFiles(paths) {
+    if (!Array.isArray(paths) || !paths.length) return [];
+    const removed = [];
+    for (let index = 0; index < paths.length; index += 1000) {
+      const batch = paths.slice(index, index + 1000);
+      const response = await fetch(URL + '/storage/v1/object/melec-private', {
+        method: 'DELETE',
+        headers: { apikey: KEY, Authorization: 'Bearer ' + await token(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prefixes: batch })
+      });
+      const result = await decode(response);
+      if (Array.isArray(result)) removed.push(...result);
+    }
+    return removed;
+  }
   async function signOut() {
     try {
       if (current) await fetch(URL + '/auth/v1/logout', {
@@ -99,5 +114,5 @@
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   }
-  window.MelecPortal = { URL, KEY, signIn, signUp, token, user, rest, invoke, upload, download, signOut, escapeHtml };
+  window.MelecPortal = { URL, KEY, signIn, signUp, token, user, rest, invoke, upload, download, removeFiles, signOut, escapeHtml };
 })();
