@@ -89,6 +89,7 @@ body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active) span{
 .teach-preview>header{margin:1.2rem 0;padding-bottom:.7rem;border-bottom:2px solid #69a9d6}
 .teach-preview>header h1{font-size:clamp(1.5rem,3vw,2rem);margin:.3rem 0;overflow-wrap:anywhere}
 .teach-preview-content{max-width:210mm;margin:auto}
+.teach-preview-content.teach-preview-with-pdf{max-width:none;width:100%}
 .teach-preview .lesson-block{margin:.6rem 0;break-inside:avoid-page}
 .teach-preview .lesson-file{display:grid;gap:.5rem;max-width:100%}
 .teach-preview .lesson-image,.student-readonly .lesson-image{display:block;max-width:100%;max-height:230mm;width:auto;height:auto;object-fit:contain;border-radius:.35rem;page-break-inside:avoid}
@@ -97,7 +98,8 @@ body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active) span{
 .teach-pdf-attachments h2{margin:0;color:#123c66}
 .teach-pdf-card{display:grid;gap:.7rem;padding:1rem;border:1px solid #8fbee0;border-radius:.9rem;background:#e9f5ff;overflow-wrap:anywhere}
 .teach-pdf-card strong{color:#143553}
-.teach-pdf-card .teach-pdf-frame{display:block;width:100%;height:min(75vh,900px);min-height:420px;border:1px solid #9cb9d2;border-radius:.5rem;background:#fff}
+.teach-pdf-card .teach-pdf-frame{display:block;width:100%;height:clamp(360px,78dvh,1200px);border:1px solid #9cb9d2;border-radius:.5rem;background:#fff}
+.teach-pdf-card>.teach-row{align-items:center;flex-wrap:wrap}
 .teach-pdf-open{display:inline-flex;align-items:center;min-height:2.5rem;padding:.5rem 1rem;border-radius:99px;background:#1264a2;color:#fff;text-decoration:none;font-weight:700}
 .teach-pdf-open:hover,.teach-pdf-open:focus-visible{background:#0d4b79;outline:2px solid #e58d23;outline-offset:2px}
 .teach-color-group{display:flex;align-items:center;gap:.3rem;flex-wrap:wrap;padding:.25rem .45rem;border:1px solid #90bce0;border-radius:.65rem;background:#f4faff}
@@ -113,7 +115,7 @@ body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active) span{
 .teach-tp-student input[type=checkbox]{width:1.25rem;height:1.25rem;min-height:0;flex:0 0 auto}
 .teach-tp-time{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.35rem;font-size:.85rem}
 .teach-tp-time select{min-width:6rem}
-@media(max-width:600px){.teach-preview{inset:.3rem;padding:.8rem}.teach-preview-actions{position:static}.teaching-space .teach-editor-toolbar select{max-width:8rem}}
+@media(max-width:600px){.teach-preview{inset:.3rem;padding:.65rem}.teach-preview-actions{position:sticky;top:0}.teach-pdf-card{padding:.55rem}.teach-pdf-card .teach-pdf-frame{height:72dvh;min-height:320px}.teaching-space .teach-editor-toolbar select{max-width:8rem}}
 @media print{
   @page{size:A4;margin:0}
   body.print-lesson,body.print-lesson *{visibility:hidden!important}

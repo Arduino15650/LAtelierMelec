@@ -99,6 +99,8 @@
           } else if (asset.mime_type === 'application/pdf') {
             const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Consulter';
             button.onclick = async () => {
+              const opened = box.querySelector('iframe');
+              if (opened) { opened.remove(); button.textContent = 'Consulter'; button.setAttribute('aria-expanded','false'); return; }
               button.disabled = true;
               try {
                 const blob = asset.local_blob || await MelecPortal.download(asset.object_path);
@@ -106,8 +108,9 @@
                 const viewer = asset.mime_type === 'application/pdf' ? document.createElement('iframe') : document.createElement('img');
                 viewer.src = url + (asset.mime_type === 'application/pdf' ? '#toolbar=0&navpanes=0' : '');
                 viewer.title = asset.file_name; viewer.loading = 'lazy'; box.append(viewer);
-                button.remove();
-              } catch (error) { alert(error.message); button.disabled = false; }
+                button.textContent = 'Réduire le PDF'; button.setAttribute('aria-expanded','true');
+              } catch (error) { alert(error.message); }
+              finally { button.disabled = false; }
             };
             box.append(button);
           } else {

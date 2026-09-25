@@ -242,11 +242,8 @@
           await api.rest('learning_items?id=eq.' + encodeURIComponent(selectedItem.id), {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published: !selectedItem.published})});
           await loadClass();
           if (!selectedItem.published) {
-            const preview = await previewItem({...selectedItem,published:true});
-            if (preview?.hasPrintable) {
-              status('Contenu publié. La fenêtre d’impression permet de choisir « Enregistrer au format PDF ».');
-              document.querySelector('#printLesson')?.click();
-            } else status('Contenu publié. Ouvrez chaque PDF joint depuis l’aperçu pour le consulter ou l’imprimer.');
+            await previewItem({...selectedItem,published:true});
+            status('Contenu publié. Aperçu ouvert.');
           }
           else status('Contenu masqué aux élèves.');
         } catch (error) { status(error.message, true); }
@@ -413,10 +410,10 @@
     const isPdf = asset => asset && (asset.mime_type === 'application/pdf' || /\.pdf$/i.test(asset.file_name || ''));
     const pdfAssets = previewBlocks.filter(block => block.type === 'asset' && isPdf(assetMap.get(block.assetId))).map(block => assetMap.get(block.assetId));
     const otherBlocks = previewBlocks.filter(block => !(block.type === 'asset' && isPdf(assetMap.get(block.assetId))));
-    const hasPrintable = otherBlocks.some(block => block.type === 'html' || block.type === 'table' ||
+    const hasPrintable = otherBlocks.some(block => (block.type === 'html' && /[^\s\u00a0]/.test(String(block.html || '').replace(/<[^>]*>/g, '').replace(/&nbsp;|&#160;/gi, ''))) || block.type === 'table' ||
       (block.type === 'asset' && String(assetMap.get(block.assetId)?.mime_type || '').startsWith('image/')));
     const pane = document.createElement('section'); pane.id = 'teachPreview'; pane.className = 'teach-preview';
-    pane.innerHTML = `<div class="teach-preview-actions"><strong>Aperçu · ${esc(kindNames[tab])}</strong>${hasPrintable ? '<button type="button" id="printLesson">Imprimer la page de cours</button>' : ''}<button type="button" id="closePreview">Fermer</button><small>${pdfAssets.length ? 'Les PDF joints se consultent et s’impriment séparément ci-dessous. ' : ''}Dans la fenêtre d’impression, désactivez « En-têtes et pieds de page » si nécessaire.</small></div><header><p>BAC PRO MELEC · ${esc(classes.find(entry => entry.id === classId)?.name || '')}</p><h1>${esc(title)}</h1></header><div class="teach-preview-content"></div>`;
+    pane.innerHTML = `<div class="teach-preview-actions"><strong>Aperçu · ${esc(kindNames[tab])} · ${esc(title)}</strong>${hasPrintable ? '<button type="button" id="printLesson">Imprimer le contenu</button>' : ''}<button type="button" id="closePreview">Fermer</button></div>${hasPrintable ? `<header><p>BAC PRO MELEC · ${esc(classes.find(entry => entry.id === classId)?.name || '')}</p><h1>${esc(title)}</h1></header>` : ''}<div class="teach-preview-content${pdfAssets.length ? ' teach-preview-with-pdf' : ''}"></div>`;
     document.body.append(pane);
     const pdfUrls = [];
     const close = () => { if (previewCleanup) { previewCleanup(); previewCleanup = null; } pane.remove(); document.body.classList.remove('print-lesson'); };
@@ -430,7 +427,6 @@
       previewCleanup = () => { renderCleanup(); pdfUrls.forEach(url => URL.revokeObjectURL(url)); };
       if (pdfAssets.length) {
         const section = document.createElement('section'); section.className = 'teach-pdf-attachments';
-        const heading = document.createElement('h2'); heading.textContent = 'Documents PDF joints'; section.append(heading);
         let firstOpen = null;
         for (const asset of pdfAssets) {
           const card = document.createElement('article'); card.className = 'teach-pdf-card';
@@ -439,6 +435,12 @@
           const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Afficher le PDF'; actions.append(button);
           card.append(actions); section.append(card);
           const showPdf = async () => {
+            const existingFrame = card.querySelector('.teach-pdf-frame');
+            if (existingFrame) {
+              existingFrame.remove(); actions.querySelector('.teach-pdf-open')?.remove();
+              button.textContent = 'Afficher le PDF'; button.setAttribute('aria-expanded','false');
+              return;
+            }
             button.disabled = true; button.textContent = 'Chargement…';
             try {
               const blob = asset.local_blob || await api.download(asset.object_path);
@@ -447,8 +449,9 @@
               frame.title = asset.file_name; frame.className = 'teach-pdf-frame'; card.append(frame);
               const link = document.createElement('a'); link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
               link.className = 'teach-pdf-open'; link.textContent = 'Ouvrir / imprimer ce PDF'; actions.append(link);
-              button.remove();
-            } catch (error) { button.disabled = false; button.textContent = 'Réessayer'; status('PDF inaccessible : ' + error.message,true); }
+              button.textContent = 'Réduire le PDF'; button.setAttribute('aria-expanded','true');
+            } catch (error) { button.textContent = 'Réessayer'; status('PDF inaccessible : ' + error.message,true); }
+            finally { button.disabled = false; }
           };
           button.onclick = showPdf;
           if (!firstOpen) firstOpen = showPdf;

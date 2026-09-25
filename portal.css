@@ -20,6 +20,9 @@ button,input,textarea,select{font:inherit}a{color:inherit}.portal-shell{width:mi
 .student-tp-viewer section{padding:.8rem;border-radius:.8rem;background:#fff;border:1px solid #9ac7e2}
 .student-tp-viewer h4{margin:.1rem 0 .5rem}
 .student-tp-viewer iframe{display:block;width:100%;height:min(75vh,900px);border:1px solid #acc7db;border-radius:.5rem;background:#fff}
+.student-tp-viewer iframe{height:clamp(360px,78dvh,1200px)}
+.student-readonly .lesson-file iframe{display:block;width:100%;height:clamp(360px,78dvh,1200px);min-height:0}
+@media(max-width:600px){.student-tp-viewer section{padding:.5rem}.student-tp-viewer iframe,.student-readonly .lesson-file iframe{height:72dvh;min-height:320px}}
 .portal-tabs button:disabled{opacity:.55;cursor:not-allowed}
 @media print{body.portal-page{visibility:hidden!important}body.portal-page::before{content:'Impression non autorisée';visibility:visible;position:fixed;inset:0;display:grid;place-items:center;background:#fff;color:#142e48;font:700 22px Arial,sans-serif}}
 @media(max-width:600px){.student-readonly .lesson-content{font-size:15px}.student-readonly .lesson-content td,.student-readonly .lesson-content th{padding:.35rem}}
