@@ -12,4 +12,13 @@ button,input,textarea,select{font:inherit}a{color:inherit}.portal-shell{width:mi
 .student-readonly .lesson-content table{table-layout:fixed;max-width:100%;overflow-wrap:anywhere}
 .student-readonly .lesson-file{display:grid;justify-items:start;max-width:100%;overflow:hidden}
 .student-readonly .lesson-image{display:block;width:auto;height:auto;max-width:100%;max-height:90vh;object-fit:contain;border-radius:.4rem}
+.student-tp-card{padding:1rem;border:2px solid #74b8df;border-radius:1rem;background:#e4f5ff;color:#143553;overflow-wrap:anywhere}
+.student-tp-card h3{margin:.1rem 0 .5rem}
+.student-tp-card button{margin:.35rem .4rem .35rem 0;padding:.6rem 1rem;border:0;border-radius:99px;background:#1765a3;color:#fff;font-weight:700;cursor:pointer}
+.student-tp-card button:disabled{opacity:.55;cursor:wait}
+.student-tp-viewer{display:grid;gap:1rem;margin-top:.8rem}
+.student-tp-viewer section{padding:.8rem;border-radius:.8rem;background:#fff;border:1px solid #9ac7e2}
+.student-tp-viewer h4{margin:.1rem 0 .5rem}
+.student-tp-viewer iframe{display:block;width:100%;height:min(75vh,900px);border:1px solid #acc7db;border-radius:.5rem;background:#fff}
+.portal-tabs button:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:600px){.student-readonly .lesson-content{font-size:15px}.student-readonly .lesson-content td,.student-readonly .lesson-content th{padding:.35rem}}

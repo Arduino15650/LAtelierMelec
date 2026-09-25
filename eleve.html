@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#071b34"><title>BAC PRO MELEC — Élève</title>
-  <link rel="stylesheet" href="portal.css?v=20260925-editor1">
+  <link rel="stylesheet" href="portal.css?v=20260925-tp1">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
@@ -36,9 +36,14 @@
           <form id="studentCodeForm" class="portal-form"><label>Code fourni par l’enseignant<input name="code" autocomplete="one-time-code" maxlength="32" required></label><button class="portal-button" type="submit">Valider le code</button></form>
           <p id="studentCodeStatus" class="form-status" role="status" aria-live="polite"></p>
         </section>
+        <div id="studentContentTabs" class="portal-tabs" hidden><button id="studentCoursesTab" type="button" class="active">Cours et TD</button><button id="studentTpTab" type="button">TP en atelier</button></div>
         <section id="studentLessonsPane" class="student-pane" hidden>
-          <h2>Mes cours, TD et TP</h2><p id="studentAccessUntil" class="portal-small"></p>
+          <h2>Mes cours et TD</h2><p id="studentAccessUntil" class="portal-small"></p>
           <div id="studentLessons" class="portal-list"></div>
+        </section>
+        <section id="studentTpPane" class="student-pane" hidden>
+          <h2>TP en atelier</h2><p id="studentTpNotice" class="portal-message" role="status"></p>
+          <div id="studentTpList" class="portal-list"></div>
         </section>
       </section>
       <section class="portal-panel contact-panel" aria-labelledby="contactTitle" style="margin-top:28px">
@@ -53,8 +58,8 @@
     </main>
   </div>
   <script src="portal-api.js?v=20260925-1"></script>
-  <script src="content-render.js?v=20260925-editor1"></script>
+  <script src="content-render.js?v=20260925-tp1"></script>
   <script src="portal-contact.js?v=20260925-1"></script>
-  <script src="student-space.js?v=20260925-1"></script>
+  <script src="student-space.js?v=20260925-tp1"></script>
 </body>
 </html>

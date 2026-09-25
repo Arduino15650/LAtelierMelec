@@ -4,6 +4,25 @@
   const api = MelecPortal;
   let profile = null;
   let cleanupViewer = null;
+  let assignments = [], tpItems = [], activeTp = null, tpUrls = [], selectedContentTab = 'courses';
+  function tpEnd(assignment) {
+    return Math.max(assignment.started_at ? Date.parse(assignment.started_at) + 210 * 60000 : 0,
+      Date.parse(assignment.reactivated_until || '') || 0);
+  }
+  function clearTpViewer() {
+    tpUrls.forEach(url => URL.revokeObjectURL(url)); tpUrls = [];
+    $('studentTpViewer')?.remove();
+  }
+  function switchContentTab(next) {
+    if (activeTp && next === 'courses') return;
+    selectedContentTab = next;
+    $('studentCoursesTab').classList.toggle('active', next === 'courses');
+    $('studentTpTab').classList.toggle('active', next === 'tp');
+    $('studentLessonsPane').hidden = next !== 'courses';
+    $('studentTpPane').hidden = next !== 'tp';
+  }
+  $('studentCoursesTab').onclick = () => switchContentTab('courses');
+  $('studentTpTab').onclick = () => switchContentTab('tp');
   const authPane = $('studentAuth');
   const dashboard = $('studentDashboard');
   const authStatus = $('studentAuthStatus');
@@ -69,6 +88,8 @@
     const active = approved && Date.parse(profile.access_until || '') > Date.now();
     $('studentCodePane').hidden = !approved || active;
     $('studentLessonsPane').hidden = !active;
+    $('studentTpPane').hidden = true;
+    $('studentContentTabs').hidden = !active;
     if (!approved) {
       intro.textContent += ' Votre inscription est en attente de validation par l’enseignant.';
       return;
@@ -78,7 +99,84 @@
       return;
     }
     $('studentAccessUntil').textContent = 'Accès autorisé jusqu’au ' + new Date(profile.access_until).toLocaleString('fr-FR');
-    await loadLessons();
+    await loadTpAssignments();
+    if (activeTp) {
+      if (cleanupViewer) { cleanupViewer(); cleanupViewer=null; }
+      $('studentLessons').replaceChildren();
+      switchContentTab('tp'); $('studentCoursesTab').disabled = true;
+    }
+    else { $('studentCoursesTab').disabled = false; switchContentTab(selectedContentTab); await loadLessons(); }
+  }
+  async function loadTpAssignments(preserveViewer = false) {
+    const previousActiveId = activeTp?.id;
+    [assignments,tpItems] = await Promise.all([
+      api.rest('tp_assignments?student_id=eq.' + encodeURIComponent(profile.user_id) + '&select=*'),
+      api.rest('learning_items?kind=eq.tp&published=is.true&select=id,title,kind,blocks,chapter_id')
+    ]);
+    activeTp = assignments.find(row => tpEnd(row) > Date.now()) || null;
+    if (preserveViewer && previousActiveId && activeTp?.id === previousActiveId) return;
+    clearTpViewer();
+    const list = $('studentTpList'); list.replaceChildren();
+    $('studentTpNotice').textContent = activeTp ? 'Un TP est en cours. Les cours et TD restent verrouillés jusqu’à la fin du chronomètre.' : 'Ouvrir un TP démarre immédiatement un chronomètre de 3 h 30. Après son expiration, demandez une prolongation à l’enseignant.';
+    const visible = activeTp ? assignments.filter(row => row.id === activeTp.id) : assignments;
+    for (const row of visible) {
+      const item = tpItems.find(candidate => candidate.id === row.tp_id); if (!item) continue;
+      const card = document.createElement('article'); card.className = 'student-tp-card';
+      const heading = document.createElement('h3'); heading.textContent = item.title; card.append(heading);
+      const info = document.createElement('p'); info.className = 'portal-small'; card.append(info);
+      if (row.id === activeTp?.id) {
+        info.textContent = 'Temps restant : ' + formatDuration(tpEnd(row) - Date.now());
+        const open = document.createElement('button'); open.type='button'; open.textContent='Ouvrir les documents du TP';
+        open.onclick = () => openTpFiles(item,card); card.append(open);
+      } else if (!row.started_at) {
+        info.textContent = 'Non commencé · durée initiale 3 h 30';
+        const start = document.createElement('button'); start.type='button'; start.textContent='Ouvrir le TP et démarrer 3 h 30';
+        start.onclick = async () => {
+          start.disabled = true;
+          try {
+            const changed = await api.rest('tp_assignments?id=eq.' + encodeURIComponent(row.id) + '&started_at=is.null&select=*',{
+              method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({started_at:new Date().toISOString()})
+            });
+            if (!Array.isArray(changed) || changed.length !== 1) throw new Error('Le démarrage du TP n’a pas été confirmé. Actualisez la page.');
+            clearTpViewer(); await openDashboard();
+            const current = tpItems.find(candidate => candidate.id === row.tp_id);
+            if (current) await openTpFiles(current,$('studentTpList').querySelector('.student-tp-card'));
+          } catch (error) { alert(error.message); start.disabled = false; }
+        }; card.append(start);
+      } else info.textContent = 'Temps écoulé · TP verrouillé. Demandez une prolongation à l’enseignant.';
+      list.append(card);
+    }
+    if (!list.children.length) list.textContent = 'Aucun TP attribué pour le moment.';
+  }
+  function formatDuration(ms) {
+    const seconds = Math.max(0,Math.ceil(ms/1000));
+    return [Math.floor(seconds/3600),Math.floor(seconds%3600/60),seconds%60].map(number => String(number).padStart(2,'0')).join(':');
+  }
+  async function openTpFiles(item,card) {
+    if (!activeTp || activeTp.tp_id !== item.id || tpEnd(activeTp) <= Date.now()) return openDashboard();
+    clearTpViewer();
+    const assets = await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(item.id) + '&select=id,object_path,file_name,mime_type,asset_role');
+    const viewer = document.createElement('div'); viewer.id='studentTpViewer'; viewer.className='student-tp-viewer';
+    for (const role of ['main','technical']) {
+      const group = document.createElement('section');
+      const heading = document.createElement('h4'); heading.textContent = role === 'main' ? 'Document du TP' : 'Dossier technique'; group.append(heading);
+      const files = assets.filter(asset => (asset.asset_role || 'main') === role);
+      for (const asset of files) {
+        const button = document.createElement('button'); button.type='button'; button.textContent=asset.file_name;
+        button.onclick = async () => {
+          if (tpEnd(activeTp) <= Date.now()) { clearTpViewer(); await openDashboard(); return; }
+          button.disabled=true;
+          try {
+            const blob = await api.download(asset.object_path); const url=URL.createObjectURL(blob); tpUrls.push(url);
+            group.querySelector('iframe')?.remove();
+            const frame=document.createElement('iframe'); frame.src=url+'#toolbar=0&navpanes=0'; frame.title=asset.file_name; group.append(frame);
+          } catch(error) { alert(error.message); } finally { button.disabled=false; }
+        };
+        group.append(button);
+      }
+      if (files.length) viewer.append(group);
+    }
+    card.append(viewer);
   }
   async function loadLessons() {
     const target = $('studentLessons');
@@ -87,14 +185,15 @@
     const chapters = await api.rest('learning_chapters?class_id=eq.' + encodeURIComponent(profile.class_id) + '&published=is.true&select=id,title,position&order=position.asc,title.asc');
     if (!chapters.length) { target.textContent = 'Aucun chapitre publié pour votre classe.'; return; }
     const ids = chapters.map(c => c.id);
-    const items = await api.rest('learning_items?chapter_id=in.(' + ids.join(',') + ')&published=is.true&select=id,chapter_id,kind,title,blocks,linked_course_id,position&order=position.asc,title.asc');
+    const items = await api.rest('learning_items?chapter_id=in.(' + ids.join(',') + ')&kind=in.(course,td)&published=is.true&select=id,chapter_id,kind,title,blocks,linked_course_id,position&order=position.asc,title.asc');
     target.replaceChildren();
     const labels = { course: 'Cours', td: 'Travaux dirigés', tp: 'Travaux pratiques' };
     for (const chapter of chapters) {
       const chapterNode = document.createElement('details');
       const title = document.createElement('summary'); title.textContent = chapter.title; chapterNode.append(title);
       const chapterItems = items.filter(item => item.chapter_id === chapter.id);
-      for (const kind of ['course','td','tp']) {
+      if (!chapterItems.length) continue;
+      for (const kind of ['course','td']) {
         const subset = chapterItems.filter(item => item.kind === kind);
         if (!subset.length) continue;
         const heading = document.createElement('h3'); heading.textContent = labels[kind]; chapterNode.append(heading);
@@ -133,9 +232,17 @@
   $('studentRefresh').onclick = () => openDashboard().catch(error => alert(error.message));
   $('studentLogout').onclick = async () => {
     if (cleanupViewer) cleanupViewer();
+    clearTpViewer(); activeTp=null; assignments=[]; tpItems=[];
     await api.signOut();
     dashboard.hidden = true; authPane.hidden = false; profile = null;
   };
+  setInterval(() => {
+    if (!activeTp) return;
+    const remaining = tpEnd(activeTp) - Date.now();
+    const info = $('studentTpList').querySelector('.student-tp-card .portal-small');
+    if (info) info.textContent = remaining > 0 ? 'Temps restant : ' + formatDuration(remaining) : 'Temps écoulé · TP verrouillé.';
+    if (remaining <= 0) { clearTpViewer(); activeTp=null; selectedContentTab='courses'; openDashboard().catch(error => message($('studentTpNotice'),error.message,true)); }
+  },1000);
   setInterval(async () => {
     if (!profile || $('studentLessonsPane').hidden) return;
     try {
@@ -146,8 +253,19 @@
       if (cleanupViewer) cleanupViewer();
       $('studentLessons').replaceChildren();
       $('studentLessonsPane').hidden = true;
+      $('studentTpPane').hidden = true;
+      $('studentContentTabs').hidden = true;
+      clearTpViewer(); activeTp=null;
       $('studentCodePane').hidden = !profile.approved_at;
       $('studentProfileStatus').textContent = profile.approved_at ? 'Votre accès de 24 h a expiré. Demandez un nouveau code à l’enseignant.' : 'Votre accès a été révoqué par l’enseignant.';
+    }
+    if (profile.approved_at && profile.class_id && Date.parse(profile.access_until || '') > Date.now()) {
+      const wasActive = activeTp?.id || null;
+      try {
+        await loadTpAssignments(true);
+        if (activeTp) { $('studentCoursesTab').disabled=true; switchContentTab('tp'); }
+        else { $('studentCoursesTab').disabled=false; if (wasActive) { switchContentTab('courses'); await loadLessons(); } }
+      } catch { /* Les règles RLS continuent à protéger chaque accès aux documents. */ }
     }
   }, 30000);
   document.addEventListener('copy', e => { if (e.target.closest('.student-readonly')) e.preventDefault(); });

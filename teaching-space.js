@@ -4,6 +4,7 @@
   let classes = [], chapters = [], items = [], students = [], messages = [];
   let classId = '', tab = 'course', editing = null, blocks = [], draftAssets = [], activeItem = null, originalAssets = [];
   let selectedChapterId = '', selectedItemId = '';
+  let tpAssignments = [], classStudents = [], selectedTpId = 'all', draftRoles = [];
   let previewCleanup = null;
   let loadedSession = '', lastLoaded = 0, loadInFlight = null;
   const kindNames = { course: 'Cours', td: 'Travaux dirigés', tp: 'Travaux pratiques' };
@@ -81,6 +82,12 @@
         api.rest('learning_items?select=*&order=position.asc,title.asc')
       ]);
       items = items.filter(i => chapters.some(c => c.id === i.chapter_id));
+      if (tab === 'tp') {
+        [classStudents,tpAssignments] = await Promise.all([
+          api.rest('student_profiles?class_id=eq.' + encodeURIComponent(classId) + '&select=user_id,last_name,first_name&order=last_name.asc,first_name.asc'),
+          api.rest('tp_assignments?select=*')
+        ]);
+      }
     } else { chapters = []; items = []; }
     if (auxiliary) {
       const result = await auxiliary;
@@ -108,9 +115,11 @@
     root.querySelectorAll('[data-teach-tab]').forEach(button => button.onclick = () => {
       tab = button.dataset.teachTab; selectedItemId = ''; editing = null; render();
       if (tab === 'students' || tab === 'messages') refreshAuxiliary(tab).catch(err => status(err.message, true));
+      if (tab === 'tp') loadClass().catch(err => status(err.message, true));
     });
     if (tab === 'students') renderStudents();
     else if (tab === 'messages') renderMessages();
+    else if (tab === 'tp') renderTp();
     else renderContent();
   }
   async function syncClasses() {
@@ -121,6 +130,71 @@
       await api.rest('teaching_classes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(names.map(name => ({name}))) });
       await load(); status(names.length + ' classe(s) ajoutée(s).');
     } catch (error) { status(error.message, true); }
+  }
+  function tpIsActive(assignment) {
+    const initialEnd = assignment.started_at ? Date.parse(assignment.started_at) + 210 * 60000 : 0;
+    return Math.max(initialEnd, Date.parse(assignment.reactivated_until || '') || 0) > Date.now();
+  }
+  function renderTp() {
+    const body = root.querySelector('#teachBody');
+    if (!classId) { body.innerHTML = '<div class="teach-card">Choisissez une classe pour gérer ses TP.</div>'; return; }
+    const tps = items.filter(item => item.kind === 'tp');
+    if (selectedTpId !== 'all' && !tps.some(item => item.id === selectedTpId)) selectedTpId = 'all';
+    const displayed = selectedTpId === 'all' ? tps : tps.filter(item => item.id === selectedTpId);
+    body.innerHTML = `<div class="teach-card teach-content-manager"><h2>TP en atelier</h2><p class="teach-help">Ajoutez un TP PDF, puis choisissez les élèves autorisés. Chaque dossier technique reste lié à son TP.</p><div class="teach-row"><button type="button" id="createTp">＋ Ajouter un TP</button><label for="tpFilter">Afficher<select id="tpFilter"><option value="all">Tous les TP (${tps.length})</option>${tps.map(item => `<option value="${item.id}" ${item.id === selectedTpId ? 'selected' : ''}>${esc(item.title)}</option>`).join('')}</select></label></div></div>
+      ${displayed.map(item => { const assignments = tpAssignments.filter(row => row.tp_id === item.id); return `<article class="teach-card teach-tp-card" data-tp="${item.id}"><div class="teach-section-heading"><div><h3>${esc(item.title)}</h3><span class="teach-meta">${assignments.length} élève(s) associé(s)</span></div><div class="teach-row"><button type="button" data-preview-tp="${item.id}" class="subtle">Voir</button><button type="button" data-edit-tp="${item.id}" class="subtle">Modifier</button><button type="button" data-publish-tp="${item.id}" class="subtle">${item.published ? 'Masquer' : 'Publier'}</button><button type="button" data-delete-tp="${item.id}" class="warn">Supprimer</button></div></div><details><summary>Associer des élèves et gérer le temps</summary><div class="teach-tp-students">${classStudents.map(student => { const assignment = assignments.find(row => row.student_id === student.user_id); const active = assignment && tpIsActive(assignment); const locked = assignment?.started_at && !active; return `<div class="teach-tp-student"><label><input type="checkbox" data-tp-student="${student.user_id}" ${assignment ? 'checked' : ''}><span>${esc(student.last_name)} ${esc(student.first_name)}</span></label><div class="teach-tp-time">${assignment ? active ? 'En cours' : locked ? 'Terminé / verrouillé' : 'Non commencé' : 'Non associé'}${locked ? `<select data-extend-time="${assignment.id}" aria-label="Prolongation"><option value="30">30 min</option><option value="60">1 h</option><option value="90">1 h 30</option><option value="120">2 h</option><option value="180">3 h</option></select><button type="button" data-extend="${assignment.id}">Réactiver</button>` : ''}</div></div>`; }).join('') || '<p>Aucun élève dans cette classe.</p>'}</div><button type="button" data-save-tp="${item.id}">Enregistrer les associations</button></details></article>`; }).join('') || '<div class="teach-card">Aucun TP pour cette classe. Cliquez sur « Ajouter un TP ».</div>'}<div id="teachEditor"></div>`;
+    body.querySelector('#tpFilter').onchange = event => { selectedTpId = event.target.value; renderTp(); };
+    body.querySelector('#createTp').onclick = async () => {
+      try {
+        let chapter = chapters.find(candidate => candidate.title === 'TP en atelier');
+        if (!chapter) {
+          const created = await api.rest('learning_chapters?select=*', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({class_id:classId,title:'TP en atelier',published:true})});
+          chapter = created[0]; chapters.push(chapter);
+        } else if (!chapter.published) await api.rest('learning_chapters?id=eq.' + chapter.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:true})});
+        editItem(null,chapter.id);
+      } catch (error) { status(error.message,true); }
+    };
+    body.querySelectorAll('[data-preview-tp]').forEach(button => button.onclick = () => previewItem(items.find(item => item.id === button.dataset.previewTp)));
+    body.querySelectorAll('[data-edit-tp]').forEach(button => button.onclick = () => editItem(button.dataset.editTp));
+    body.querySelectorAll('[data-publish-tp]').forEach(button => button.onclick = async () => {
+      const item = items.find(candidate => candidate.id === button.dataset.publishTp);
+      if (!item) return;
+      try {
+        if (!item.published) {
+          const chapter = chapters.find(candidate => candidate.id === item.chapter_id);
+          if (chapter && !chapter.published) await api.rest('learning_chapters?id=eq.' + encodeURIComponent(chapter.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:true})});
+        }
+        await api.rest('learning_items?id=eq.' + encodeURIComponent(item.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:!item.published})});
+        await loadClass(); status(item.published ? 'TP masqué.' : 'TP publié pour les élèves associés.');
+      } catch (error) { status(error.message,true); }
+    });
+    body.querySelectorAll('[data-delete-tp]').forEach(button => button.onclick = () => deleteItem(button.dataset.deleteTp));
+    body.querySelectorAll('[data-save-tp]').forEach(button => button.onclick = () => saveTpAssignments(button.dataset.saveTp));
+    body.querySelectorAll('[data-extend]').forEach(button => button.onclick = () => extendTp(button.dataset.extend));
+  }
+  async function saveTpAssignments(tpId) {
+    const card = root.querySelector(`[data-tp="${tpId}"]`);
+    const selected = new Set([...card.querySelectorAll('[data-tp-student]:checked')].map(input => input.dataset.tpStudent));
+    const existing = tpAssignments.filter(row => row.tp_id === tpId);
+    const removed = existing.filter(row => !selected.has(row.student_id));
+    if (removed.some(row => row.started_at) && !confirm('Retirer un élève qui a déjà ouvert ce TP supprimera son accès et son chronomètre. Continuer ?')) return;
+    try {
+      const newRows = [...selected].filter(id => !existing.some(row => row.student_id === id)).map(student_id => ({tp_id:tpId,student_id}));
+      if (newRows.length) await api.rest('tp_assignments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newRows)});
+      for (const row of removed) await api.rest('tp_assignments?id=eq.' + encodeURIComponent(row.id),{method:'DELETE'});
+      await loadClass(); status('Associations du TP enregistrées.');
+    } catch (error) { status(error.message,true); }
+  }
+  async function extendTp(id) {
+    const assignment = tpAssignments.find(row => row.id === id);
+    const select = root.querySelector(`[data-extend-time="${id}"]`);
+    if (!assignment || !select || tpIsActive(assignment)) return status('Ce TP est encore actif.',true);
+    const minutes = Number(select.value);
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > 180) return status('Durée invalide.',true);
+    try {
+      await api.rest('tp_assignments?id=eq.' + encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({extension_minutes:minutes})});
+      await loadClass(); status('TP réactivé pour cet élève pendant ' + minutes + ' minute(s).');
+    } catch (error) { status(error.message,true); }
   }
   function renderContent() {
     const body = root.querySelector('#teachBody');
@@ -137,11 +211,11 @@
     body.innerHTML = `<div class="teach-card teach-content-manager"><h2>${esc(kindNames[tab])} de la classe</h2><p class="teach-help">${tab === 'tp' ? 'Les TP ne sont liés ni aux cours ni aux TD. Le chapitre sert uniquement au classement.' : `Chaque chapitre peut contenir plusieurs ${itemPlural}. Choisissez d’abord un chapitre, puis un contenu.`}</p>
       <div class="teach-manager-fields"><label for="chapterSelect">Chapitre<select id="chapterSelect"><option value="">Choisir un chapitre…</option>${chapters.map((candidate,index) => { const count = items.filter(item => item.chapter_id === candidate.id && item.kind === tab).length; const duplicate = duplicateCounts.get(candidate.title.trim().toLocaleLowerCase('fr')) > 1; return `<option value="${candidate.id}" ${candidate.id === selectedChapterId ? 'selected' : ''}>${esc(candidate.title)}${duplicate ? ` · n°${index + 1}` : ''} — ${count} ${itemPlural}</option>`; }).join('')}</select></label>
       <div class="teach-create-chapter"><label for="chapterTitle">Créer un chapitre<input id="chapterTitle" maxlength="180" placeholder="Ex. Symboles architecturaux"></label><button type="button" id="addChapter">Créer</button></div></div></div>
-      ${chapter ? `<div class="teach-card teach-chapter-detail"><div class="teach-section-heading"><div><span class="teach-meta">Chapitre ${chapter.published ? 'publié' : 'en brouillon'}</span><h3>${esc(chapter.title)}</h3></div><div class="teach-row"><button type="button" id="publishChapter" class="subtle">${chapter.published ? 'Masquer aux élèves' : 'Publier le chapitre'}</button><button type="button" id="deleteChapter" class="warn">Supprimer le chapitre</button></div></div>
+      ${chapter ? `<div class="teach-card teach-chapter-detail"><div class="teach-section-heading"><div><h3>${esc(chapter.title)}</h3></div><div class="teach-row"><button type="button" id="publishChapter" class="subtle">${chapter.published ? 'Masquer aux élèves' : 'Publier le chapitre'}</button><button type="button" id="deleteChapter" class="warn">Supprimer le chapitre</button></div></div>
       <details class="teach-rename"><summary>Modifier le nom du chapitre</summary><div class="teach-row"><label for="chapterRename">Nouveau nom</label><input id="chapterRename" maxlength="180" value="${esc(chapter.title)}"><button type="button" id="renameChapter">Enregistrer le nom</button></div></details>
-      <div class="teach-manager-fields"><label for="lessonSelect">${tab === 'course' ? 'Leçons du chapitre' : tab === 'td' ? 'TD du chapitre' : 'TP du chapitre'}<select id="lessonSelect"><option value="">Choisir ${tab === 'course' ? 'une leçon' : tab === 'td' ? 'un TD' : 'un TP'}…</option>${relatedItems.map(item => `<option value="${item.id}" ${item.id === selectedItemId ? 'selected' : ''}>${esc(item.title)}${item.published ? ' · publié' : ' · brouillon'}</option>`).join('')}</select></label><button type="button" id="addItem">Ajouter ${tab === 'course' ? 'une leçon' : tab === 'td' ? 'un TD' : 'un TP'}</button></div>
+      <div class="teach-manager-fields"><label for="lessonSelect">${tab === 'course' ? 'Leçons du chapitre' : tab === 'td' ? 'TD du chapitre' : 'TP du chapitre'}<select id="lessonSelect"><option value="">Choisir ${tab === 'course' ? 'une leçon' : tab === 'td' ? 'un TD' : 'un TP'}…</option>${relatedItems.map(item => `<option value="${item.id}" ${item.id === selectedItemId ? 'selected' : ''}>${esc(item.title)}</option>`).join('')}</select></label><button type="button" id="addItem">Ajouter ${tab === 'course' ? 'une leçon' : tab === 'td' ? 'un TD' : 'un TP'}</button></div>
       ${relatedItems.length ? `<p class="teach-help">${relatedItems.length} ${relatedItems.length === 1 ? itemSingular : itemPlural} dans ce chapitre.</p>` : `<p class="teach-help">Aucun ${itemSingular} dans ce chapitre. Utilisez le bouton « Ajouter ».</p>`}</div>` : ''}
-      ${selectedItem ? `<div class="teach-card teach-item-detail"><div><span class="teach-meta">${selectedItem.published ? 'Publié' : 'Brouillon'}${tab === 'td' && selectedItem.linked_course_id ? ' · lié à un cours' : ''}</span><h3>${esc(selectedItem.title)}</h3></div><div class="teach-row"><button type="button" id="previewSelectedItem" class="subtle">Voir le contenu</button><button type="button" id="editSelectedItem" class="subtle">Modifier</button><button type="button" id="publishSelectedItem" class="subtle">${selectedItem.published ? 'Masquer' : 'Publier et voir le PDF'}</button><button type="button" id="deleteSelectedItem" class="warn">Supprimer</button></div></div>` : ''}<div id="teachEditor"></div>`;
+      ${selectedItem ? `<div class="teach-card teach-item-detail"><div><h3>${esc(selectedItem.title)}</h3></div><div class="teach-row"><button type="button" id="previewSelectedItem" class="subtle">Voir le contenu</button><button type="button" id="editSelectedItem" class="subtle">Modifier</button><button type="button" id="publishSelectedItem" class="subtle">${selectedItem.published ? 'Masquer' : 'Publier et voir le PDF'}</button><button type="button" id="deleteSelectedItem" class="warn">Supprimer</button></div></div>` : ''}<div id="teachEditor"></div>`;
     body.querySelector('#addChapter').onclick = async () => {
       const title = body.querySelector('#chapterTitle').value.trim(); if (!title) return status('Saisissez le nom du chapitre.', true);
       const existing = chapters.find(candidate => candidate.title.trim().toLocaleLowerCase('fr') === title.toLocaleLowerCase('fr'));
@@ -253,20 +327,27 @@
     editing = id ? items.find(i => i.id === id) : null;
     if (id && (!editing || editing.kind !== tab)) return status('Contenu introuvable. Actualisez la page.', true);
     activeItem = editing?.id || null;
-    blocks = structuredClone(editing?.blocks || []); draftAssets = [];
+    blocks = structuredClone(editing?.blocks || []); draftAssets = []; draftRoles = [];
     try {
-      originalAssets = id ? await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(id) + '&select=id,object_path,file_name,mime_type') : [];
+      originalAssets = id ? await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(id) + '&select=id,object_path,file_name,mime_type,asset_role') : [];
     } catch (error) { return status('Impossible de charger les fichiers joints : ' + error.message, true); }
     const host = root.querySelector('#teachEditor');
     const courseOptions = items.filter(i => i.kind === 'course' && i.chapter_id === (editing?.chapter_id || chapterId));
-    host.innerHTML = `<div class="teach-card teach-editor"><h2>${editing ? 'Modifier' : 'Créer'} : ${esc(kindNames[tab])}</h2><label>Titre <input id="itemTitle" maxlength="180" value="${esc(editing?.title || '')}" required></label>${tab === 'td' ? `<label>Cours lié <select id="linkedCourse"><option value="">Aucun</option>${courseOptions.map(i => `<option value="${i.id}" ${editing?.linked_course_id === i.id ? 'selected' : ''}>${esc(i.title)}</option>`).join('')}</select></label>` : ''}<div id="blockList"></div><div class="teach-row">${tab !== 'tp' ? '<button type="button" id="addText" class="subtle">＋ Texte / tableau</button><button type="button" id="addVideo" class="subtle">＋ Vidéo</button>' : ''}<button type="button" id="addFile" class="subtle">＋ ${tab === 'tp' ? 'PDF ou Word' : 'Image ou document'}</button><input id="itemFile" type="file" accept="${tab === 'tp' ? '.pdf,.doc,.docx' : 'image/*,.pdf,.doc,.docx'}" hidden></div><div class="teach-row"><button type="button" id="previewDraft" class="subtle">Aperçu du brouillon</button><button type="button" id="saveItem">Enregistrer</button><button type="button" id="cancelItem" class="subtle">Annuler</button></div><p class="teach-help">${tab === 'tp' ? 'Ce TP n’est lié à aucun cours ni TD. ' : ''}Publiez ensuite le chapitre et le contenu pour les rendre accessibles aux élèves.</p></div>`;
+    host.innerHTML = `<div class="teach-card teach-editor"><h2>${editing ? 'Modifier' : 'Créer'} : ${esc(kindNames[tab])}</h2><label>Titre <input id="itemTitle" maxlength="180" value="${esc(editing?.title || '')}" required></label>${tab === 'td' ? `<label>Cours lié <select id="linkedCourse"><option value="">Aucun</option>${courseOptions.map(i => `<option value="${i.id}" ${editing?.linked_course_id === i.id ? 'selected' : ''}>${esc(i.title)}</option>`).join('')}</select></label>` : ''}<div id="blockList"></div><div class="teach-row">${tab !== 'tp' ? '<button type="button" id="addText" class="subtle">＋ Texte / tableau</button><button type="button" id="addVideo" class="subtle">＋ Vidéo</button>' : ''}<button type="button" id="addFile" class="subtle">＋ ${tab === 'tp' ? 'PDF du TP' : 'Image ou document'}</button><input id="itemFile" type="file" accept="${tab === 'tp' ? '.pdf' : 'image/*,.pdf,.doc,.docx'}" hidden>${tab === 'tp' ? '<button type="button" id="addTechnical" class="subtle">＋ Dossier technique PDF</button><input id="technicalFile" type="file" accept=".pdf" hidden>' : ''}</div><div class="teach-row"><button type="button" id="previewDraft" class="subtle">Aperçu</button><button type="button" id="saveItem">Enregistrer</button><button type="button" id="cancelItem" class="subtle">Annuler</button></div><p class="teach-help">${tab === 'tp' ? 'Chaque PDF ajouté reste lié uniquement à ce TP.' : 'Publiez ensuite le chapitre et le contenu pour les rendre accessibles aux élèves.'}</p></div>`;
+    if (tab !== 'tp') {
+      const tip = document.createElement('p'); tip.className='teach-help';
+      tip.textContent='Sélectionnez d’abord le texte, puis cliquez sur une couleur, une taille ou un autre outil de la palette.';
+      host.querySelector('#blockList').before(tip);
+    }
     host.querySelector('#cancelItem').onclick = () => host.replaceChildren();
     host.querySelector('#saveItem').onclick = () => saveItem(editing?.chapter_id || chapterId);
     host.querySelector('#previewDraft').onclick = () => previewItem(null, true);
     host.querySelector('#addText')?.addEventListener('click', () => { captureBlocks(); blocks.push({type:'html',html:'<p>Votre texte…</p>'}); renderBlocks(); });
     host.querySelector('#addVideo')?.addEventListener('click', () => { captureBlocks(); blocks.push({type:'video',url:''}); renderBlocks(); });
     host.querySelector('#addFile').onclick = () => host.querySelector('#itemFile').click();
-    host.querySelector('#itemFile').onchange = e => { const file = e.target.files[0]; if (file) { captureBlocks(); draftAssets.push(file); blocks.push({type:'pending',index:draftAssets.length-1}); renderBlocks(); } };
+    host.querySelector('#itemFile').onchange = e => { const file = e.target.files[0]; if (file) { captureBlocks(); draftAssets.push(file); draftRoles.push('main'); blocks.push({type:'pending',index:draftAssets.length-1}); renderBlocks(); e.target.value=''; } };
+    host.querySelector('#addTechnical')?.addEventListener('click', () => host.querySelector('#technicalFile').click());
+    if (host.querySelector('#technicalFile')) host.querySelector('#technicalFile').onchange = e => { const file=e.target.files[0]; if (file) { captureBlocks(); draftAssets.push(file); draftRoles.push('technical'); blocks.push({type:'pending',index:draftAssets.length-1}); renderBlocks(); e.target.value=''; } };
     renderBlocks(); host.scrollIntoView({behavior:'smooth',block:'start'});
   }
   function captureBlocks() {
@@ -294,21 +375,24 @@
   }
   function editorToolbar() {
     const commands = [['bold','Gras','G'],['italic','Italique','I'],['underline','Souligné','S'],['strikeThrough','Barré','S̶'],['subscript','Indice','x₂'],['superscript','Exposant','x²'],['insertUnorderedList','Puces','• Liste'],['insertOrderedList','Numérotation','1. Liste'],['outdent','Réduire le retrait','⇤'],['indent','Augmenter le retrait','⇥'],['justifyLeft','Aligner à gauche','☷'],['justifyCenter','Centrer','☰'],['justifyRight','Aligner à droite','☷'],['justifyFull','Justifier','▤']];
-    return `<div class="teach-editor-toolbar" role="toolbar" aria-label="Mise en forme du texte"><label>Police<select data-format-select="fontName" aria-label="Police"><option value="">Police</option>${['Arial','Aptos','Calibri','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS'].map(font => `<option value="${font}">${font}</option>`).join('')}</select></label><label>Taille<select data-format-select="fontSize" aria-label="Taille"><option value="">Taille</option>${[['1','10'],['2','12'],['3','14'],['4','16'],['5','18'],['6','24'],['7','32']].map(([value,label]) => `<option value="${value}">${label} pt</option>`).join('')}</select></label>${commands.map(([command,label,symbol]) => `<button type="button" data-format="${command}" title="${label}" aria-label="${label}">${symbol}</button>`).join('')}<label>Texte<input type="color" data-color="foreColor" value="#173450" aria-label="Couleur du texte"></label><label>Surlignage<input type="color" data-color="hiliteColor" value="#fff08a" aria-label="Couleur de surlignage"></label><button type="button" data-table="1" title="Insérer un tableau">▦ Tableau</button></div>`;
+    const colors = ['#173450','#d12d32','#e47713','#147a45','#1669b3','#7b4bad'];
+    const highlights = ['#fff08a','#ffb8bb','#c2f0ce','#bfe6ff','#e5d7ff'];
+    return `<div class="teach-editor-toolbar" role="toolbar" aria-label="Mise en forme du texte"><label>Police<select data-format-select="fontName" aria-label="Police"><option value="">Police</option>${['Arial','Aptos','Calibri','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS'].map(font => `<option value="${font}">${font}</option>`).join('')}</select></label><label>Taille<select data-format-select="fontSize" aria-label="Taille"><option value="">Taille</option>${[['1','10'],['2','12'],['3','14'],['4','16'],['5','18'],['6','24'],['7','32']].map(([value,label]) => `<option value="${value}">${label} pt</option>`).join('')}</select></label>${commands.map(([command,label,symbol]) => `<button type="button" data-format="${command}" title="${label}" aria-label="${label}">${symbol}</button>`).join('')}<div class="teach-color-group"><span>Texte</span>${colors.map(color => `<button type="button" class="teach-swatch" data-swatch="foreColor" data-value="${color}" style="--swatch:${color}" title="Texte ${color}" aria-label="Texte ${color}"></button>`).join('')}<input type="color" data-color="foreColor" value="#173450" aria-label="Autre couleur du texte"></div><div class="teach-color-group"><span>Surlignage</span>${highlights.map(color => `<button type="button" class="teach-swatch" data-swatch="hiliteColor" data-value="${color}" style="--swatch:${color}" title="Surlignage ${color}" aria-label="Surlignage ${color}"></button>`).join('')}<input type="color" data-color="hiliteColor" value="#fff08a" aria-label="Autre couleur de surlignage"></div><button type="button" data-table="1" title="Insérer un tableau">▦ Tableau</button></div>`;
   }
   function renderBlocks() {
     const list = root.querySelector('#blockList'); if (!list) return;
-    list.innerHTML = blocks.map((block,index) => `<div class="teach-block" data-block-index="${index}"><div class="teach-block-actions"><button type="button" data-up="${index}" class="subtle" aria-label="Monter">↑</button><button type="button" data-down="${index}" class="subtle" aria-label="Descendre">↓</button><button type="button" data-remove="${index}" class="warn">Retirer</button></div>${block.type === 'html' ? `${editorToolbar()}<div class="teach-editable" contenteditable="true" role="textbox" aria-label="Contenu du cours">${MelecContent.sanitize(block.html)}</div>` : block.type === 'video' ? `<label>Adresse YouTube ou Vimeo <input type="url" value="${esc(block.url)}" placeholder="https://..."></label>` : `<span>${block.type === 'pending' ? esc(draftAssets[block.index]?.name || 'Fichier') : esc(originalAssets.find(asset => asset.id === block.assetId)?.file_name || 'Document joint')}</span>`}</div>`).join('');
+    list.innerHTML = blocks.map((block,index) => `<div class="teach-block" data-block-index="${index}"><div class="teach-block-actions"><button type="button" data-up="${index}" class="subtle" aria-label="Monter">↑</button><button type="button" data-down="${index}" class="subtle" aria-label="Descendre">↓</button><button type="button" data-remove="${index}" class="warn">Retirer</button></div>${block.type === 'html' ? `${editorToolbar()}<div class="teach-editable" contenteditable="true" role="textbox" aria-label="Contenu du cours">${MelecContent.sanitize(block.html)}</div>` : block.type === 'video' ? `<label>Adresse YouTube ou Vimeo <input type="url" value="${esc(block.url)}" placeholder="https://..."></label>` : `<span>${tab === 'tp' ? (block.type === 'pending' ? draftRoles[block.index] : originalAssets.find(asset => asset.id === block.assetId)?.asset_role) === 'technical' ? 'Dossier technique · ' : 'Document du TP · ' : ''}${block.type === 'pending' ? esc(draftAssets[block.index]?.name || 'Fichier') : esc(originalAssets.find(asset => asset.id === block.assetId)?.file_name || 'Document joint')}</span>`}</div>`).join('');
     list.querySelectorAll('[data-up],[data-down],[data-remove]').forEach(btn => btn.onclick = () => { captureBlocks(); const n = Number(btn.dataset.up ?? btn.dataset.down ?? btn.dataset.remove); if (btn.dataset.remove != null) blocks.splice(n,1); else { const m = btn.dataset.up != null ? n-1 : n+1; if (m >= 0 && m < blocks.length) [blocks[n],blocks[m]] = [blocks[m],blocks[n]]; } renderBlocks(); });
     list.querySelectorAll('[data-format]').forEach(btn => { btn.onmousedown = event => event.preventDefault(); btn.onclick = () => formatSelection(btn.dataset.format); });
     list.querySelectorAll('[data-format-select]').forEach(select => select.onchange = () => { if (select.value) formatSelection(select.dataset.formatSelect, select.value); select.value = ''; });
-    list.querySelectorAll('[data-color]').forEach(input => input.onchange = () => formatSelection(input.dataset.color, input.value));
+    list.querySelectorAll('[data-color]').forEach(input => input.oninput = () => formatSelection(input.dataset.color, input.value));
+    list.querySelectorAll('[data-swatch]').forEach(button => { button.onmousedown = event => event.preventDefault(); button.onclick = () => formatSelection(button.dataset.swatch,button.dataset.value); });
     list.querySelectorAll('[data-table]').forEach(btn => { btn.onmousedown = event => event.preventDefault(); btn.onclick = () => formatSelection('insertHTML', '<table><tbody><tr><td>Cellule 1</td><td>Cellule 2</td></tr><tr><td>Cellule 3</td><td>Cellule 4</td></tr></tbody></table><p></p>'); });
   }
   async function previewItem(item, draft = false) {
     if (previewCleanup) { previewCleanup(); previewCleanup = null; }
     document.querySelector('#teachPreview')?.remove();
-    const title = draft ? root.querySelector('#itemTitle')?.value.trim() || 'Brouillon sans titre' : item.title;
+    const title = draft ? root.querySelector('#itemTitle')?.value.trim() || 'Sans titre' : item.title;
     let previewBlocks = draft ? (captureBlocks(), structuredClone(blocks)) : item.blocks || [];
     let assets = draft ? [...originalAssets] : await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(item.id) + '&select=id,object_path,file_name,mime_type');
     if (draft) previewBlocks = previewBlocks.map(block => {
@@ -320,7 +404,7 @@
       return {type:'asset',assetId:id};
     }).filter(Boolean);
     const pane = document.createElement('section'); pane.id = 'teachPreview'; pane.className = 'teach-preview';
-    pane.innerHTML = `<div class="teach-preview-actions"><strong>Aperçu · ${esc(kindNames[tab])}</strong><button type="button" id="printLesson">Afficher / enregistrer en PDF</button><button type="button" id="closePreview">Fermer</button></div><header><p>BAC PRO MELEC · ${esc(classes.find(entry => entry.id === classId)?.name || '')}</p><h1>${esc(title)}</h1><span>${draft ? 'Brouillon' : item.published ? 'Publié' : 'Brouillon'}</span></header><div class="teach-preview-content"></div>`;
+    pane.innerHTML = `<div class="teach-preview-actions"><strong>Aperçu · ${esc(kindNames[tab])}</strong><button type="button" id="printLesson">Afficher / enregistrer en PDF</button><button type="button" id="closePreview">Fermer</button><small>Dans la fenêtre d’impression, désactivez « En-têtes et pieds de page » si votre navigateur les affiche.</small></div><header><p>BAC PRO MELEC · ${esc(classes.find(entry => entry.id === classId)?.name || '')}</p><h1>${esc(title)}</h1></header><div class="teach-preview-content"></div>`;
     document.body.append(pane);
     const close = () => { if (previewCleanup) { previewCleanup(); previewCleanup = null; } pane.remove(); document.body.classList.remove('print-lesson'); };
     pane.querySelector('#closePreview').onclick = close;
@@ -337,6 +421,7 @@
     const host = root.querySelector('#teachEditor'), title = host.querySelector('#itemTitle').value.trim();
     if (!title) return status('Saisissez un titre.', true);
     captureBlocks();
+    if (tab === 'tp' && !blocks.some(block => block.type === 'pending' ? draftRoles[block.index] === 'main' : originalAssets.some(asset => asset.id === block.assetId && asset.asset_role === 'main'))) return status('Ajoutez au moins un PDF du TP.',true);
     if (blocks.some(b => b.type === 'video' && b.url && !MelecContent.videoUrl(b.url))) return status('Lien vidéo accepté : YouTube ou Vimeo en HTTPS.', true);
     const button = host.querySelector('#saveItem'); button.disabled = true;
     try {
@@ -352,7 +437,7 @@
         if (file.size > 20 * 1024 * 1024) throw new Error('Fichier trop volumineux (20 Mo maximum).');
         const path = id + '/' + crypto.randomUUID() + '-' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
         await api.upload(path,file);
-        const asset = await api.rest('learning_assets?select=id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({item_id:id,object_path:path,file_name:file.name,mime_type:file.type || 'application/octet-stream'})});
+        const asset = await api.rest('learning_assets?select=id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({item_id:id,object_path:path,file_name:file.name,mime_type:file.type || 'application/octet-stream',asset_role:draftRoles[block.index] || 'main'})});
         payload.blocks.push({type:'asset',assetId:asset[0].id});
       }
       if (pendingBlocks.length) await api.rest('learning_items?id=eq.' + id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({blocks:payload.blocks})});
@@ -369,7 +454,7 @@
       selectedItemId = id;
       activeItem = null; editing = null; originalAssets = [];
       await loadClass();
-      status(cleanupError ? 'Contenu modifié, mais le nettoyage d’anciens fichiers a échoué : ' + cleanupError.message : wasPublished ? 'Contenu modifié.' : 'Contenu enregistré en brouillon.', !!cleanupError);
+      status(cleanupError ? 'Contenu modifié, mais le nettoyage d’anciens fichiers a échoué : ' + cleanupError.message : wasPublished ? 'Contenu modifié.' : 'Contenu enregistré.', !!cleanupError);
     } catch (error) { status(error.message, true); button.disabled = false; }
   }
   function renderStudents() {
