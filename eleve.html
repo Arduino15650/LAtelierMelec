@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#071b34"><title>BAC PRO MELEC — Élève</title>
+  <link rel="stylesheet" href="portal.css?v=20260925-1">
+</head>
+<body class="portal-page">
+  <div class="portal-shell">
+    <a class="portal-top-link" href="./index.html">← Accueil</a>
+    <header class="portal-header"><img src="logo-bac-pro-melec-v3.webp" alt="Logo BAC PRO MELEC" width="92" height="92"><div><p class="eyebrow">Espace élève</p><h1>BAC PRO MELEC</h1><p>Consulter les contenus pédagogiques de votre classe.</p></div></header>
+    <main>
+      <section id="studentAuth" class="portal-panel portal-auth" aria-labelledby="studentAuthTitle">
+        <h2 id="studentAuthTitle">Connexion élève</h2>
+        <div class="portal-tabs"><button id="studentLoginTab" class="active" type="button">Se connecter</button><button id="studentSignupTab" type="button">Créer un compte</button></div>
+        <form id="studentLoginForm" class="portal-form">
+          <label>Adresse e-mail<input name="email" type="email" autocomplete="username" required></label>
+          <label>Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>
+          <button class="portal-button" type="submit">Se connecter</button>
+        </form>
+        <form id="studentSignupForm" class="portal-form" hidden>
+          <div class="portal-form-grid"><label>Nom<input name="lastName" maxlength="80" autocomplete="family-name" required></label><label>Prénom<input name="firstName" maxlength="80" autocomplete="given-name" required></label></div>
+          <label>Classe demandée<input name="className" maxlength="80" placeholder="Ex. 1MELEC" required></label>
+          <label>Adresse e-mail<input name="email" type="email" maxlength="254" autocomplete="email" required></label>
+          <label>Mot de passe<input name="password" type="password" minlength="12" autocomplete="new-password" required></label>
+          <p class="portal-small">Après l’inscription, confirmez votre adresse e-mail. L’enseignant validera ensuite votre classe et vous donnera un code d’accès.</p>
+          <button class="portal-button" type="submit">Demander mon inscription</button>
+        </form>
+        <p id="studentAuthStatus" class="form-status" role="status" aria-live="polite"></p>
+      </section>
+      <section id="studentDashboard" class="portal-panel portal-dashboard" hidden>
+        <div class="portal-actions"><button id="studentRefresh" type="button">Actualiser</button><button id="studentLogout" class="subtle" type="button">Déconnexion</button></div>
+        <div id="studentProfileStatus" class="portal-message" role="status" aria-live="polite"></div>
+        <section id="studentCodePane" class="student-pane" hidden>
+          <h2>Code d’accès</h2><p>Votre enseignant vous communique un nouveau code valable 24 h. Demandez-lui un nouveau code quand l’accès expire.</p>
+          <form id="studentCodeForm" class="portal-form"><label>Code fourni par l’enseignant<input name="code" autocomplete="one-time-code" maxlength="32" required></label><button class="portal-button" type="submit">Valider le code</button></form>
+          <p id="studentCodeStatus" class="form-status" role="status" aria-live="polite"></p>
+        </section>
+        <section id="studentLessonsPane" class="student-pane" hidden>
+          <h2>Mes cours, TD et TP</h2><p id="studentAccessUntil" class="portal-small"></p>
+          <div id="studentLessons" class="portal-list"></div>
+        </section>
+      </section>
+      <section class="portal-panel contact-panel" aria-labelledby="contactTitle" style="margin-top:28px">
+        <div><p class="eyebrow">Besoin d’aide ?</p><h2 id="contactTitle">Contacter l’enseignant</h2></div>
+        <form id="contactForm" class="portal-form">
+          <div class="portal-form-grid"><label>Nom *<input name="lastName" maxlength="80" autocomplete="family-name" required></label><label>Prénom *<input name="firstName" maxlength="80" autocomplete="given-name" required></label><label>Adresse e-mail *<input name="email" type="email" maxlength="254" autocomplete="email" required></label><label>Classe *<input name="className" maxlength="80" required></label></div>
+          <label>Commentaire *<textarea name="comment" maxlength="500" rows="5" required aria-describedby="contactCount"></textarea></label><span id="contactCount" class="field-help">0 / 500 caractères</span>
+          <div class="honeypot" aria-hidden="true"><label>Ne pas remplir ce champ<input name="website" tabindex="-1" autocomplete="off"></label></div>
+          <button class="portal-button" type="submit">Envoyer le message</button><p id="contactStatus" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+  </div>
+  <script src="portal-api.js?v=20260925-1"></script>
+  <script src="content-render.js?v=20260925-1"></script>
+  <script src="portal-contact.js?v=20260925-1"></script>
+  <script src="student-space.js?v=20260925-1"></script>
+</body>
+</html>

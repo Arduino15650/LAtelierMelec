@@ -89,6 +89,10 @@
     return data;
   }
   async function validAccessToken() {
+    try {
+      const stored = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+      if (stored?.access_token && stored.access_token !== session?.access_token) session = stored;
+    } catch { /* session invalide */ }
     if (!session) throw new Error('Session absente.');
     if (Date.now() < Number(session.expires_at) * 1000 - 60000) return session.access_token;
     const refreshed = await authRequest('/auth/v1/token?grant_type=refresh_token', {
@@ -127,6 +131,12 @@
     const rows = await api('melec_state?user_id=eq.' + encodeURIComponent(userId) + '&select=data,revision');
     return rows && rows[0] || null;
   }
+  async function ensureTeacher() {
+    const rows = await api('teacher_accounts?user_id=eq.' + encodeURIComponent(userId) + '&select=user_id');
+    if (!rows || rows.length !== 1) {
+      throw new Error('Accès réservé à l’enseignant. Utilisez l’espace élève si vous êtes inscrit comme élève.');
+    }
+  }
   function showImport() {
     byId('cloudLoginPane').hidden = true;
     byId('cloudImportPane').hidden = false;
@@ -137,6 +147,7 @@
     lock();
     gateMessage('Connexion et vérification des données…');
     await identify();
+    await ensureTeacher();
     const row = await cloudRow();
     if (!row) {
       showImport();

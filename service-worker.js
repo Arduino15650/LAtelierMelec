@@ -1,7 +1,7 @@
-const CACHE_NAME = 'bac-pro-melec-v64-account-menu';
+const CACHE_NAME = 'bac-pro-melec-v65-spaces';
 const APP_FILES = [
-  './','./index.html','./styles.css','./bo.css','./referential.js','./app.js',
-  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js','./cloud-sync.js',
+  './','./index.html','./eleve.html','./enseignant.html','./styles.css','./bo.css','./portal.css','./teaching.css','./referential.js','./app.js',
+  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js','./cloud-sync.js','./portal-api.js','./portal-contact.js','./student-space.js','./teaching-space.js','./content-render.js',
   './background-melec-tools.webp','./logo-bac-pro-melec-v3.webp',
   './manifest.webmanifest','./icon-180.png','./icon-192.png'
 ];
@@ -28,10 +28,10 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put('./index.html', response.clone()));
+          if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
           return response;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html')))
     );
     return;
   }

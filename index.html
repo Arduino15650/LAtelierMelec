@@ -1,131 +1,57 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <meta name="theme-color" content="#06182d">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="MELEC">
-  <title>BAC PRO MELEC</title>
-  <style>html,body{min-height:100%;background:#06182d;color:#fff}body{margin:0}</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#071b34">
+  <title>BAC PRO MELEC — Accueil</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-  <link rel="stylesheet" href="styles.css?v=20260911-1">
-  <link rel="stylesheet" href="bo.css?v=20260924-5">
-  <style>
-  </style>
-  <style>
-    body.cloud-locked > :not(#cloudGate):not(script){visibility:hidden!important}
-    #cloudGate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;overflow:auto;padding:20px;background:#06182d;color:#172b45;font-family:Arial,sans-serif}
-    #cloudGate[hidden]{display:none}
-    .cloud-card{width:min(100%,500px);box-sizing:border-box;padding:clamp(20px,5vw,34px);border:2px solid #ef9e31;border-radius:24px;background:#eff6ff;box-shadow:0 20px 60px #0008}
-    .cloud-brand{display:flex;align-items:center;gap:14px;margin-bottom:18px}.cloud-brand img{width:72px;height:72px;object-fit:contain}.cloud-brand strong{font-size:clamp(21px,5vw,29px)}
-    .cloud-card h1{font-size:24px;margin:0 0 10px}.cloud-card p{line-height:1.5}.cloud-card label{display:block;margin:14px 0 6px;font-weight:700}
-    .cloud-card input[type=email],.cloud-card input[type=password],.cloud-card input[type=file]{box-sizing:border-box;width:100%;min-height:46px;padding:10px;border:1px solid #8ca9c9;border-radius:12px;background:#fff;color:#172b45;font-size:16px}
-    .cloud-card button{min-height:46px;padding:10px 17px;border:0;border-radius:999px;background:#145cb5;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
-    .cloud-card button.secondary{background:#dcecff;color:#123661;border:1px solid #8cb7ec}.cloud-card button:disabled{opacity:.55;cursor:wait}
-    .cloud-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}.cloud-status{min-height:20px;margin:12px 0 0;font-size:14px;overflow-wrap:anywhere}
-    .cloud-status.error{color:#ad2525}.cloud-status.success{color:#125d36}
-    .cloud-toolbar{display:flex;align-items:center;justify-content:flex-end;padding:8px 24px;background:transparent;color:#fff;font:13px Arial,sans-serif}
-    .cloud-toolbar[hidden]{display:none!important}
-    .cloud-menu{position:relative}
-    .cloud-menu>summary{display:flex;align-items:center;justify-content:center;min-height:42px;padding:0 17px;border:1px solid #e3a34c;border-radius:999px;background:#174878;color:#fff;font-weight:700;cursor:pointer;list-style:none}
-    .cloud-menu>summary::-webkit-details-marker{display:none}
-    .cloud-menu>summary:hover,.cloud-menu>summary:focus-visible{background:#2366a2;outline:2px solid #fff;outline-offset:2px}
-    .cloud-menu-panel{position:absolute;right:0;top:calc(100% + 7px);z-index:1000;box-sizing:border-box;width:min(310px,calc(100vw - 28px));display:grid;gap:11px;padding:16px;border:1px solid #93b9df;border-radius:17px;background:#edf5ff;color:#18324c;box-shadow:0 12px 30px #0007}
-    .cloud-menu-panel button{min-height:42px;padding:8px 14px;border:1px solid #8eb5de;border-radius:999px;background:#155395;color:#fff;font:700 14px Arial,sans-serif;cursor:pointer}
-    .cloud-menu-panel button:hover,.cloud-menu-panel button:focus-visible{filter:brightness(1.12);outline:2px solid #174878;outline-offset:2px}
-    .cloud-menu-panel .cloud-sync-error{color:#a12626}
-    @media(min-width:981px){.cloud-toolbar{margin-left:248px}}
-  </style>
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="stylesheet" href="portal.css?v=20260925-1">
 </head>
-<body class="cloud-locked">
-  <div id="cloudGate" role="dialog" aria-modal="true" aria-label="Connexion à LAtelierMelec">
-    <div class="cloud-card">
-      <div class="cloud-brand"><img src="logo-bac-pro-melec-v3.webp" alt=""><strong>BAC PRO MELEC</strong></div>
-      <section id="cloudLoginPane">
-        <h1>Accès personnel</h1>
-        <p>Connectez-vous avec le compte créé dans votre nouveau projet Supabase.</p>
-        <form id="cloudLoginForm">
-          <label for="cloudEmail">Adresse e-mail</label><input id="cloudEmail" type="email" autocomplete="username" required>
-          <label for="cloudPassword">Mot de passe</label><input id="cloudPassword" type="password" autocomplete="current-password" required>
-          <div class="cloud-actions"><button type="submit">Se connecter</button></div>
-        </form>
-      </section>
-      <section id="cloudImportPane" hidden>
-        <h1>Première synchronisation</h1>
-        <p>Aucune donnée n’est encore enregistrée dans ce compte. Importez votre sauvegarde JSON, ou utilisez les données conservées dans ce navigateur. Rien ne sera envoyé sans votre confirmation.</p>
-        <label for="cloudBackupFile">Sauvegarde JSON téléchargée précédemment</label>
-        <input id="cloudBackupFile" type="file" accept=".json,application/json">
-        <div class="cloud-actions">
-          <button id="cloudImportFile" type="button">Importer ce fichier</button>
-          <button id="cloudImportLocal" class="secondary" type="button">Utiliser les données de ce navigateur</button>
-          <button id="cloudStartEmpty" class="secondary" type="button">Commencer sans données</button>
+<body class="portal-page">
+  <div class="portal-shell">
+    <header class="portal-header">
+      <img src="logo-bac-pro-melec-v3.webp" alt="Logo BAC PRO MELEC" width="102" height="102">
+      <div><p class="eyebrow">Espace pédagogique</p><h1>BAC PRO MELEC</h1><p>Baccalauréat professionnel Métiers de l’Électricité et de ses Environnements Connectés</p></div>
+    </header>
+    <main>
+      <section class="portal-hero" aria-labelledby="welcomeTitle">
+        <p class="eyebrow">Bienvenue à L’Atelier MELEC</p>
+        <h2 id="welcomeTitle">Choisissez votre espace</h2>
+        <p>Cours, travaux dirigés et travaux pratiques sont accessibles selon votre profil.</p>
+        <div class="portal-cards">
+          <a class="portal-card teacher-card" href="./enseignant.html"><span class="portal-card-icon">⚡</span><span><strong>Espace enseignant</strong><small>Activités, évaluations, contenus pédagogiques et suivi des élèves.</small></span><span aria-hidden="true">›</span></a>
+          <a class="portal-card student-card" href="./eleve.html"><span class="portal-card-icon">▣</span><span><strong>Espace élève</strong><small>Consulter les cours, TD et TP de votre classe après validation.</small></span><span aria-hidden="true">›</span></a>
         </div>
       </section>
-      <p id="cloudGateStatus" class="cloud-status" role="status" aria-live="polite"></p>
-      <button id="cloudSignOutGate" class="secondary" type="button" hidden>Changer de compte</button>
-    </div>
+      <section class="portal-panel contact-panel" aria-labelledby="contactTitle">
+        <div><p class="eyebrow">Une question ?</p><h2 id="contactTitle">Contacter l’enseignant</h2><p>Décrivez votre demande. Les champs marqués * sont obligatoires.</p></div>
+        <form id="contactForm" class="portal-form">
+          <div class="portal-form-grid">
+            <label>Nom *<input name="lastName" maxlength="80" autocomplete="family-name" required></label>
+            <label>Prénom *<input name="firstName" maxlength="80" autocomplete="given-name" required></label>
+            <label>Adresse e-mail *<input name="email" type="email" maxlength="254" autocomplete="email" required></label>
+            <label>Classe *<input name="className" maxlength="80" required placeholder="Ex. 1MELEC"></label>
+          </div>
+          <label>Commentaire *<textarea name="comment" maxlength="500" rows="5" required aria-describedby="contactCount"></textarea></label>
+          <span id="contactCount" class="field-help">0 / 500 caractères</span>
+          <div class="honeypot" aria-hidden="true"><label>Ne pas remplir ce champ<input name="website" tabindex="-1" autocomplete="off"></label></div>
+          <button class="portal-button" type="submit">Envoyer le message</button>
+          <p id="contactStatus" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
   </div>
-  <header class="topbar">
-    <button id="appBackButton" class="app-back-button" type="button" aria-label="Revenir à la page précédente" onclick="appBack()" hidden>← <span>Retour</span></button>
-    <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome()}"><span class="brand-logo"><img src="logo-bac-pro-melec-v3.webp?v=1" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
-  </header>
-    <nav class="header-nav quick-nav" aria-label="Navigation principale">
-      <button class="nav nav-home" data-view="home"><span>⌂</span> Accueil</button>
-      <button class="nav active" data-view="activities"><span>▦</span> Activités</button>
-      <button class="nav" data-view="activity-list"><span>☷</span> Liste des activités</button>
-      <button class="nav" data-view="students"><span>♙</span> Élèves</button>
-      <button class="nav" data-view="results"><span>▤</span> Résultats</button>
-      <button class="nav" data-view="ccf"><span>◉</span> Récap Des CCF</button>
-      <button class="nav" data-view="referential"><span>◎</span> Référentiel</button>
-    </nav>
-  <div class="cloud-toolbar" hidden>
-    <details class="cloud-menu">
-      <summary>⚙ Mon compte</summary>
-      <div class="cloud-menu-panel">
-        <span id="cloudSyncStatus" role="status" aria-live="polite">Connexion…</span>
-        <button id="cloudSyncNow" type="button">Actualiser les données</button>
-        <button id="cloudSignOut" type="button">Déconnexion</button>
-      </div>
-    </details>
-  </div>
-
-  <main class="shell">
-    <section class="content">
-      <div id="homeView" class="view hidden"></div>
-      <div id="activitiesView" class="view"></div>
-      <div id="activity-listView" class="view hidden"></div>
-      <div id="studentsView" class="view hidden"></div>
-      <div id="resultsView" class="view hidden"></div>
-      <div id="ccfView" class="view hidden"></div>
-      <div id="referentialView" class="view hidden"></div>
-      <div id="editorView" class="view hidden"></div>
-    </section>
-  </main>
-  <div id="toast" class="toast"></div>
-  <script src="referential.js?v=20260911-1"></script>
-  <script src="app.js?v=20260911-1"></script>
-  <script src="performance.js?v=20260911-1"></script>
-  <script src="workshop-activities-v2.js?v=20260924-1"></script>
-  <script src="evaluation-atelier-v2.js?v=20260912-2"></script>
-  <script src="student-groups.js?v=20260925-1"></script>
-  <script src="ccf-dashboard.js?v=20260924-5"></script>
-  <script src="home.js?v=20260924-2"></script>
-  <script src="pdf-generator-v2.js?v=20260911-1"></script>
-  <script src="cloud-sync.js?v=20260924-1"></script>
+  <script src="portal-api.js?v=20260925-1"></script>
+  <script src="portal-contact.js?v=20260925-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='64';
+      const version='65';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
-        const key='melec-sw-version';
-        if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}
+        if(sessionStorage.getItem('melec-sw-version')!==version){sessionStorage.setItem('melec-sw-version',version);location.reload()}
       });
-      window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).then(registration=>registration.update()).catch(console.error));
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v='+version,{updateViaCache:'none'}).then(reg=>reg.update()).catch(console.error));
     }
   </script>
 </body>
