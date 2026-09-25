@@ -45,3 +45,28 @@ body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active){
 body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active) span{
   color:#095d9e!important;
 }
+
+/* Navigation compacte : un chapitre, puis une leçon/TD/TP à la fois. */
+.teach-content-manager,.teach-chapter-detail,.teach-item-detail{max-width:100%;overflow-wrap:anywhere}
+.teach-content-manager{background:#e4f3ff!important;border:2px solid #85c2ec!important}
+.teach-chapter-detail{background:#e7f7ed!important;border:2px solid #83d0a3!important}
+.teach-item-detail{background:#fff1de!important;border:2px solid #efbc7a!important}
+.teach-manager-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1rem;align-items:end;margin-top:1rem}
+.teach-manager-fields>label,.teach-create-chapter>label{display:grid;gap:.4rem;min-width:0;font-weight:700;color:#12375b}
+.teach-manager-fields select,.teach-manager-fields input,.teach-rename input{width:100%;min-width:0;max-width:100%;box-sizing:border-box;min-height:2.8rem;background:#fff;color:#102e4d;border:1px solid #7eadd0;border-radius:12px;padding:.55rem .8rem;font:inherit}
+.teach-create-chapter{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.6rem;align-items:end;min-width:0}
+.teach-create-chapter button,.teach-manager-fields>button{min-height:2.8rem}
+.teach-section-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap}
+.teach-section-heading h3,.teach-item-detail h3{margin:.25rem 0 .5rem;color:#092f50}
+.teach-rename{margin:.75rem 0;padding:.75rem 1rem;border:1px solid #9acdb0;border-radius:12px;background:#f7fff9;color:#12375b}
+.teach-rename summary{cursor:pointer;font-weight:700}
+.teach-rename .teach-row{margin-top:.75rem;align-items:center}
+.teach-rename input{flex:1 1 14rem}
+.teach-item-detail{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+@media(max-width:760px){
+  .teach-manager-fields{grid-template-columns:minmax(0,1fr)}
+  .teach-create-chapter{grid-template-columns:minmax(0,1fr)}
+  .teach-create-chapter button,.teach-manager-fields>button{width:100%}
+  .teach-section-heading,.teach-item-detail{display:block}
+  .teach-section-heading .teach-row,.teach-item-detail .teach-row{margin-top:.7rem;flex-wrap:wrap}
+}
