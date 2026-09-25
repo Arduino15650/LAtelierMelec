@@ -21,4 +21,5 @@ button,input,textarea,select{font:inherit}a{color:inherit}.portal-shell{width:mi
 .student-tp-viewer h4{margin:.1rem 0 .5rem}
 .student-tp-viewer iframe{display:block;width:100%;height:min(75vh,900px);border:1px solid #acc7db;border-radius:.5rem;background:#fff}
 .portal-tabs button:disabled{opacity:.55;cursor:not-allowed}
+@media print{body.portal-page{visibility:hidden!important}body.portal-page::before{content:'Impression non autorisée';visibility:visible;position:fixed;inset:0;display:grid;place-items:center;background:#fff;color:#142e48;font:700 22px Arial,sans-serif}}
 @media(max-width:600px){.student-readonly .lesson-content{font-size:15px}.student-readonly .lesson-content td,.student-readonly .lesson-content th{padding:.35rem}}

@@ -182,7 +182,13 @@
       const newRows = [...selected].filter(id => !existing.some(row => row.student_id === id)).map(student_id => ({tp_id:tpId,student_id}));
       if (newRows.length) await api.rest('tp_assignments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newRows)});
       for (const row of removed) await api.rest('tp_assignments?id=eq.' + encodeURIComponent(row.id),{method:'DELETE'});
-      await loadClass(); status('Associations du TP enregistrées.');
+      const item = items.find(candidate => candidate.id === tpId);
+      if (selected.size && item && !item.published) {
+        const chapter = chapters.find(candidate => candidate.id === item.chapter_id);
+        if (chapter && !chapter.published) await api.rest('learning_chapters?id=eq.' + encodeURIComponent(chapter.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:true})});
+        await api.rest('learning_items?id=eq.' + encodeURIComponent(tpId),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:true})});
+      }
+      await loadClass(); status(selected.size ? 'Associations enregistrées. Le TP est accessible aux élèves sélectionnés.' : 'Associations du TP enregistrées.');
     } catch (error) { status(error.message,true); }
   }
   async function extendTp(id) {

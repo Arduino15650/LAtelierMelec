@@ -5,6 +5,12 @@
   let profile = null;
   let cleanupViewer = null;
   let assignments = [], tpItems = [], activeTp = null, tpUrls = [], selectedContentTab = 'courses';
+  document.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p' && !dashboard.hidden) {
+      event.preventDefault();
+      alert('L’impression des documents de l’espace élève n’est pas autorisée.');
+    }
+  });
   function tpEnd(assignment) {
     return Math.max(assignment.started_at ? Date.parse(assignment.started_at) + 210 * 60000 : 0,
       Date.parse(assignment.reactivated_until || '') || 0);
@@ -157,6 +163,7 @@
     clearTpViewer();
     const assets = await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(item.id) + '&select=id,object_path,file_name,mime_type,asset_role');
     const viewer = document.createElement('div'); viewer.id='studentTpViewer'; viewer.className='student-tp-viewer';
+    const notice = document.createElement('p'); notice.className='portal-small'; notice.textContent='Consultation à l’écran uniquement · impression non autorisée.'; viewer.append(notice);
     for (const role of ['main','technical']) {
       const group = document.createElement('section');
       const heading = document.createElement('h4'); heading.textContent = role === 'main' ? 'Document du TP' : 'Dossier technique'; group.append(heading);
@@ -169,7 +176,7 @@
           try {
             const blob = await api.download(asset.object_path); const url=URL.createObjectURL(blob); tpUrls.push(url);
             group.querySelector('iframe')?.remove();
-            const frame=document.createElement('iframe'); frame.src=url+'#toolbar=0&navpanes=0'; frame.title=asset.file_name; group.append(frame);
+            const frame=document.createElement('iframe'); frame.src=url+'#toolbar=0&navpanes=0&scrollbar=1'; frame.title='Consultation du document ' + asset.file_name; group.append(frame);
           } catch(error) { alert(error.message); } finally { button.disabled=false; }
         };
         group.append(button);
