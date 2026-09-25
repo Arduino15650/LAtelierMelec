@@ -199,17 +199,18 @@
   function renderContent() {
     const body = root.querySelector('#teachBody');
     if (!classId) { body.innerHTML = '<div class="teach-card">Ajoutez ou choisissez une classe pour commencer.</div>'; return; }
-    if (!chapters.some(chapter => chapter.id === selectedChapterId)) { selectedChapterId = ''; selectedItemId = ''; }
-    const chapter = chapters.find(candidate => candidate.id === selectedChapterId);
+    const contentChapters = chapters.filter(candidate => candidate.title.trim().toLocaleLowerCase('fr') !== 'tp en atelier');
+    if (!contentChapters.some(chapter => chapter.id === selectedChapterId)) { selectedChapterId = ''; selectedItemId = ''; }
+    const chapter = contentChapters.find(candidate => candidate.id === selectedChapterId);
     const relatedItems = chapter ? items.filter(item => item.chapter_id === chapter.id && item.kind === tab) : [];
     if (!relatedItems.some(item => item.id === selectedItemId)) selectedItemId = '';
     const selectedItem = relatedItems.find(item => item.id === selectedItemId);
     const itemSingular = tab === 'course' ? 'leçon' : tab === 'td' ? 'travail dirigé' : 'travail pratique';
     const itemPlural = tab === 'course' ? 'leçons' : tab === 'td' ? 'travaux dirigés' : 'travaux pratiques';
     const duplicateCounts = new Map();
-    chapters.forEach(candidate => { const key = candidate.title.trim().toLocaleLowerCase('fr'); duplicateCounts.set(key, (duplicateCounts.get(key) || 0) + 1); });
+    contentChapters.forEach(candidate => { const key = candidate.title.trim().toLocaleLowerCase('fr'); duplicateCounts.set(key, (duplicateCounts.get(key) || 0) + 1); });
     body.innerHTML = `<div class="teach-card teach-content-manager"><h2>${esc(kindNames[tab])} de la classe</h2><p class="teach-help">${tab === 'tp' ? 'Les TP ne sont liés ni aux cours ni aux TD. Le chapitre sert uniquement au classement.' : `Chaque chapitre peut contenir plusieurs ${itemPlural}. Choisissez d’abord un chapitre, puis un contenu.`}</p>
-      <div class="teach-manager-fields"><label for="chapterSelect">Chapitre<select id="chapterSelect"><option value="">Choisir un chapitre…</option>${chapters.map((candidate,index) => { const count = items.filter(item => item.chapter_id === candidate.id && item.kind === tab).length; const duplicate = duplicateCounts.get(candidate.title.trim().toLocaleLowerCase('fr')) > 1; return `<option value="${candidate.id}" ${candidate.id === selectedChapterId ? 'selected' : ''}>${esc(candidate.title)}${duplicate ? ` · n°${index + 1}` : ''} — ${count} ${itemPlural}</option>`; }).join('')}</select></label>
+      <div class="teach-manager-fields"><label for="chapterSelect">Chapitre<select id="chapterSelect"><option value="">Choisir un chapitre…</option>${contentChapters.map((candidate,index) => { const count = items.filter(item => item.chapter_id === candidate.id && item.kind === tab).length; const duplicate = duplicateCounts.get(candidate.title.trim().toLocaleLowerCase('fr')) > 1; return `<option value="${candidate.id}" ${candidate.id === selectedChapterId ? 'selected' : ''}>${esc(candidate.title)}${duplicate ? ` · n°${index + 1}` : ''} — ${count} ${itemPlural}</option>`; }).join('')}</select></label>
       <div class="teach-create-chapter"><label for="chapterTitle">Créer un chapitre<input id="chapterTitle" maxlength="180" placeholder="Ex. Symboles architecturaux"></label><button type="button" id="addChapter">Créer</button></div></div></div>
       ${chapter ? `<div class="teach-card teach-chapter-detail"><div class="teach-section-heading"><div><h3>${esc(chapter.title)}</h3></div><div class="teach-row"><button type="button" id="publishChapter" class="subtle">${chapter.published ? 'Masquer aux élèves' : 'Publier le chapitre'}</button><button type="button" id="deleteChapter" class="warn">Supprimer le chapitre</button></div></div>
       <details class="teach-rename"><summary>Modifier le nom du chapitre</summary><div class="teach-row"><label for="chapterRename">Nouveau nom</label><input id="chapterRename" maxlength="180" value="${esc(chapter.title)}"><button type="button" id="renameChapter">Enregistrer le nom</button></div></details>
@@ -218,7 +219,8 @@
       ${selectedItem ? `<div class="teach-card teach-item-detail"><div><h3>${esc(selectedItem.title)}</h3></div><div class="teach-row"><button type="button" id="previewSelectedItem" class="subtle">Voir le contenu</button><button type="button" id="editSelectedItem" class="subtle">Modifier</button><button type="button" id="publishSelectedItem" class="subtle">${selectedItem.published ? 'Masquer' : 'Publier et voir le PDF'}</button><button type="button" id="deleteSelectedItem" class="warn">Supprimer</button></div></div>` : ''}<div id="teachEditor"></div>`;
     body.querySelector('#addChapter').onclick = async () => {
       const title = body.querySelector('#chapterTitle').value.trim(); if (!title) return status('Saisissez le nom du chapitre.', true);
-      const existing = chapters.find(candidate => candidate.title.trim().toLocaleLowerCase('fr') === title.toLocaleLowerCase('fr'));
+      if (title.toLocaleLowerCase('fr') === 'tp en atelier') return status('Ce nom est réservé à la rubrique Travaux pratiques.', true);
+      const existing = contentChapters.find(candidate => candidate.title.trim().toLocaleLowerCase('fr') === title.toLocaleLowerCase('fr'));
       if (existing) { selectedChapterId = existing.id; selectedItemId = ''; renderContent(); return status('Ce chapitre existe déjà. Il est maintenant sélectionné.'); }
       try { const created = await api.rest('learning_chapters?select=id', {method:'POST', headers:{'Content-Type':'application/json',Prefer:'return=representation'}, body:JSON.stringify({class_id:classId,title,position:chapters.length})}); selectedChapterId = created[0].id; selectedItemId = ''; await loadClass(); status('Chapitre créé. Vous pouvez y ajouter plusieurs contenus.'); }
       catch (error) { status(error.message, true); }
@@ -238,9 +240,11 @@
           await api.rest('learning_items?id=eq.' + encodeURIComponent(selectedItem.id), {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published: !selectedItem.published})});
           await loadClass();
           if (!selectedItem.published) {
-            await previewItem({...selectedItem,published:true});
-            status('Contenu publié. La fenêtre d’impression permet de choisir « Enregistrer au format PDF ».');
-            document.querySelector('#printLesson')?.click();
+            const preview = await previewItem({...selectedItem,published:true});
+            if (preview?.hasPrintable) {
+              status('Contenu publié. La fenêtre d’impression permet de choisir « Enregistrer au format PDF ».');
+              document.querySelector('#printLesson')?.click();
+            } else status('Contenu publié. Ouvrez chaque PDF joint depuis l’aperçu pour le consulter ou l’imprimer.');
           }
           else status('Contenu masqué aux élèves.');
         } catch (error) { status(error.message, true); }
@@ -403,18 +407,57 @@
       assets.push({id,file_name:file.name,mime_type:file.type || 'application/octet-stream',local_blob:file});
       return {type:'asset',assetId:id};
     }).filter(Boolean);
+    const assetMap = new Map(assets.map(asset => [asset.id,asset]));
+    const isPdf = asset => asset && (asset.mime_type === 'application/pdf' || /\.pdf$/i.test(asset.file_name || ''));
+    const pdfAssets = previewBlocks.filter(block => block.type === 'asset' && isPdf(assetMap.get(block.assetId))).map(block => assetMap.get(block.assetId));
+    const otherBlocks = previewBlocks.filter(block => !(block.type === 'asset' && isPdf(assetMap.get(block.assetId))));
+    const hasPrintable = otherBlocks.some(block => block.type === 'html' || block.type === 'table' ||
+      (block.type === 'asset' && String(assetMap.get(block.assetId)?.mime_type || '').startsWith('image/')));
     const pane = document.createElement('section'); pane.id = 'teachPreview'; pane.className = 'teach-preview';
-    pane.innerHTML = `<div class="teach-preview-actions"><strong>Aperçu · ${esc(kindNames[tab])}</strong><button type="button" id="printLesson">Afficher / enregistrer en PDF</button><button type="button" id="closePreview">Fermer</button><small>Dans la fenêtre d’impression, désactivez « En-têtes et pieds de page » si votre navigateur les affiche.</small></div><header><p>BAC PRO MELEC · ${esc(classes.find(entry => entry.id === classId)?.name || '')}</p><h1>${esc(title)}</h1></header><div class="teach-preview-content"></div>`;
+    pane.innerHTML = `<div class="teach-preview-actions"><strong>Aperçu · ${esc(kindNames[tab])}</strong>${hasPrintable ? '<button type="button" id="printLesson">Imprimer la page de cours</button>' : ''}<button type="button" id="closePreview">Fermer</button><small>${pdfAssets.length ? 'Les PDF joints se consultent et s’impriment séparément ci-dessous. ' : ''}Dans la fenêtre d’impression, désactivez « En-têtes et pieds de page » si nécessaire.</small></div><header><p>BAC PRO MELEC · ${esc(classes.find(entry => entry.id === classId)?.name || '')}</p><h1>${esc(title)}</h1></header><div class="teach-preview-content"></div>`;
     document.body.append(pane);
+    const pdfUrls = [];
     const close = () => { if (previewCleanup) { previewCleanup(); previewCleanup = null; } pane.remove(); document.body.classList.remove('print-lesson'); };
     pane.querySelector('#closePreview').onclick = close;
-    pane.querySelector('#printLesson').onclick = async () => {
+    if (hasPrintable) pane.querySelector('#printLesson').onclick = async () => {
       await Promise.all([...pane.querySelectorAll('img')].map(image => image.decode?.().catch(() => {}) || Promise.resolve()));
       document.body.classList.add('print-lesson'); window.print();
     };
-    try { previewCleanup = await MelecContent.render(previewBlocks, pane.querySelector('.teach-preview-content'), assets); }
+    try {
+      const renderCleanup = await MelecContent.render(otherBlocks, pane.querySelector('.teach-preview-content'), assets);
+      previewCleanup = () => { renderCleanup(); pdfUrls.forEach(url => URL.revokeObjectURL(url)); };
+      if (pdfAssets.length) {
+        const section = document.createElement('section'); section.className = 'teach-pdf-attachments';
+        const heading = document.createElement('h2'); heading.textContent = 'Documents PDF joints'; section.append(heading);
+        let firstOpen = null;
+        for (const asset of pdfAssets) {
+          const card = document.createElement('article'); card.className = 'teach-pdf-card';
+          const name = document.createElement('strong'); name.textContent = asset.file_name; card.append(name);
+          const actions = document.createElement('div'); actions.className = 'teach-row';
+          const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Afficher le PDF'; actions.append(button);
+          card.append(actions); section.append(card);
+          const showPdf = async () => {
+            button.disabled = true; button.textContent = 'Chargement…';
+            try {
+              const blob = asset.local_blob || await api.download(asset.object_path);
+              const url = URL.createObjectURL(blob); pdfUrls.push(url);
+              const frame = document.createElement('iframe'); frame.src = url + '#toolbar=1&navpanes=0';
+              frame.title = asset.file_name; frame.className = 'teach-pdf-frame'; card.append(frame);
+              const link = document.createElement('a'); link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+              link.className = 'teach-pdf-open'; link.textContent = 'Ouvrir / imprimer ce PDF'; actions.append(link);
+              button.remove();
+            } catch (error) { button.disabled = false; button.textContent = 'Réessayer'; status('PDF inaccessible : ' + error.message,true); }
+          };
+          button.onclick = showPdf;
+          if (!firstOpen) firstOpen = showPdf;
+        }
+        pane.querySelector('.teach-preview-content').append(section);
+        if (!hasPrintable && firstOpen) await firstOpen();
+      }
+    }
     catch (error) { close(); status('Aperçu impossible : ' + error.message, true); return; }
     pane.scrollIntoView({behavior:'smooth',block:'start'});
+    return {hasPrintable,pdfCount:pdfAssets.length};
   }
   window.addEventListener('afterprint', () => document.body.classList.remove('print-lesson'));
   async function saveItem(chapterId) {

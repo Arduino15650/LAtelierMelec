@@ -93,6 +93,13 @@ body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active) span{
 .teach-preview .lesson-file{display:grid;gap:.5rem;max-width:100%}
 .teach-preview .lesson-image,.student-readonly .lesson-image{display:block;max-width:100%;max-height:230mm;width:auto;height:auto;object-fit:contain;border-radius:.35rem;page-break-inside:avoid}
 .teach-preview iframe{max-width:100%;width:100%;min-height:20rem}
+.teach-pdf-attachments{display:grid;gap:1rem;margin-top:1.4rem}
+.teach-pdf-attachments h2{margin:0;color:#123c66}
+.teach-pdf-card{display:grid;gap:.7rem;padding:1rem;border:1px solid #8fbee0;border-radius:.9rem;background:#e9f5ff;overflow-wrap:anywhere}
+.teach-pdf-card strong{color:#143553}
+.teach-pdf-card .teach-pdf-frame{display:block;width:100%;height:min(75vh,900px);min-height:420px;border:1px solid #9cb9d2;border-radius:.5rem;background:#fff}
+.teach-pdf-open{display:inline-flex;align-items:center;min-height:2.5rem;padding:.5rem 1rem;border-radius:99px;background:#1264a2;color:#fff;text-decoration:none;font-weight:700}
+.teach-pdf-open:hover,.teach-pdf-open:focus-visible{background:#0d4b79;outline:2px solid #e58d23;outline-offset:2px}
 .teach-color-group{display:flex;align-items:center;gap:.3rem;flex-wrap:wrap;padding:.25rem .45rem;border:1px solid #90bce0;border-radius:.65rem;background:#f4faff}
 .teach-color-group>span{font-size:.75rem;font-weight:800;color:#173450;margin-right:.25rem}
 .teaching-space .teach-editor-toolbar .teach-swatch{min-width:1.35rem;width:1.35rem;min-height:1.35rem;height:1.35rem;padding:0;border:1px solid #6f8296;border-radius:50%;background:var(--swatch)}
@@ -113,6 +120,7 @@ body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active) span{
   body.print-lesson #teachPreview,body.print-lesson #teachPreview *{visibility:visible!important}
   body.print-lesson #teachPreview{position:absolute!important;inset:0!important;width:100%!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:16mm!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;color:#111!important}
   body.print-lesson .teach-preview-actions{display:none!important}
+  body.print-lesson .teach-pdf-attachments{display:none!important}
   body.print-lesson .lesson-file>strong{display:none!important}
   body.print-lesson .lesson-block{break-inside:avoid-page}
   body.print-lesson .lesson-image{max-height:220mm}
