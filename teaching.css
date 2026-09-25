@@ -70,3 +70,36 @@ body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active) span{
   .teach-section-heading,.teach-item-detail{display:block}
   .teach-section-heading .teach-row,.teach-item-detail .teach-row{margin-top:.7rem;flex-wrap:wrap}
 }
+
+/* L'éditeur et l'aperçu partagent une typographie et un interligne constants. */
+.teaching-space .teach-editor-toolbar{display:flex;align-items:end;gap:.4rem;flex-wrap:wrap;background:#d7eafd;border:1px solid #8bbde6}
+.teaching-space .teach-editor-toolbar label{display:grid;gap:.2rem;font-size:.75rem;color:#12375b}
+.teaching-space .teach-editor-toolbar select{min-height:2.25rem;padding:.3rem .5rem;max-width:11rem}
+.teaching-space .teach-editor-toolbar input[type=color]{width:2.5rem;height:2.25rem;min-height:0;padding:.15rem;cursor:pointer}
+.teaching-space .teach-editor-toolbar button{border-radius:.55rem;min-height:2.25rem;color:#0d3f70;background:#fff}
+.teaching-space .teach-editable,.teach-preview .lesson-content{font:16px/1.55 Arial,sans-serif;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+.teaching-space .teach-editable>* ,.teach-preview .lesson-content .lesson-block>*{margin-top:0;margin-bottom:.7em}
+.teaching-space .teach-editable p,.teach-preview .lesson-content p{margin:.35em 0;line-height:1.55}
+.teaching-space .teach-editable table,.teach-preview .lesson-content table{max-width:100%;border-collapse:collapse;table-layout:fixed;overflow-wrap:anywhere}
+.teaching-space .teach-editable td,.teaching-space .teach-editable th,.teach-preview .lesson-content td,.teach-preview .lesson-content th{border:1px solid #8daecb;padding:.5rem;vertical-align:top}
+.teach-preview{position:fixed;z-index:9999;inset:1rem;overflow:auto;background:#fff;color:#132f4b;padding:clamp(1rem,3vw,2rem);border:3px solid #6ab5e9;border-radius:18px;box-shadow:0 12px 45px #0008}
+.teach-preview-actions{position:sticky;top:-2rem;z-index:1;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.7rem;background:#dbeeff;border-radius:12px}
+.teach-preview-actions strong{margin-right:auto}
+.teach-preview-actions button{background:#1264a2;color:#fff;border:0;border-radius:99px;padding:.6rem 1rem;cursor:pointer;font-weight:700}
+.teach-preview>header{margin:1.2rem 0;padding-bottom:.7rem;border-bottom:2px solid #69a9d6}
+.teach-preview>header h1{font-size:clamp(1.5rem,3vw,2rem);margin:.3rem 0;overflow-wrap:anywhere}
+.teach-preview-content{max-width:210mm;margin:auto}
+.teach-preview .lesson-block{margin:.6rem 0;break-inside:avoid-page}
+.teach-preview .lesson-file{display:grid;gap:.5rem;max-width:100%}
+.teach-preview .lesson-image,.student-readonly .lesson-image{display:block;max-width:100%;max-height:230mm;width:auto;height:auto;object-fit:contain;border-radius:.35rem;page-break-inside:avoid}
+.teach-preview iframe{max-width:100%;width:100%;min-height:20rem}
+@media(max-width:600px){.teach-preview{inset:.3rem;padding:.8rem}.teach-preview-actions{position:static}.teaching-space .teach-editor-toolbar select{max-width:8rem}}
+@media print{
+  @page{size:A4;margin:16mm}
+  body.print-lesson,body.print-lesson *{visibility:hidden!important}
+  body.print-lesson #teachPreview,body.print-lesson #teachPreview *{visibility:visible!important}
+  body.print-lesson #teachPreview{position:absolute!important;inset:0!important;width:100%!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;color:#111!important}
+  body.print-lesson .teach-preview-actions{display:none!important}
+  body.print-lesson .lesson-block{break-inside:avoid-page}
+  body.print-lesson .lesson-image{max-height:220mm}
+}

@@ -1,6 +1,12 @@
 (function () {
   'use strict';
-  const allowed = new Set(['P','DIV','BR','STRONG','B','EM','I','U','H2','H3','H4','UL','OL','LI','BLOCKQUOTE','TABLE','THEAD','TBODY','TR','TH','TD','A']);
+  const allowed = new Set(['P','DIV','BR','STRONG','B','EM','I','U','S','STRIKE','SUB','SUP','SPAN','FONT','H2','H3','H4','UL','OL','LI','BLOCKQUOTE','TABLE','THEAD','TBODY','TR','TH','TD','A']);
+  const fonts = new Set(['Arial','Aptos','Calibri','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS']);
+  const sizes = {'1':'10px','2':'12px','3':'14px','4':'16px','5':'18px','6':'24px','7':'32px'};
+  function safeColor(value) {
+    const color = String(value || '').trim();
+    return /^(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\))$/i.test(color) ? color : '';
+  }
   function sanitize(html) {
     const parsed = new DOMParser().parseFromString(String(html || ''), 'text/html');
     function clean(node) {
@@ -11,7 +17,17 @@
         [...node.childNodes].forEach(child => fragment.append(clean(child)));
         return fragment;
       }
-      const output = document.createElement(node.tagName.toLowerCase());
+      const output = document.createElement(node.tagName === 'FONT' ? 'span' : node.tagName.toLowerCase());
+      const style = node.style;
+      const face = node.getAttribute('face') || style.fontFamily.replaceAll('"','').replaceAll("'",'');
+      if (fonts.has(face)) output.style.fontFamily = face;
+      const size = node.tagName === 'FONT' ? sizes[node.getAttribute('size')] : style.fontSize;
+      if (size && (/^(10|12|14|16|18|20|24|28|32|36|48)px$/.test(size) || Object.values(sizes).includes(size))) output.style.fontSize = size;
+      const color = safeColor(node.getAttribute('color') || style.color);
+      const background = safeColor(style.backgroundColor);
+      if (color) output.style.color = color;
+      if (background) output.style.backgroundColor = background;
+      if (['left','center','right','justify'].includes(style.textAlign) && ['P','DIV','H2','H3','H4'].includes(node.tagName)) output.style.textAlign = style.textAlign;
       if (node.tagName === 'A') {
         try {
           const url = new URL(node.getAttribute('href') || '', location.href);
@@ -72,12 +88,20 @@
         if (asset) {
           const box = document.createElement('div'); box.className = 'lesson-file';
           const label = document.createElement('strong'); label.textContent = asset.file_name; box.append(label);
-          if (asset.mime_type === 'application/pdf' || asset.mime_type.startsWith('image/')) {
+          if (String(asset.mime_type || '').startsWith('image/')) {
+            const image = document.createElement('img');
+            image.className = 'lesson-image'; image.alt = asset.file_name;
+            try {
+              const blob = asset.local_blob || await MelecPortal.download(asset.object_path);
+              const url = URL.createObjectURL(blob); urls.push(url); image.src = url;
+              box.append(image);
+            } catch (error) { const note = document.createElement('span'); note.textContent = 'Image inaccessible : ' + error.message; box.append(note); }
+          } else if (asset.mime_type === 'application/pdf') {
             const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Consulter';
             button.onclick = async () => {
               button.disabled = true;
               try {
-                const blob = await MelecPortal.download(asset.object_path);
+                const blob = asset.local_blob || await MelecPortal.download(asset.object_path);
                 const url = URL.createObjectURL(blob); urls.push(url);
                 const viewer = asset.mime_type === 'application/pdf' ? document.createElement('iframe') : document.createElement('img');
                 viewer.src = url + (asset.mime_type === 'application/pdf' ? '#toolbar=0&navpanes=0' : '');
