@@ -122,17 +122,13 @@
   <script src="home.js?v=20260925-2"></script>
   <script src="portal-api.js?v=20260925"></script>
   <script src="content-render.js?v=20260925"></script>
-  <script src="teaching-space.js?v=20260925"></script>
+  <script src="teaching-space.js?v=20260925-speed1"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
-  <script src="cloud-sync.js?v=20260924-1"></script>
+  <script src="cloud-sync.js?v=20260925-speed1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='65';
-      navigator.serviceWorker.addEventListener('controllerchange',()=>{
-        const key='melec-sw-version';
-        if(sessionStorage.getItem(key)!==swVersion){sessionStorage.setItem(key,swVersion);location.reload()}
-      });
-      window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).then(registration=>registration.update()).catch(console.error));
+      const swVersion='66';
+      window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>
 </body>

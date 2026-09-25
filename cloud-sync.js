@@ -147,8 +147,8 @@
     lock();
     gateMessage('Connexion et vérification des données…');
     await identify();
-    await ensureTeacher();
-    const row = await cloudRow();
+    // Ces deux lectures sont indépendantes : les attendre ensemble évite un aller-retour réseau.
+    const [, row] = await Promise.all([ensureTeacher(), cloudRow()]);
     if (!row) {
       showImport();
       return;

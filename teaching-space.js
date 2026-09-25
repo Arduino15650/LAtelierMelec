@@ -3,8 +3,18 @@
   const api = MelecPortal, esc = api.escapeHtml, root = document.getElementById('teachingView');
   let classes = [], chapters = [], items = [], students = [], messages = [];
   let classId = '', tab = 'course', editing = null, blocks = [], draftAssets = [], activeItem = null;
+  let loadedSession = '', lastLoaded = 0, loadInFlight = null;
   const kindNames = { course: 'Cours', td: 'Travaux dirigés', tp: 'Travaux pratiques' };
   const originalShow = window.show;
+  function sessionKey() {
+    try {
+      const token = JSON.parse(sessionStorage.getItem('melec-cloud-session-v1') || 'null')?.access_token;
+      if (!token) return '';
+      // Utilisé seulement pour isoler le cache d'affichage, jamais pour autoriser l'accès.
+      return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub || token;
+    }
+    catch { return ''; }
+  }
   window.show = show = function (name) {
     if (name !== 'teaching') return originalShow(name);
     history.replaceState(null, '', location.pathname + location.search + '#teaching');
@@ -13,7 +23,15 @@
     root.classList.remove('hidden');
     document.querySelectorAll('.nav').forEach(node => node.classList.toggle('active', node.dataset.view === name));
     window.scrollTo(0, 0);
-    load().catch(error => status(error.message, true));
+    const key = sessionKey();
+    if (key && loadedSession === key) {
+      render();
+      if (Date.now() - lastLoaded > 30000) load(true).catch(error => status(error.message, true));
+    } else {
+      classes = []; chapters = []; items = []; students = []; messages = [];
+      loadedSession = '';
+      load().catch(error => status(error.message, true));
+    }
   };
   function status(text, error = false) {
     const node = root.querySelector('#teachStatus');
@@ -25,16 +43,33 @@
     (state?.activities || []).forEach(a => { if (a.className) names.add(a.className.trim()); });
     return [...names].filter(Boolean).sort((a,b) => a.localeCompare(b, 'fr'));
   }
-  async function load() {
-    root.innerHTML = '<div class="teach-head"><div><h1>Cours · TD · TP</h1><p>Contenus de classe et accès élèves</p></div></div><div class="teach-card">Chargement… <span id="teachStatus"></span></div>';
-    const user = await api.user();
-    const teachers = await api.rest('teacher_accounts?user_id=eq.' + encodeURIComponent(user.id) + '&select=user_id');
-    if (!teachers.length) throw new Error('Accès réservé à l’enseignant.');
-    classes = await api.rest('teaching_classes?select=id,name&order=name.asc');
-    if (!classId || !classes.some(c => c.id === classId)) classId = classes[0]?.id || '';
-    await loadClass();
+  async function load(background = false) {
+    if (loadInFlight) return loadInFlight;
+    if (!background) root.innerHTML = '<div class="teach-head"><div><h1>Cours · TD · TP</h1><p>Contenus de classe et accès élèves</p></div></div><div class="teach-card">Chargement… <span id="teachStatus"></span></div>';
+    const key = sessionKey();
+    loadInFlight = (async () => {
+      // La base applique les règles d'accès : aucune donnée n'est affichée avant contrôle du compte.
+      const [user, nextClasses] = await Promise.all([
+        api.user(),
+        api.rest('teaching_classes?select=id,name&order=name.asc')
+      ]);
+      const teachers = await api.rest('teacher_accounts?user_id=eq.' + encodeURIComponent(user.id) + '&select=user_id');
+      if (!teachers.length) throw new Error('Accès réservé à l’enseignant.');
+      if (sessionKey() !== key) return;
+      classes = nextClasses;
+      if (!classId || !classes.some(c => c.id === classId)) classId = classes[0]?.id || '';
+      await loadClass();
+      if (sessionKey() === key) { loadedSession = key; lastLoaded = Date.now(); }
+    })();
+    try { await loadInFlight; }
+    finally { loadInFlight = null; }
   }
   async function loadClass() {
+    const auxiliary = tab === 'students'
+      ? api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc')
+      : tab === 'messages'
+        ? api.rest('contact_messages?select=*&order=created_at.desc&limit=100')
+        : null;
     if (classId) {
       [chapters, items] = await Promise.all([
         api.rest('learning_chapters?class_id=eq.' + classId + '&select=*&order=position.asc,title.asc'),
@@ -42,8 +77,20 @@
       ]);
       items = items.filter(i => chapters.some(c => c.id === i.chapter_id));
     } else { chapters = []; items = []; }
-    if (tab === 'students') students = await api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc');
-    if (tab === 'messages') messages = await api.rest('contact_messages?select=*&order=created_at.desc&limit=100');
+    if (auxiliary) {
+      const result = await auxiliary;
+      if (tab === 'students') students = result;
+      if (tab === 'messages') messages = result;
+    }
+    render();
+  }
+  async function refreshAuxiliary(selectedTab) {
+    const result = selectedTab === 'students'
+      ? await api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc')
+      : await api.rest('contact_messages?select=*&order=created_at.desc&limit=100');
+    if (tab !== selectedTab || !root.offsetParent) return;
+    if (selectedTab === 'students') students = result;
+    else messages = result;
     render();
   }
   function render() {
@@ -53,7 +100,10 @@
       <div id="teachBody"></div><p id="teachStatus" class="teach-status" role="status"></p>`;
     root.querySelector('#teachClass').onchange = e => { classId = e.target.value; editing = null; loadClass().catch(err => status(err.message, true)); };
     root.querySelector('#teachSyncClasses').onclick = syncClasses;
-    root.querySelectorAll('[data-teach-tab]').forEach(button => button.onclick = () => { tab = button.dataset.teachTab; editing = null; loadClass().catch(err => status(err.message, true)); });
+    root.querySelectorAll('[data-teach-tab]').forEach(button => button.onclick = () => {
+      tab = button.dataset.teachTab; editing = null; render();
+      if (tab === 'students' || tab === 'messages') refreshAuxiliary(tab).catch(err => status(err.message, true));
+    });
     if (tab === 'students') renderStudents();
     else if (tab === 'messages') renderMessages();
     else renderContent();
