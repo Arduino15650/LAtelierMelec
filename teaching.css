@@ -32,3 +32,16 @@
 @media(max-width:980px){
   .header-nav .nav[data-view="teaching"]{min-width:0!important;max-width:100%!important}
 }
+
+/* Le style des sous-pages ciblait les boutons inactifs plus précisément. */
+body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active){
+  display:inline-flex!important;
+  background:#d9ecff!important;
+  color:#073967!important;
+  border:1px solid #78b9ed!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active) span{
+  color:#095d9e!important;
+}
