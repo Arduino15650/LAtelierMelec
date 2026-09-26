@@ -1,9 +1,10 @@
 (function () {
   'use strict';
+  const scriptBase = document.currentScript?.src || document.baseURI;
   let libraryPromise;
   function library() {
     if (!libraryPromise) libraryPromise = import('./pdf.min.mjs').then(pdfjs => {
-      pdfjs.GlobalWorkerOptions.workerSrc = new URL('./pdf.worker.min.mjs', document.baseURI).href;
+      pdfjs.GlobalWorkerOptions.workerSrc = new URL('./pdf.worker.min.mjs', scriptBase).href;
       return pdfjs;
     }).catch(error => { libraryPromise = null; throw error; });
     return libraryPromise;
@@ -14,16 +15,25 @@
     if (!mayRead()) throw new Error('L’accès à ce document a expiré.');
     const task = pdfjs.getDocument({data: new Uint8Array(await blob.arrayBuffer()), isEvalSupported: false, enableScripting: false});
     const documentPdf = await task.promise;
-    let closed = false, busy = false, current = 1, currentRender = null, pendingPage = null, lastLayout = '';
+    let closed = false, busy = false, current = 1, zoom = 1, currentRender = null, pendingPage = null, lastLayout = '';
     const panel = document.createElement('div'); panel.className = 'student-pdf-panel';
     const controls = document.createElement('div'); controls.className = 'student-pdf-controls';
+    const navigation = document.createElement('div'); navigation.className = 'student-pdf-navigation';
     const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = '← Page précédente';
     const pageCount = document.createElement('span'); pageCount.setAttribute('aria-live','polite');
     const orientation = document.createElement('span'); orientation.className = 'student-pdf-orientation';
     const next = document.createElement('button'); next.type = 'button'; next.textContent = 'Page suivante →';
-    controls.append(previous,pageCount,orientation,next);
+    navigation.append(previous,pageCount,orientation,next);
+    const zoomControls = document.createElement('div'); zoomControls.className = 'student-pdf-zoom';
+    const zoomOut = document.createElement('button'); zoomOut.type = 'button'; zoomOut.textContent = 'Zoom −';
+    const zoomValue = document.createElement('output'); zoomValue.setAttribute('aria-live','polite'); zoomValue.textContent = '100 %';
+    const zoomIn = document.createElement('button'); zoomIn.type = 'button'; zoomIn.textContent = 'Zoom +';
+    const fit = document.createElement('button'); fit.type = 'button'; fit.textContent = 'Adapter à l’écran';
+    zoomControls.append(zoomOut,zoomValue,zoomIn,fit);
+    controls.append(navigation,zoomControls);
+    const scroll = document.createElement('div'); scroll.className = 'student-pdf-scroll';
     const canvas = document.createElement('canvas'); canvas.className = 'student-pdf-page'; canvas.setAttribute('role','img');
-    panel.append(controls,canvas); mount.replaceChildren(panel);
+    scroll.append(canvas); panel.append(controls,scroll); mount.replaceChildren(panel);
     // This removes the browser's ordinary "Save image as" menu on the canvas.
     // It is a UI deterrent, not protection against screenshots or developer tools.
     panel.addEventListener('contextmenu', event => event.preventDefault(), true);
@@ -35,15 +45,20 @@
       if (closed || !mayRead()) return;
       if (busy) { pendingPage = pageNumber; return; }
       busy = true; previous.disabled = true; next.disabled = true;
+      zoomOut.disabled = true; zoomIn.disabled = true; fit.disabled = true;
       try {
         const page = await documentPdf.getPage(pageNumber);
         if (closed || !mayRead()) return;
+        const changingPage = pageNumber !== current;
+        const horizontalFocus = scroll.scrollWidth > 0 ? (scroll.scrollLeft + scroll.clientWidth / 2) / scroll.scrollWidth : .5;
+        const verticalFocus = scroll.scrollHeight > scroll.clientHeight ? (scroll.scrollTop + scroll.clientHeight / 2) / scroll.scrollHeight : 0;
         const natural = page.getViewport({scale:1});
         // Preserve the page's real proportions, including landscape pages and rotation.
         const availableWidth = Math.max(1, Math.min(mount.clientWidth - 20, 1200));
         const availableHeight = Math.max(160, Math.min(window.innerHeight * .78, 900));
-        const viewport = page.getViewport({scale: Math.min(availableWidth / natural.width, availableHeight / natural.height)});
-        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        const fitScale = Math.min(availableWidth / natural.width, availableHeight / natural.height);
+        const viewport = page.getViewport({scale: fitScale * zoom});
+        const ratio = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(12000000 / (viewport.width * viewport.height)));
         canvas.width = Math.floor(viewport.width * ratio);
         canvas.height = Math.floor(viewport.height * ratio);
         canvas.style.width = Math.floor(viewport.width) + 'px';
@@ -55,11 +70,17 @@
         current = pageNumber;
         pageCount.textContent = 'Page ' + current + ' / ' + documentPdf.numPages;
         orientation.textContent = natural.width > natural.height ? 'Paysage' : 'Portrait';
+        zoomValue.textContent = Math.round(zoom * 100) + ' %';
+        scroll.scrollLeft = changingPage ? Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2) : horizontalFocus * scroll.scrollWidth - scroll.clientWidth / 2;
+        scroll.scrollTop = changingPage ? 0 : verticalFocus * scroll.scrollHeight - scroll.clientHeight / 2;
         lastLayout = layoutKey();
       } finally {
         busy = false;
         previous.disabled = closed || current <= 1;
         next.disabled = closed || current >= documentPdf.numPages;
+        zoomOut.disabled = closed || zoom <= .5;
+        zoomIn.disabled = closed || zoom >= 2;
+        fit.disabled = closed || zoom === 1;
         if (!closed && pendingPage !== null) {
           const requested = pendingPage; pendingPage = null;
           Promise.resolve().then(() => showPage(requested)).catch(error => { pageCount.textContent = error.message; });
@@ -68,6 +89,14 @@
     }
     previous.onclick = () => showPage(current - 1).catch(error => { pageCount.textContent = error.message; });
     next.onclick = () => showPage(current + 1).catch(error => { pageCount.textContent = error.message; });
+    function setZoom(value) {
+      zoom = Math.max(.5, Math.min(2, value));
+      zoomValue.textContent = Math.round(zoom * 100) + ' %';
+      showPage(current).catch(error => { pageCount.textContent = error.message; });
+    }
+    zoomOut.onclick = () => setZoom(zoom - .25);
+    zoomIn.onclick = () => setZoom(zoom + .25);
+    fit.onclick = () => setZoom(1);
     const onResize = () => { if (layoutKey() !== lastLayout) showPage(current).catch(() => {}); };
     window.addEventListener('resize',onResize);
     const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(onResize) : null;
