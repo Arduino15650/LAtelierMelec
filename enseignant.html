@@ -47,7 +47,7 @@
     .quick-nav .cloud-menu{width:auto!important}
     .quick-nav .cloud-menu>summary{width:auto!important;min-height:44px;white-space:nowrap}
     @media(min-width:981px){.quick-nav .cloud-menu>summary{justify-content:flex-start;padding-left:14px}}
-    #mobileMenuToggle,#mobileExitButton{display:none}
+    #mobileMenuToggle,#mobileExitButton,.mobile-brand-subtitle{display:none}
     @media(max-width:980px){
       html,body{width:100%!important;max-width:100vw!important;overflow-x:hidden!important}
       .topbar{box-sizing:border-box!important;width:100vw!important;max-width:100vw!important;overflow:hidden!important}
@@ -75,23 +75,25 @@
       .topbar .brand-copy{flex:0 1 auto!important;max-width:min(680px,calc(100vw - 135px))!important}
     }
     @media(max-width:600px){
-      .topbar{position:relative!important;height:auto!important;min-height:0!important;padding:calc(env(safe-area-inset-top,0px) + 68px) 14px 16px!important}
-      .topbar #appBackButton,.topbar #mobileExitButton{position:absolute!important;top:calc(env(safe-area-inset-top,0px) + 10px)!important;z-index:5!important;align-items:center!important;justify-content:center!important;gap:6px!important;box-sizing:border-box!important;min-height:44px!important;max-width:calc(50vw - 20px)!important;padding:8px 12px!important;border:1px solid #e3a34c!important;border-radius:999px!important;background:#174878!important;color:#fff!important;font:700 14px Arial,sans-serif!important;white-space:nowrap!important;cursor:pointer!important}
-      .topbar #appBackButton{left:12px!important}
+      .topbar{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;grid-template-rows:auto auto!important;align-items:center!important;column-gap:8px!important;row-gap:7px!important;box-sizing:border-box!important;height:auto!important;min-height:0!important;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 13px!important}
+      .topbar #appBackButton,.topbar #mobileExitButton{position:static!important;inset:auto!important;z-index:5!important;align-items:center!important;justify-content:center!important;gap:4px!important;box-sizing:border-box!important;min-height:44px!important;max-width:100%!important;padding:6px!important;border:1px solid #e3a34c!important;border-radius:999px!important;background:#174878!important;color:#fff!important;font:700 12px Arial,sans-serif!important;white-space:nowrap!important;cursor:pointer!important}
+      .topbar #appBackButton{grid-column:1!important;grid-row:1!important;justify-self:start!important}
       .topbar #appBackButton[hidden],body.home-active .topbar #appBackButton{display:none!important}
       body.subpage-active .topbar #appBackButton{display:inline-flex!important}
       .topbar #appBackButton span{display:inline!important}
-      .topbar #mobileExitButton{display:inline-flex!important;right:12px!important}
-      .topbar #mobileExitButton svg{display:block;width:21px;height:21px;flex:0 0 21px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+      .topbar #mobileExitButton{display:inline-flex!important;grid-column:3!important;grid-row:1!important;justify-self:end!important}
+      .topbar #mobileExitButton svg{display:block;width:16px;height:16px;flex:0 0 16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
       #mobileMenuToggle{display:flex!important;min-width:135px!important;margin:10px auto 14px!important}
-      .topbar .brand{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;height:auto!important;min-height:0!important;gap:10px!important;text-align:center!important}
-      .topbar .brand-logo{position:static!important;width:clamp(72px,22vw,96px)!important;height:clamp(72px,22vw,96px)!important;flex:0 0 auto!important;margin:0 auto!important}
+      .topbar .brand{display:flex!important;grid-column:2!important;grid-row:1!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;width:auto!important;height:auto!important;min-height:0!important;gap:7px!important;padding:0!important;text-align:center!important}
+      .topbar .brand-logo{position:static!important;width:clamp(52px,16vw,72px)!important;height:clamp(52px,16vw,72px)!important;flex:0 0 clamp(52px,16vw,72px)!important;margin:0!important}
       .topbar .brand-logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important}
-      .topbar .brand-copy{flex:0 1 auto!important;width:100%!important;max-width:100%!important;text-align:center!important}
-      .topbar .brand-copy strong,.topbar .brand-copy strong span{font-size:clamp(23px,6vw,34px)!important;line-height:1.12!important;text-align:center!important}
-      .topbar .brand-copy p{max-width:34em!important;margin:7px auto 0!important;font-size:clamp(11px,2.8vw,14px)!important;line-height:1.35!important;text-align:center!important}
+      .topbar .brand-copy{flex:0 1 auto!important;width:auto!important;max-width:none!important;text-align:center!important}
+      .topbar .brand-copy strong,.topbar .brand-copy strong span{font-size:clamp(16px,4.5vw,21px)!important;line-height:1.08!important;white-space:nowrap!important;overflow-wrap:normal!important;text-align:center!important}
+      .topbar .brand-copy p{display:none!important}
+      .topbar .mobile-brand-subtitle{display:block!important;grid-column:1/-1!important;grid-row:2!important;width:100%!important;max-width:36em!important;margin:0 auto!important;padding:0 4px!important;color:#d6e3f3!important;font:400 clamp(11px,2.8vw,14px)/1.35 Arial,sans-serif!important;text-align:center!important;text-wrap:balance;overflow-wrap:anywhere}
       body.mobile-nav-open #teacherPrimaryNav,body.mobile-nav-open.home-active #teacherPrimaryNav{grid-template-columns:repeat(2,minmax(0,1fr))!important}
     }
+    @media(max-width:420px){.topbar #appBackButton span,.topbar #mobileExitButton span{display:none!important}.topbar #appBackButton,.topbar #mobileExitButton{width:44px!important;padding:6px!important}.topbar .brand-copy strong,.topbar .brand-copy strong span{font-size:clamp(15px,4.5vw,19px)!important}}
   </style>
 </head>
 <body class="cloud-locked">
@@ -127,6 +129,7 @@
     <button id="appBackButton" class="app-back-button" type="button" aria-label="Revenir à la page précédente" onclick="appBack()" hidden>← <span>Retour</span></button>
     <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome()}"><span class="brand-logo"><img src="logo-bac-pro-melec-v3.webp?v=1" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
     <button id="mobileExitButton" type="button" aria-label="Quitter l’espace enseignant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5M14 7l5 5-5 5M19 12H8"/></svg><span>Quitter</span></button>
+    <p class="mobile-brand-subtitle">Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p>
   </header>
     <button id="mobileMenuToggle" type="button" aria-controls="teacherPrimaryNav" aria-expanded="false">☰ Menu</button>
     <nav id="teacherPrimaryNav" class="header-nav quick-nav" aria-label="Navigation principale">
@@ -179,7 +182,7 @@
   <script src="cloud-sync.js?v=20260925-speed1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='71';
+      const swVersion='72';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>

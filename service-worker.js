@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v71-mobile-actions';
+const CACHE_NAME = 'bac-pro-melec-v72-horizontal-header';
 const APP_FILES = [
   './','./index.html','./eleve.html','./enseignant.html','./styles.css','./bo.css','./portal.css','./teaching.css','./referential.js','./app.js',
   './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js','./cloud-sync.js','./portal-api.js','./portal-contact.js','./student-space.js','./teaching-space.js','./content-render.js',
