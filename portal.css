@@ -43,6 +43,11 @@ button,input,textarea,select{font:inherit}a{color:inherit}.portal-shell{width:mi
 .portal-card strong{font-size:clamp(17px,1.5vw,24px);overflow-wrap:anywhere}
 .portal-card small{font-size:clamp(12px,1vw,15px)}
 .contact-card{background:linear-gradient(130deg,#594075,#7953a2)}
+.teacher-card .portal-card-icon svg{display:block;width:29px;height:32px;fill:#07345c;filter:drop-shadow(0 1px 0 #fff7)}
+.contact-card{grid-template-columns:43px minmax(0,1fr) 14px;gap:10px;padding-inline:14px}
+.contact-card .portal-card-icon{width:43px;height:43px;font-size:22px}
+.contact-card strong{font-size:clamp(16px,1.1vw,20px);white-space:nowrap;letter-spacing:-.02em}
+.contact-card>span:last-child{font-size:25px}
 .contact-panel[hidden],.portal-form[hidden],.portal-tabs[hidden]{display:none!important}
 .contact-panel{margin-top:18px}
 .auth-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -51,3 +56,4 @@ button,input,textarea,select{font:inherit}a{color:inherit}.portal-shell{width:mi
 @media(max-width:900px){.portal-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.contact-card{grid-column:1/-1}.portal-card{min-height:116px}}
 @media(max-width:700px){.portal-cards{grid-template-columns:1fr}.contact-card{grid-column:auto}.portal-card{min-height:92px}.portal-card-icon{width:43px;height:43px}.portal-card>span:last-child{font-size:26px}.auth-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.auth-tabs #studentContactTab{grid-column:1/-1}.portal-actions button{flex:1 1 140px}}
 @media(max-width:390px){.portal-header img{width:60px}.portal-header{gap:10px}.portal-header h1{font-size:25px}.portal-panel{padding:17px}.auth-tabs{grid-template-columns:1fr}.auth-tabs #studentContactTab{grid-column:auto}}
+@media(max-width:390px){.contact-card strong{font-size:clamp(14px,4.4vw,17px)}.contact-card{gap:7px;padding-inline:11px}}

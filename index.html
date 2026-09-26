@@ -7,7 +7,7 @@
   <title>BAC PRO MELEC — Accueil</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-180.png">
-  <link rel="stylesheet" href="portal.css?v=20260926-acces-permanent1">
+  <link rel="stylesheet" href="portal.css?v=20260926-alignement2">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
@@ -21,7 +21,7 @@
         <h2 id="welcomeTitle">Choisissez votre espace</h2>
         <p>Cours, travaux dirigés et travaux pratiques sont accessibles selon votre profil.</p>
         <div class="portal-cards">
-          <a class="portal-card teacher-card" href="./enseignant.html"><span class="portal-card-icon">⚡</span><span><strong>Espace enseignant</strong><small>Activités, évaluations, contenus pédagogiques et suivi des élèves.</small></span><span aria-hidden="true">›</span></a>
+          <a class="portal-card teacher-card" href="./enseignant.html"><span class="portal-card-icon"><svg viewBox="0 0 32 38" aria-hidden="true" focusable="false"><path d="M18 1 5 21h9l-2 16 15-23h-9l3-13z"/></svg></span><span><strong>Espace enseignant</strong><small>Activités, évaluations, contenus pédagogiques et suivi des élèves.</small></span><span aria-hidden="true">›</span></a>
           <a class="portal-card student-card" href="./eleve.html"><span class="portal-card-icon">▣</span><span><strong>Espace élève</strong><small>Consulter les cours, TD et TP de votre classe après validation.</small></span><span aria-hidden="true">›</span></a>
           <button id="homeContactButton" class="portal-card contact-card" type="button" aria-expanded="false" aria-controls="homeContactPanel"><span class="portal-card-icon">✉</span><span><strong>Contacter l’enseignant</strong><small>Envoyer une question ou demander de l’aide.</small></span><span aria-hidden="true">›</span></button>
         </div>
@@ -55,7 +55,7 @@
       if(!contactPanel.hidden){document.getElementById('contactForm').reset();contactPanel.scrollIntoView({block:'nearest'});}
     });
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const version='67';
+      const version='68';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         if(sessionStorage.getItem('melec-sw-version')!==version){sessionStorage.setItem('melec-sw-version',version);location.reload()}
       });
