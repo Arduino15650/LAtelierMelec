@@ -4,6 +4,14 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#071b34"><title>BAC PRO MELEC — Élève</title>
   <link rel="stylesheet" href="portal.css?v=20260926-acces-permanent1">
+  <style>
+    .student-refresh-actions{align-items:center;margin-bottom:16px}
+    .student-refresh-actions #studentRefresh{min-height:48px;padding:11px 20px;background:#f6ad25;border:2px solid #9d5900;color:#172f49;font-size:1rem;font-weight:800;box-shadow:0 3px 0 #9d5900}
+    .student-refresh-actions #studentRefresh:hover{background:#ffd06c}
+    .student-refresh-actions #studentRefresh:focus-visible{outline:3px solid #164e8b;outline-offset:3px}
+    .student-refresh-actions #studentRefresh:disabled{opacity:.7;cursor:wait}
+    @media(max-width:600px){.student-refresh-actions #studentRefresh{width:100%}}
+  </style>
 </head>
 <body class="portal-page">
   <div class="portal-shell">
@@ -29,7 +37,8 @@
         <p id="studentAuthStatus" class="form-status" role="status" aria-live="polite"></p>
       </section>
       <section id="studentDashboard" class="portal-panel portal-dashboard" hidden>
-        <div class="portal-actions"><button id="studentRefresh" type="button">Actualiser</button><button id="studentContactButton" class="subtle" type="button">Contacter l’enseignant</button><button id="studentLogout" class="subtle" type="button">Déconnexion</button></div>
+        <div class="portal-actions student-refresh-actions"><button id="studentRefresh" type="button" aria-label="Actualiser les cours, TD et TP">↻ Actualiser</button><button id="studentContactButton" class="subtle" type="button">Contacter l’enseignant</button><button id="studentLogout" class="subtle" type="button">Déconnexion</button></div>
+        <p id="studentRefreshStatus" class="portal-small" role="status" aria-live="polite"></p>
         <div id="studentProfileStatus" class="portal-message" role="status" aria-live="polite"></div>
         <p id="studentClassName" class="student-class-name" hidden></p>
         <div id="studentContentTabs" class="portal-tabs" hidden><button id="studentCoursesTab" type="button" class="active">Cours et TD</button><button id="studentTpTab" type="button">TP en atelier</button></div>
@@ -56,6 +65,6 @@
   <script src="portal-api.js?v=20260926-tp-fiabilite1"></script>
   <script src="content-render.js?v=20260926-impression-tp3"></script>
   <script src="portal-contact.js?v=20260925-1"></script>
-  <script src="student-space.js?v=20260926-tp-fiabilite1"></script>
+  <script src="student-space.js?v=20260926-actualiser1"></script>
 </body>
 </html>

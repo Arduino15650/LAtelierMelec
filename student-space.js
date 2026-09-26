@@ -247,7 +247,22 @@
       target.append(chapterNode);
     }
   }
-  $('studentRefresh').onclick = () => openDashboard().catch(error => alert(error.message));
+  $('studentRefresh').onclick = async () => {
+    const button = $('studentRefresh');
+    const status = $('studentRefreshStatus');
+    button.disabled = true;
+    button.textContent = 'Actualisation…';
+    message(status, 'Mise à jour des cours, TD et TP en cours…');
+    try {
+      await openDashboard();
+      message(status, 'Contenus actualisés.');
+    } catch (error) {
+      message(status, error.message, true);
+    } finally {
+      button.disabled = false;
+      button.textContent = '↻ Actualiser';
+    }
+  };
   $('studentLogout').onclick = async () => {
     if (cleanupViewer) cleanupViewer();
     clearTpViewer(); activeTp=null; assignments=[]; tpItems=[];
