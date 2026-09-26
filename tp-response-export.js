@@ -47,7 +47,7 @@
         }
         ctx.restore();
       } else if (entry.type === 'check' && entry.value) {
-        ctx.save(); ctx.strokeStyle = '#154f9c'; ctx.lineWidth = Math.max(2,2 * scale);
+        ctx.save(); ctx.strokeStyle = '#000000'; ctx.lineWidth = Math.max(2,2 * scale);
         const size = Math.max(9 * scale,Math.min(bounded(entry.w,.015,1) * canvas.width,bounded(entry.h,.015,1) * canvas.height));
         ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+size,y+size); ctx.moveTo(x+size,y); ctx.lineTo(x,y+size); ctx.stroke(); ctx.restore();
       } else if (entry.type === 'stroke' && Array.isArray(entry.points) && entry.points.length > 1) {

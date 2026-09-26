@@ -18,7 +18,8 @@
 .student-pdf-pen-active{cursor:crosshair;touch-action:none}
 .student-pdf-field{position:absolute;box-sizing:border-box;pointer-events:auto}
 .student-pdf-field textarea{box-sizing:border-box;width:100%;height:100%;min-height:22px;padding:3px;border:1px solid #1774c9;border-radius:3px;background:#fffffff0;color:#102e4b;font:14px Arial,sans-serif;resize:both;user-select:text}
-.student-pdf-cross{display:grid;place-items:center;width:100%;height:100%;min-width:0;min-height:0;padding:0;border:0;background:transparent;color:#154f9c;font:bold 12px/1 Arial,sans-serif;cursor:pointer;text-shadow:0 0 2px #fff}
+.student-tp-card .student-pdf-field .student-pdf-cross{display:grid;place-items:center;width:100%;height:100%;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:0;outline:0;box-shadow:none;background:transparent;color:#000;font:bold 12px/1 Arial,sans-serif;cursor:pointer;text-shadow:none}
+.student-tp-card .student-pdf-field .student-pdf-cross:focus-visible{outline:0;filter:brightness(.55)}
 .student-pdf-cross[aria-pressed=false]{opacity:.35}
 .student-pdf-move-field,.student-pdf-resize-field{position:absolute;z-index:2;width:19px;height:19px;padding:0;border:1px solid #3973ad;border-radius:4px;background:#eaf4ff;color:#163e65;font-size:13px;line-height:1;cursor:grab;touch-action:none}
 .student-pdf-move-field{left:0;top:-18px}.student-pdf-resize-field{right:-17px;bottom:-17px;cursor:nwse-resize}
