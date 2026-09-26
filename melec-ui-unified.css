@@ -24,6 +24,8 @@
 #teachingView .teach-tp-response-actions button{min-width:0;max-width:100%;margin:0;white-space:normal;text-align:center}
 #teachingView .teach-tp-response-row .teach-help{display:block;min-height:0;overflow-wrap:anywhere}
 #teachingView .teach-tp-response-actions .warn{background:#a74e28;color:#fff}
+#teachingView .teach-tp-final-actions{display:inline-flex;align-items:center;gap:7px;flex-wrap:nowrap;max-width:100%}
+#teachingView .teach-tp-final-actions button{white-space:nowrap}
 @media(max-width:700px){
   #teachingView,#studentDashboard{font-size:15px;line-height:1.45}
   #teachingView :is(.teach-card h2,.teach-preview h2),#studentDashboard h2{font-size:24px}
