@@ -20,11 +20,11 @@
   }
   let profile = null;
   let cleanupViewer = null;
-  let assignments = [], tpItems = [], activeTp = null, tpUrls = [], selectedContentTab = 'courses';
+  let assignments = [], tpItems = [], activeTp = null, tpPdfCleanup = null, selectedContentTab = 'courses';
   document.addEventListener('keydown', event => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p' && !dashboard.hidden) {
+    if ((event.ctrlKey || event.metaKey) && ['p','s','c','x'].includes(event.key.toLowerCase()) && !dashboard.hidden && !event.target.closest('input,textarea,[contenteditable]')) {
       event.preventDefault();
-      alert('L’impression des documents de l’espace élève n’est pas autorisée.');
+      message($('studentRefreshStatus'), 'Copie, enregistrement et impression désactivés dans l’espace élève.');
     }
   });
   function tpEnd(assignment) {
@@ -32,7 +32,7 @@
       Date.parse(assignment.reactivated_until || '') || 0);
   }
   function clearTpViewer() {
-    tpUrls.forEach(url => URL.revokeObjectURL(url)); tpUrls = [];
+    if (tpPdfCleanup) { tpPdfCleanup(); tpPdfCleanup = null; }
     $('studentTpViewer')?.remove();
   }
   function switchContentTab(next) {
@@ -191,16 +191,20 @@
         const button = document.createElement('button'); button.type='button'; button.textContent=asset.file_name;
         button.onclick = async () => {
           if (tpEnd(activeTp) <= Date.now()) { clearTpViewer(); await openDashboard(); return; }
-          const opened = group.querySelector('iframe');
+          const opened = viewer.querySelector('.student-pdf-mount');
           if (opened?.dataset.assetId === asset.id) {
-            opened.remove(); button.textContent = asset.file_name; button.setAttribute('aria-expanded','false'); return;
+            tpPdfCleanup?.(); tpPdfCleanup = null; opened.remove(); button.textContent = asset.file_name; button.setAttribute('aria-expanded','false'); return;
           }
           button.disabled=true;
           try {
-            const blob = await api.download(asset.object_path); const url=URL.createObjectURL(blob); tpUrls.push(url);
-            group.querySelector('iframe')?.remove();
-            group.querySelectorAll('button[aria-expanded="true"]').forEach(other => { other.textContent = other.dataset.fileName; other.setAttribute('aria-expanded','false'); });
-            const frame=document.createElement('iframe'); frame.src=url+'#toolbar=0&navpanes=0&scrollbar=1'; frame.title='Consultation du document ' + asset.file_name; frame.dataset.assetId=asset.id; group.append(frame);
+            const blob = await api.download(asset.object_path);
+            if (!viewer.isConnected || !activeTp || tpEnd(activeTp) <= Date.now()) throw new Error('L’accès à ce TP a expiré.');
+            tpPdfCleanup?.(); tpPdfCleanup = null;
+            viewer.querySelector('.student-pdf-mount')?.remove();
+            viewer.querySelectorAll('button[aria-expanded="true"]').forEach(other => { other.textContent = other.dataset.fileName; other.setAttribute('aria-expanded','false'); });
+            const mount=document.createElement('div'); mount.className='student-pdf-mount'; mount.dataset.assetId=asset.id; group.append(mount);
+            try { tpPdfCleanup = await MelecStudentPdf.render(blob,mount,() => Boolean(activeTp && tpEnd(activeTp) > Date.now())); }
+            catch (error) { mount.remove(); throw error; }
             button.dataset.fileName=asset.file_name; button.textContent='Réduire · '+asset.file_name; button.setAttribute('aria-expanded','true');
           } catch(error) { alert(error.message); } finally { button.disabled=false; }
         };
@@ -321,7 +325,8 @@
   window.addEventListener('pageshow', event => {
     if (event.persisted) refreshStudentAccess();
   });
-  document.addEventListener('copy', e => { if (e.target.closest('.student-readonly')) e.preventDefault(); });
-  document.addEventListener('contextmenu', e => { if (e.target.closest('.student-readonly')) e.preventDefault(); });
+  for (const type of ['copy','cut','contextmenu','dragstart']) {
+    document.addEventListener(type, e => { if (!dashboard.hidden && e.target.closest('#studentDashboard')) e.preventDefault(); });
+  }
   openDashboard().catch(() => { authPane.hidden = false; dashboard.hidden = true; });
 })();

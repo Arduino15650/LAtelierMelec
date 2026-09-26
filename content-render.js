@@ -65,6 +65,7 @@
     target.classList.add('lesson-content');
     const assetMap = new Map(assets.map(asset => [asset.id, asset]));
     const urls = [];
+    const pdfCleanups = [];
     for (const block of Array.isArray(blocks) ? blocks : []) {
       const wrapper = document.createElement('div'); wrapper.className = 'lesson-block';
       if (block.type === 'html') {
@@ -102,16 +103,23 @@
             } catch (error) { const note = document.createElement('span'); note.textContent = 'Image inaccessible : ' + error.message; box.append(note); }
           } else if (asset.mime_type === 'application/pdf') {
             const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Consulter';
+            let pdfCleanup = null;
             button.onclick = async () => {
-              const opened = box.querySelector('iframe');
-              if (opened) { opened.remove(); button.textContent = 'Consulter'; button.setAttribute('aria-expanded','false'); return; }
+              const opened = box.querySelector('.student-pdf-mount,iframe');
+              if (opened) { pdfCleanup?.(); pdfCleanup = null; opened.remove(); button.textContent = 'Consulter'; button.setAttribute('aria-expanded','false'); return; }
               button.disabled = true;
               try {
                 const blob = asset.local_blob || await MelecPortal.download(asset.object_path);
-                const url = URL.createObjectURL(blob); urls.push(url);
-                const viewer = asset.mime_type === 'application/pdf' ? document.createElement('iframe') : document.createElement('img');
-                viewer.src = url + (asset.mime_type === 'application/pdf' ? '#toolbar=0&navpanes=0' : '');
-                viewer.title = asset.file_name; viewer.loading = 'lazy'; box.append(viewer);
+                if (target.closest('#studentDashboard') && !window.MelecStudentPdf) throw new Error('Lecteur protégé indisponible. Actualisez la page.');
+                if (window.MelecStudentPdf) {
+                  const mount = document.createElement('div'); mount.className = 'student-pdf-mount'; box.append(mount);
+                  try { pdfCleanup = await MelecStudentPdf.render(blob,mount,() => Boolean(box.isConnected)); pdfCleanups.push(pdfCleanup); }
+                  catch (error) { mount.remove(); throw error; }
+                } else {
+                  const url = URL.createObjectURL(blob); urls.push(url);
+                  const frame = document.createElement('iframe'); frame.src = url + '#toolbar=0&navpanes=0';
+                  frame.title = asset.file_name; frame.loading = 'lazy'; box.append(frame);
+                }
                 button.textContent = 'Réduire le PDF'; button.setAttribute('aria-expanded','true');
               } catch (error) { alert(error.message); }
               finally { button.disabled = false; }
@@ -126,7 +134,7 @@
       }
       target.append(wrapper);
     }
-    return () => urls.forEach(url => URL.revokeObjectURL(url));
+    return () => { pdfCleanups.forEach(cleanup => cleanup()); urls.forEach(url => URL.revokeObjectURL(url)); };
   }
   window.MelecContent = { sanitize, videoUrl, render };
 })();
