@@ -21,12 +21,6 @@
   let profile = null;
   let cleanupViewer = null;
   let assignments = [], tpItems = [], activeTp = null, tpUrls = [], selectedContentTab = 'courses';
-  document.addEventListener('keydown', event => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p' && !dashboard.hidden) {
-      event.preventDefault();
-      message($('studentRefreshStatus'), 'Impression non autorisée dans l’espace élève.');
-    }
-  });
   function tpEnd(assignment) {
     return Math.max(assignment.started_at ? Date.parse(assignment.started_at) + 210 * 60000 : 0,
       Date.parse(assignment.reactivated_until || '') || 0);
@@ -182,7 +176,6 @@
     clearTpViewer();
     const assets = await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(item.id) + '&select=id,object_path,file_name,mime_type,asset_role');
     const viewer = document.createElement('div'); viewer.id='studentTpViewer'; viewer.className='student-tp-viewer';
-    const notice = document.createElement('p'); notice.className='portal-small'; notice.textContent='Consultation à l’écran uniquement · impression non autorisée.'; viewer.append(notice);
     for (const role of ['main','technical']) {
       const group = document.createElement('section');
       const heading = document.createElement('h4'); heading.textContent = role === 'main' ? 'Document du TP' : 'Dossier technique'; group.append(heading);
@@ -202,7 +195,7 @@
             const url = URL.createObjectURL(blob); tpUrls.push(url);
             viewer.querySelector('iframe')?.remove();
             viewer.querySelectorAll('button[aria-expanded="true"]').forEach(other => { other.textContent = other.dataset.fileName; other.setAttribute('aria-expanded','false'); });
-            const frame=document.createElement('iframe'); frame.src=url+'#toolbar=0&navpanes=0&scrollbar=1';
+            const frame=document.createElement('iframe'); frame.src=url+'#toolbar=1&navpanes=0';
             frame.title='Consultation du document ' + asset.file_name; frame.dataset.assetId=asset.id; group.append(frame);
             button.dataset.fileName=asset.file_name; button.textContent='Réduire · '+asset.file_name; button.setAttribute('aria-expanded','true');
           } catch(error) { alert(error.message); } finally { button.disabled=false; }
@@ -324,7 +317,5 @@
   window.addEventListener('pageshow', event => {
     if (event.persisted) refreshStudentAccess();
   });
-  document.addEventListener('copy', e => { if (e.target.closest('.student-readonly')) e.preventDefault(); });
-  document.addEventListener('contextmenu', e => { if (e.target.closest('.student-readonly')) e.preventDefault(); });
   openDashboard().catch(() => { authPane.hidden = false; dashboard.hidden = true; });
 })();

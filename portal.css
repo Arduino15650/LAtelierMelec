@@ -35,7 +35,6 @@ button,input,textarea,select{font:inherit}a{color:inherit}.portal-shell{width:mi
 .student-readonly .lesson-file iframe{display:block;width:100%;height:clamp(360px,78dvh,1200px);min-height:0}
 @media(max-width:600px){.student-tp-viewer section{padding:.5rem}.student-tp-viewer iframe,.student-readonly .lesson-file iframe{height:72dvh;min-height:320px}}
 .portal-tabs button:disabled{opacity:.55;cursor:not-allowed}
-@media print{body.portal-page{visibility:hidden!important}body.portal-page::before{content:'Impression non autorisée';visibility:visible;position:fixed;inset:0;display:grid;place-items:center;background:#fff;color:#142e48;font:700 22px Arial,sans-serif}}
 @media(max-width:600px){.student-readonly .lesson-content{font-size:15px}.student-readonly .lesson-content td,.student-readonly .lesson-content th{padding:.35rem}}
 .portal-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(10px,1.5vw,18px)}
 .portal-card{width:100%;min-width:0;min-height:136px;padding:clamp(13px,1.6vw,22px);gap:clamp(9px,1vw,16px);text-align:left;font:inherit;color:#fff;cursor:pointer}

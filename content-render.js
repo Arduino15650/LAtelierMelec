@@ -109,7 +109,7 @@
               try {
                 const blob = asset.local_blob || await MelecPortal.download(asset.object_path);
                 const url = URL.createObjectURL(blob); urls.push(url);
-                const frame = document.createElement('iframe'); frame.src = url + '#toolbar=0&navpanes=0';
+                const frame = document.createElement('iframe'); frame.src = url + '#toolbar=1&navpanes=0';
                 frame.title = asset.file_name; frame.loading = 'lazy'; box.append(frame);
                 button.textContent = 'Réduire le PDF'; button.setAttribute('aria-expanded','true');
               } catch (error) { alert(error.message); }
