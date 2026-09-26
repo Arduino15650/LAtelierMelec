@@ -89,7 +89,7 @@
     if (classId) {
       [chapters, items] = await Promise.all([
         api.rest('learning_chapters?class_id=eq.' + classId + '&select=*&order=position.asc,title.asc'),
-        api.rest('learning_items?select=*&order=position.asc,title.asc')
+        api.rest('learning_items?select=id,chapter_id,kind,title,linked_course_id,position,published&order=position.asc,title.asc')
       ]);
       items = items.filter(i => chapters.some(c => c.id === i.chapter_id));
       if (tab === 'tp') {
@@ -345,6 +345,13 @@
   async function editItem(id, chapterId) {
     editing = id ? items.find(i => i.id === id) : null;
     if (id && (!editing || editing.kind !== tab)) return status('Contenu introuvable. Actualisez la page.', true);
+    if (id) {
+      try {
+        const full = await api.rest('learning_items?id=eq.' + encodeURIComponent(id) + '&select=blocks');
+        if (!full.length) return status('Contenu introuvable. Actualisez la page.', true);
+        editing = { ...editing, blocks: full[0].blocks || [] };
+      } catch (error) { return status('Impossible de charger le contenu : ' + error.message, true); }
+    }
     activeItem = editing?.id || null;
     blocks = structuredClone(editing?.blocks || []); draftAssets = []; draftRoles = [];
     try {
@@ -431,7 +438,7 @@
     if (previewCleanup) { previewCleanup(); previewCleanup = null; }
     document.querySelector('#teachPreview')?.remove();
     const title = draft ? root.querySelector('#itemTitle')?.value.trim() || 'Sans titre' : item.title;
-    let previewBlocks = draft ? (captureBlocks(), structuredClone(blocks)) : item.blocks || [];
+    let previewBlocks = draft ? (captureBlocks(), structuredClone(blocks)) : (await api.rest('learning_items?id=eq.' + encodeURIComponent(item.id) + '&select=blocks'))[0]?.blocks || [];
     let assets = draft ? [...originalAssets] : await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(item.id) + '&select=id,object_path,file_name,mime_type');
     if (draft) previewBlocks = previewBlocks.map(block => {
       if (block.type !== 'pending') return block;

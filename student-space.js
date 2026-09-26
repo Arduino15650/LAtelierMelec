@@ -95,9 +95,11 @@
   };
   async function openDashboard() {
     const user = await api.user();
-    const teacher = await api.rest('teacher_accounts?user_id=eq.' + encodeURIComponent(user.id) + '&select=user_id');
+    const [teacher, profiles] = await Promise.all([
+      api.rest('teacher_accounts?user_id=eq.' + encodeURIComponent(user.id) + '&select=user_id'),
+      api.rest('student_profiles?user_id=eq.' + encodeURIComponent(user.id) + '&select=*')
+    ]);
     if (teacher.length) { location.href = './enseignant.html'; return; }
-    const profiles = await api.rest('student_profiles?user_id=eq.' + encodeURIComponent(user.id) + '&select=*');
     if (!profiles.length) throw new Error('Profil élève introuvable. Contactez votre enseignant.');
     profile = profiles[0];
     authPane.hidden = true; dashboard.hidden = false;
@@ -107,12 +109,12 @@
     const approved = Boolean(profile.approved_at && profile.class_id && !profile.blocked_at);
     const classLabel = $('studentClassName');
     classLabel.hidden = !approved;
+    let classNamePromise = Promise.resolve();
     if (approved) {
       classLabel.textContent = 'Classe attribuée : chargement…';
-      try {
-        const assigned = await api.rest('teaching_classes?id=eq.' + encodeURIComponent(profile.class_id) + '&select=name');
+      classNamePromise = api.rest('teaching_classes?id=eq.' + encodeURIComponent(profile.class_id) + '&select=name').then(assigned => {
         classLabel.textContent = assigned.length ? 'Classe attribuée : ' + assigned[0].name : 'Classe attribuée : nom indisponible';
-      } catch { classLabel.textContent = 'Classe attribuée : nom indisponible'; }
+      }).catch(() => { classLabel.textContent = 'Classe attribuée : nom indisponible'; });
     }
     $('studentLessonsPane').hidden = !approved;
     $('studentTpPane').hidden = true;
@@ -121,7 +123,7 @@
       intro.textContent += ' Votre inscription est en attente de validation par l’enseignant.';
       return;
     }
-    await loadTpAssignments();
+    await Promise.all([classNamePromise, loadTpAssignments()]);
     if (activeTp) {
       if (cleanupViewer) { cleanupViewer(); cleanupViewer=null; }
       $('studentLessons').replaceChildren();
