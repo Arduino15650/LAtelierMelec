@@ -27,9 +27,11 @@
       Date.parse(assignment.reactivated_until || '') || 0);
   }
   function clearTpViewer() {
+    tpPdfCleanup?.(); tpPdfCleanup = null;
     window.MelecPdfPreview?.close();
     $('studentTpViewer')?.remove();
   }
+  let tpPdfCleanup = null;
   function switchContentTab(next) {
     if (activeTp && next === 'courses') return;
     selectedContentTab = next;
@@ -188,11 +190,55 @@
         const button = document.createElement('button'); button.type='button'; button.textContent=asset.file_name;
         button.onclick = async () => {
           if (tpEnd(activeTp) <= Date.now()) { clearTpViewer(); await openDashboard(); return; }
+          const opened = viewer.querySelector('.student-pdf-mount');
+          if (opened?.dataset.assetId === asset.id) {
+            try { await tpPdfCleanup?.flush?.(); }
+            catch (error) { alert('Réponses non enregistrées : ' + error.message); return; }
+            tpPdfCleanup?.(); tpPdfCleanup = null; opened.remove();
+            button.textContent = asset.file_name; button.setAttribute('aria-expanded','false'); return;
+          }
           button.disabled=true;
           try {
             const blob = await api.download(asset.object_path);
             if (!viewer.isConnected || !activeTp || tpEnd(activeTp) <= Date.now()) throw new Error('L’accès à ce TP a expiré.');
-            MelecPdfPreview.open(blob, asset.file_name, role === 'main' ? 'Travaux pratiques' : 'Dossier technique');
+            await tpPdfCleanup?.flush?.();
+            tpPdfCleanup?.(); tpPdfCleanup = null;
+            viewer.querySelector('.student-pdf-mount')?.remove();
+            viewer.querySelectorAll('button[aria-expanded="true"]').forEach(other => {
+              other.textContent = other.dataset.fileName; other.setAttribute('aria-expanded','false');
+            });
+            if (asset.mime_type !== 'application/pdf' && !/\.pdf$/i.test(asset.file_name || '')) {
+              MelecPdfPreview.open(blob, asset.file_name, role === 'main' ? 'Travaux pratiques' : 'Dossier technique');
+              return;
+            }
+            const mount = document.createElement('div'); mount.className='student-pdf-mount'; mount.dataset.assetId=asset.id; group.append(mount);
+            try {
+              const mayRead = () => Boolean(activeTp && tpEnd(activeTp) > Date.now());
+              if (role === 'technical') {
+                tpPdfCleanup = await MelecStudentPdf.render(blob,mount,mayRead);
+              } else {
+                const responsePath = 'tp_document_responses?student_id=eq.' + encodeURIComponent(profile.user_id) + '&asset_id=eq.' + encodeURIComponent(asset.id);
+                const existing = await api.rest(responsePath + '&select=answers');
+                let hasResponse = existing.length > 0;
+                const formOptions = {
+                  entries: existing[0]?.answers?.entries || [],
+                  save: async entries => {
+                    if (!activeTp || activeTp.tp_id !== item.id || tpEnd(activeTp) <= Date.now()) throw new Error('Le temps du TP est écoulé.');
+                    const answers = {entries};
+                    if (hasResponse) {
+                      const updated = await api.rest(responsePath + '&select=asset_id', {method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({answers})});
+                      if (updated.length !== 1) throw new Error('Réponse non enregistrée : accès refusé ou document introuvable.');
+                    } else {
+                      const created = await api.rest('tp_document_responses?select=asset_id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({student_id:profile.user_id,tp_id:item.id,asset_id:asset.id,answers})});
+                      if (created.length !== 1) throw new Error('Réponse non enregistrée.');
+                      hasResponse = true;
+                    }
+                  }
+                };
+                tpPdfCleanup = await MelecStudentPdf.render(blob,mount,mayRead,formOptions);
+              }
+            } catch (error) { mount.remove(); throw error; }
+            button.dataset.fileName=asset.file_name; button.textContent='Réduire · '+asset.file_name; button.setAttribute('aria-expanded','true');
           } catch(error) { alert(error.message); } finally { button.disabled=false; }
         };
         group.append(button);

@@ -164,6 +164,43 @@
     const accountNotice = `<div class="teach-card"><strong>Comptes élèves de ${esc(selectedClassName)}</strong><p class="teach-help">${classStudents.length} compte(s) rattaché(s) à la classe · ${pendingStudents.length} inscription(s) à valider${missingAccounts.length ? ` · ${missingAccounts.length} élève(s) de votre liste sans compte de connexion` : ''}.</p><p class="teach-help">Pour attribuer un TP chronométré, l’élève doit créer son compte dans l’espace élève. Validez sa classe et remettez-lui un code d’accès. La simple présence dans la liste des élèves ne crée pas de compte.</p><button type="button" id="openStudentAccess" class="subtle">Gérer les accès élèves</button></div>`;
     body.innerHTML = `<div class="teach-card teach-content-manager"><h2>TP en atelier</h2><p class="teach-help">Ajoutez un TP PDF, puis choisissez les élèves autorisés. Chaque dossier technique reste lié à son TP.</p><div class="teach-row"><button type="button" id="createTp">＋ Ajouter un TP</button><label for="tpFilter">Afficher<select id="tpFilter"><option value="all">Tous les TP (${tps.length})</option>${tps.map(item => `<option value="${item.id}" ${item.id === selectedTpId ? 'selected' : ''}>${esc(item.title)}</option>`).join('')}</select></label></div></div>
       ${accountNotice}${displayed.map(item => { const assignments = tpAssignments.filter(row => row.tp_id === item.id); return `<article class="teach-card teach-tp-card" data-tp="${item.id}"><div class="teach-section-heading"><div><h3>${esc(item.title)}</h3><span class="teach-meta">${assignments.length} élève(s) associé(s)</span></div><div class="teach-row"><button type="button" data-preview-tp="${item.id}" class="subtle">Voir</button><button type="button" data-edit-tp="${item.id}" class="subtle">Modifier</button><button type="button" data-publish-tp="${item.id}" class="subtle">${item.published ? 'Masquer' : 'Publier'}</button><button type="button" data-delete-tp="${item.id}" class="warn">Supprimer</button></div></div><details><summary>Associer des élèves et gérer le temps</summary><div class="teach-tp-students">${classStudents.map(student => { const assignment = assignments.find(row => row.student_id === student.user_id); const active = assignment && tpIsActive(assignment); const locked = assignment?.started_at && !active; return `<div class="teach-tp-student"><label><input type="checkbox" data-tp-student="${student.user_id}" ${assignment ? 'checked' : ''}><span>${esc(student.last_name)} ${esc(student.first_name)}</span></label><div class="teach-tp-time">${assignment ? active ? 'En cours' : locked ? 'Terminé / verrouillé' : 'Non commencé' : 'Non associé'}${locked ? `<select data-extend-time="${assignment.id}" aria-label="Prolongation"><option value="30">30 min</option><option value="60">1 h</option><option value="90">1 h 30</option><option value="120">2 h</option><option value="180">3 h</option></select><button type="button" data-extend="${assignment.id}">Réactiver</button>` : ''}</div></div>`; }).join('') || '<p>Aucun compte élève rattaché à cette classe.</p>'}</div><button type="button" data-save-tp="${item.id}" ${classStudents.length ? '' : 'disabled'}>Enregistrer les associations</button></details></article>`; }).join('') || '<div class="teach-card">Aucun TP pour cette classe. Cliquez sur « Ajouter un TP ».</div>'}<div id="teachEditor"></div>`;
+    body.querySelectorAll('.teach-tp-card').forEach(card => {
+      const details = document.createElement('details');
+      const summary = document.createElement('summary'); summary.textContent = 'Réponses des élèves · PDF complété'; details.append(summary);
+      const list = document.createElement('div'); list.className = 'teach-tp-students'; details.append(list); card.append(details);
+      details.addEventListener('toggle', async () => {
+        if (!details.open) return;
+        list.textContent = 'Chargement des réponses…';
+        try {
+          const [rows,assets] = await Promise.all([
+            api.rest('tp_document_responses?tp_id=eq.' + encodeURIComponent(card.dataset.tp) + '&select=student_id,asset_id,answers,updated_at&order=updated_at.desc'),
+            api.rest('learning_assets?item_id=eq.' + encodeURIComponent(card.dataset.tp) + '&select=id,object_path,file_name,mime_type,asset_role')
+          ]);
+          if (!details.open) return;
+          list.replaceChildren();
+          for (const row of rows) {
+            const asset = assets.find(candidate => candidate.id === row.asset_id && (candidate.asset_role || 'main') === 'main');
+            if (!asset) continue;
+            const student = students.find(candidate => candidate.user_id === row.student_id);
+            const line = document.createElement('div'); line.className = 'teach-tp-student';
+            const label = document.createElement('span'); label.textContent = `${student?.last_name || 'Élève'} ${student?.first_name || row.student_id} · ${asset.file_name} · ${new Date(row.updated_at).toLocaleString('fr-FR')}`;
+            const button = document.createElement('button'); button.type='button'; button.textContent='Télécharger le PDF complété';
+            const progress = document.createElement('span'); progress.className='teach-help'; progress.setAttribute('role','status');
+            button.onclick = async () => {
+              button.disabled = true;
+              try {
+                const blob = await api.download(asset.object_path);
+                const name = `${student?.last_name || row.student_id}-${student?.first_name || ''}-${asset.file_name.replace(/\.pdf$/i,'')}-complete.pdf`;
+                await MelecTpResponseExport.download(blob,row.answers?.entries || [],name,text => { progress.textContent=text; });
+              } catch (error) { progress.textContent = 'Export impossible : ' + error.message; }
+              finally { button.disabled = false; }
+            };
+            line.append(label,button,progress); list.append(line);
+          }
+          if (!list.children.length) list.textContent='Aucune réponse enregistrée pour ce TP.';
+        } catch (error) { list.textContent='Réponses indisponibles : ' + error.message; }
+      });
+    });
     body.querySelector('#openStudentAccess').onclick = () => { tab = 'students'; render(); refreshAuxiliary('students').catch(error => status(error.message,true)); };
     body.querySelector('#tpFilter').onchange = event => { selectedTpId = event.target.value; renderTp(); };
     body.querySelector('#createTp').onclick = async () => {

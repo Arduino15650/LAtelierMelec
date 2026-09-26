@@ -38,10 +38,6 @@
     const fieldLayer = document.createElement('div'); fieldLayer.className = 'student-pdf-field-layer';
     stage.append(canvas,textLayer,fieldLayer); scroll.append(stage); panel.append(controls,scroll); mount.replaceChildren(panel);
     const formController = window.MelecPdfForms?.create(panel,stage,fieldLayer,mayRead,formOptions) || null;
-    // This removes the browser's ordinary "Save image as" menu on the canvas.
-    // It is a UI deterrent, not protection against screenshots or developer tools.
-    panel.addEventListener('contextmenu', event => event.preventDefault(), true);
-    panel.addEventListener('dragstart', event => event.preventDefault(), true);
     function layoutKey() {
       return [Math.floor(mount.clientWidth), Math.floor(window.innerHeight), Math.min(window.devicePixelRatio || 1, 2)].join(':');
     }

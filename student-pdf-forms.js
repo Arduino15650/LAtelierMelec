@@ -206,6 +206,10 @@
     stage.addEventListener('pointermove',onPointerMove);
     stage.addEventListener('pointerup',onPointerEnd);
     stage.addEventListener('pointercancel',onPointerEnd);
+    const onVisibility = () => { if (document.visibilityState === 'hidden' && dirty) persist().catch(() => {}); };
+    const onBeforeUnload = event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } };
+    document.addEventListener('visibilitychange',onVisibility);
+    window.addEventListener('beforeunload',onBeforeUnload);
 
     async function renderPage(page, viewport, number) {
       currentPage = number;
@@ -231,6 +235,8 @@
       drawFields();
     }
     function cleanup() {
+      document.removeEventListener('visibilitychange',onVisibility);
+      window.removeEventListener('beforeunload',onBeforeUnload);
       stage.removeEventListener('click', addAtClick);
       stage.removeEventListener('pointerdown',onPointerDown);
       stage.removeEventListener('pointermove',onPointerMove);
