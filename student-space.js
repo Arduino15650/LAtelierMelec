@@ -133,7 +133,7 @@
     const previousActiveId = activeTp?.id;
     [assignments,tpItems] = await Promise.all([
       api.rest('tp_assignments?student_id=eq.' + encodeURIComponent(profile.user_id) + '&select=*'),
-      api.rest('learning_items?kind=eq.tp&published=is.true&select=id,title,kind,blocks,chapter_id')
+      api.rest('learning_items?kind=eq.tp&published=is.true&select=id,title')
     ]);
     activeTp = assignments.find(row => tpEnd(row) > Date.now()) || null;
     if (preserveViewer && previousActiveId && activeTp?.id === previousActiveId) return;
@@ -142,7 +142,8 @@
     $('studentTpNotice').textContent = activeTp ? 'Un TP est en cours. Les cours et TD restent verrouillés jusqu’à la fin du chronomètre.' : 'Ouvrir un TP démarre immédiatement un chronomètre de 3 h 30. Après son expiration, demandez une prolongation à l’enseignant.';
     const visible = activeTp ? assignments.filter(row => row.id === activeTp.id) : assignments;
     for (const row of visible) {
-      const item = tpItems.find(candidate => candidate.id === row.tp_id); if (!item) continue;
+      const item = tpItems.find(candidate => candidate.id === row.tp_id) || {id:row.tp_id,title:row.tp_title};
+      if (!item.title) continue;
       const card = document.createElement('article'); card.className = 'student-tp-card';
       const heading = document.createElement('h3'); heading.textContent = item.title; card.append(heading);
       const info = document.createElement('p'); info.className = 'portal-small'; card.append(info);
@@ -261,8 +262,11 @@
     if (info) info.textContent = remaining > 0 ? 'Temps restant : ' + formatDuration(remaining) : 'Temps écoulé · TP verrouillé.';
     if (remaining <= 0) { clearTpViewer(); activeTp=null; selectedContentTab='courses'; openDashboard().catch(error => message($('studentTpNotice'),error.message,true)); }
   },1000);
-  setInterval(async () => {
-    if (!profile || $('studentLessonsPane').hidden) return;
+  let accessRefreshInProgress = false;
+  async function refreshStudentAccess() {
+    if (!profile || dashboard.hidden || document.visibilityState === 'hidden' || accessRefreshInProgress) return;
+    accessRefreshInProgress = true;
+    try {
     try {
       const current = await api.rest('student_profiles?user_id=eq.' + encodeURIComponent(profile.user_id) + '&select=approved_at,class_id,blocked_at');
       if (current[0]) profile = { ...profile, ...current[0] };
@@ -277,6 +281,10 @@
       $('studentProfileStatus').textContent = 'Votre accès a été suspendu ou révoqué par l’enseignant.';
     }
     if (profile.approved_at && profile.class_id && !profile.blocked_at) {
+      if ($('studentContentTabs').hidden) {
+        try { await openDashboard(); } catch { /* Réessayer au prochain rafraîchissement. */ }
+        return;
+      }
       const wasActive = activeTp?.id || null;
       try {
         await loadTpAssignments(true);
@@ -287,7 +295,15 @@
         else { $('studentCoursesTab').disabled=false; if (wasActive) { switchContentTab('courses'); await loadLessons(); } }
       } catch { /* Les règles RLS continuent à protéger chaque accès aux documents. */ }
     }
-  }, 30000);
+    } finally { accessRefreshInProgress = false; }
+  }
+  setInterval(refreshStudentAccess, 30000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshStudentAccess();
+  });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) refreshStudentAccess();
+  });
   document.addEventListener('copy', e => { if (e.target.closest('.student-readonly')) e.preventDefault(); });
   document.addEventListener('contextmenu', e => { if (e.target.closest('.student-readonly')) e.preventDefault(); });
   openDashboard().catch(() => { authPane.hidden = false; dashboard.hidden = true; });

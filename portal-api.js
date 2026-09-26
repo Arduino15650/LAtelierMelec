@@ -4,6 +4,7 @@
   const KEY = 'sb_publishable_B95li1RB6XAlzRY7KvmyiA_kgpD1FcW';
   const SESSION_KEY = 'melec-cloud-session-v1';
   let current = null;
+  let refreshPromise = null;
   try { current = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null'); } catch { /* session invalide */ }
 
   async function decode(response) {
@@ -45,12 +46,17 @@
     } catch { /* session invalide */ }
     if (!current) throw new Error('Veuillez vous connecter.');
     if (Number(current.expires_at) * 1000 > Date.now() + 60000) return current.access_token;
-    const data = await decode(await fetch(URL + '/auth/v1/token?grant_type=refresh_token', {
-      method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: current.refresh_token })
-    }));
-    remember(data);
-    return data.access_token;
+    if (!refreshPromise) {
+      refreshPromise = (async () => {
+        const data = await decode(await fetch(URL + '/auth/v1/token?grant_type=refresh_token', {
+          method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: current.refresh_token })
+        }));
+        remember(data);
+        return data.access_token;
+      })().finally(() => { refreshPromise = null; });
+    }
+    return refreshPromise;
   }
   async function user() {
     return decode(await fetch(URL + '/auth/v1/user', {
