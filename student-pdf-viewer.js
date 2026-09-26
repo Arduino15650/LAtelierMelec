@@ -19,18 +19,18 @@
     const panel = document.createElement('div'); panel.className = 'student-pdf-panel';
     const controls = document.createElement('div'); controls.className = 'student-pdf-controls';
     const navigation = document.createElement('div'); navigation.className = 'student-pdf-navigation';
-    const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = '← Page précédente';
-    const pageCount = document.createElement('span'); pageCount.className = 'student-pdf-sr-only'; pageCount.setAttribute('aria-live','polite');
+    const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = '←'; previous.title='Page précédente'; previous.setAttribute('aria-label','Page précédente');
+    const pageCount = document.createElement('span'); pageCount.className = 'student-pdf-page-count'; pageCount.setAttribute('aria-live','polite');
     const orientation = document.createElement('span'); orientation.className = 'student-pdf-sr-only';
-    const next = document.createElement('button'); next.type = 'button'; next.textContent = 'Page suivante →';
-    navigation.append(previous,next);
+    const next = document.createElement('button'); next.type = 'button'; next.textContent = '→'; next.title='Page suivante'; next.setAttribute('aria-label','Page suivante');
+    navigation.append(previous,pageCount,next);
     const zoomControls = document.createElement('div'); zoomControls.className = 'student-pdf-zoom';
-    const zoomOut = document.createElement('button'); zoomOut.type = 'button'; zoomOut.textContent = 'Zoom −';
+    const zoomOut = document.createElement('button'); zoomOut.type = 'button'; zoomOut.textContent = '−'; zoomOut.title='Dézoomer'; zoomOut.setAttribute('aria-label','Dézoomer');
     const zoomValue = document.createElement('output'); zoomValue.setAttribute('aria-live','polite'); zoomValue.textContent = '100 %';
-    const zoomIn = document.createElement('button'); zoomIn.type = 'button'; zoomIn.textContent = 'Zoom +';
-    const fit = document.createElement('button'); fit.type = 'button'; fit.textContent = 'Adapter à l’écran';
+    const zoomIn = document.createElement('button'); zoomIn.type = 'button'; zoomIn.textContent = '+'; zoomIn.title='Zoomer'; zoomIn.setAttribute('aria-label','Zoomer');
+    const fit = document.createElement('button'); fit.type = 'button'; fit.textContent = 'Ajuster'; fit.title='Adapter à l’écran';
     zoomControls.append(zoomOut,zoomValue,zoomIn,fit);
-    controls.append(navigation,zoomControls,pageCount,orientation);
+    controls.append(navigation,zoomControls,orientation);
     const scroll = document.createElement('div'); scroll.className = 'student-pdf-scroll';
     const stage = document.createElement('div'); stage.className = 'student-pdf-stage';
     const canvas = document.createElement('canvas'); canvas.className = 'student-pdf-page'; canvas.setAttribute('role','img');
@@ -83,7 +83,7 @@
         }
         if (formController) await formController.renderPage(page,viewport,pageNumber);
         current = pageNumber;
-        pageCount.textContent = 'Page ' + current + ' / ' + documentPdf.numPages;
+        pageCount.textContent = current + ' / ' + documentPdf.numPages;
         orientation.textContent = natural.width > natural.height ? 'Paysage' : 'Portrait';
         zoomValue.textContent = Math.round(zoom * 100) + ' %';
         scroll.scrollLeft = changingPage ? Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2) : horizontalFocus * scroll.scrollWidth - scroll.clientWidth / 2;
@@ -112,6 +112,26 @@
     zoomOut.onclick = () => setZoom(zoom - .25);
     zoomIn.onclick = () => setZoom(zoom + .25);
     fit.onclick = () => setZoom(1);
+    // On touch screens, the read-only viewer also supports a vertical swipe
+    // between pages when the current fitted page does not need scrolling.
+    let touchStart = null;
+    const onTouchStart = event => {
+      if (formOptions || zoom !== 1 || scroll.scrollHeight > scroll.clientHeight + 8) return;
+      const point = event.touches[0];
+      touchStart = point ? {x:point.clientX,y:point.clientY} : null;
+    };
+    const onTouchEnd = event => {
+      if (!touchStart || formOptions || zoom !== 1 || scroll.scrollHeight > scroll.clientHeight + 8) return;
+      const point = event.changedTouches[0];
+      if (!point) return;
+      const dx = point.clientX - touchStart.x, dy = point.clientY - touchStart.y;
+      touchStart = null;
+      if (Math.abs(dy) < 70 || Math.abs(dx) > 45) return;
+      const target = dy < 0 ? current + 1 : current - 1;
+      if (target >= 1 && target <= documentPdf.numPages) showPage(target).catch(error => { pageCount.textContent = error.message; });
+    };
+    scroll.addEventListener('touchstart',onTouchStart,{passive:true});
+    scroll.addEventListener('touchend',onTouchEnd,{passive:true});
     const onResize = () => { if (layoutKey() !== lastLayout) showPage(current).catch(() => {}); };
     window.addEventListener('resize',onResize);
     const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(onResize) : null;
@@ -120,6 +140,8 @@
       if (closed) return;
       closed = true;
       window.removeEventListener('resize',onResize);
+      scroll.removeEventListener('touchstart',onTouchStart);
+      scroll.removeEventListener('touchend',onTouchEnd);
       observer?.disconnect();
       currentRender?.cancel();
       formController?.cleanup();

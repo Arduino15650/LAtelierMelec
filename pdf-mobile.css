@@ -1,0 +1,53 @@
+.student-pdf-mount,.teach-pdf-reader{width:100%;min-width:0;max-width:100%}
+.student-pdf-panel{box-sizing:border-box;width:100%;max-width:100%;min-width:0;overflow:hidden;padding:4px;border:1px solid #9dbde0;border-radius:10px;background:#eaf3ff;color:#173c61}
+.student-pdf-controls{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px;margin-bottom:5px}
+.student-pdf-navigation,.student-pdf-zoom{display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
+.student-pdf-controls button{min-width:34px;min-height:34px;padding:4px 8px;border:1px solid #8eacd0;border-radius:8px;background:#195a98;color:#fff;font-size:.9rem;font-weight:700;cursor:pointer}
+.student-pdf-controls button:disabled{opacity:.5;cursor:default}
+.student-pdf-page-count,.student-pdf-zoom output{min-width:42px;text-align:center;font-size:.85rem;font-weight:800;color:#173c61}
+.student-pdf-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.student-pdf-scroll{width:100%;max-height:88svh;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.student-pdf-stage{position:relative;margin:0 auto;background:#fff}
+.student-pdf-page{display:block;max-width:none;margin:0;background:#fff;box-shadow:0 2px 12px #1235}
+.student-pdf-text-layer{position:absolute;inset:0;overflow:hidden;line-height:1;text-align:initial;user-select:text}
+.student-pdf-text-layer span,.student-pdf-text-layer br{position:absolute;color:transparent;white-space:pre;cursor:text;transform-origin:0 0}
+.student-pdf-field-layer{position:absolute;inset:0;pointer-events:none}
+.student-pdf-stroke-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.student-pdf-placing{cursor:crosshair;touch-action:manipulation}
+.student-pdf-placing .student-pdf-text-layer,.student-pdf-pen-active .student-pdf-text-layer{pointer-events:none}
+.student-pdf-pen-active{cursor:crosshair;touch-action:none}
+.student-pdf-field{position:absolute;box-sizing:border-box;pointer-events:auto}
+.student-pdf-field textarea{box-sizing:border-box;width:100%;height:100%;min-height:22px;padding:3px;border:1px solid #1774c9;border-radius:3px;background:#fffffff0;color:#102e4b;font:14px Arial,sans-serif;resize:both;user-select:text}
+.student-pdf-cross{display:grid;place-items:center;width:100%;height:100%;min-width:0;min-height:0;padding:0;border:0;background:transparent;color:#154f9c;font:bold 12px/1 Arial,sans-serif;cursor:pointer;text-shadow:0 0 2px #fff}
+.student-pdf-cross[aria-pressed=false]{opacity:.35}
+.student-pdf-move-field,.student-pdf-resize-field{position:absolute;z-index:2;width:19px;height:19px;padding:0;border:1px solid #3973ad;border-radius:4px;background:#eaf4ff;color:#163e65;font-size:13px;line-height:1;cursor:grab;touch-action:none}
+.student-pdf-move-field{left:0;top:-18px}.student-pdf-resize-field{right:-17px;bottom:-17px;cursor:nwse-resize}
+.student-pdf-remove-field{position:absolute;right:-15px;top:-15px;width:23px;height:23px;padding:0;border-radius:50%;background:#a63b22;color:#fff;cursor:pointer}
+.student-pdf-field .student-pdf-move-field,.student-pdf-field .student-pdf-resize-field,.student-pdf-field .student-pdf-remove-field{opacity:0;pointer-events:none}
+.student-pdf-field:hover .student-pdf-move-field,.student-pdf-field:hover .student-pdf-resize-field,.student-pdf-field:hover .student-pdf-remove-field,.student-pdf-field:focus-within .student-pdf-move-field,.student-pdf-field:focus-within .student-pdf-resize-field,.student-pdf-field:focus-within .student-pdf-remove-field{opacity:1;pointer-events:auto}
+.student-pdf-form-actions{display:block;margin:0 0 5px;border:0;padding:0}
+.student-pdf-form-actions>summary{display:none;cursor:pointer;font-weight:800}
+.student-pdf-form-tools{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px}
+.student-pdf-form-tools button{min-height:32px;padding:4px 8px;border:1px solid #8eacd0;border-radius:8px;background:#195a98;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer}
+.student-pdf-form-tools button[aria-pressed=true]{background:#b35c00}
+.student-pdf-color-label{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:#173c61}
+.student-pdf-color-label input{width:35px;height:32px;padding:2px;border:1px solid #8eacd0;border-radius:8px;background:#fff}
+.student-pdf-save-status{display:block;text-align:center;font-size:.75rem;color:#173c61}
+.teach-pdf-reader{min-height:0;overflow:hidden}
+@media(max-width:700px){
+  .student-pdf-panel{padding:2px}
+  .student-pdf-controls{justify-content:space-between;flex-wrap:nowrap;gap:2px;overflow-x:auto}
+  .student-pdf-navigation,.student-pdf-zoom{gap:2px}
+  .student-pdf-controls button{min-width:30px;min-height:32px;padding:3px 5px;font-size:.8rem}
+  .student-pdf-page-count,.student-pdf-zoom output{min-width:32px;font-size:.75rem}
+  .student-pdf-form-actions{display:block!important;margin:0 0 4px}
+  .student-pdf-form-actions>summary{display:inline-flex;align-items:center;min-height:30px;padding:3px 9px;border:1px solid #8eacd0;border-radius:8px;background:#195a98;color:#fff;font-size:.78rem;list-style:none}
+  .student-pdf-form-actions>summary::-webkit-details-marker{display:none}
+  .student-pdf-form-tools{justify-content:flex-start;margin:4px 0;gap:4px}
+  .student-pdf-form-tools button{min-height:30px;padding:3px 6px;font-size:.77rem}
+  .student-pdf-color-label{font-size:.75rem}
+  .student-pdf-save-status{display:inline;margin-left:8px;font-size:.7rem}
+  .student-tp-viewer section{min-width:0}
+  .student-tp-viewer section>button{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:center}
+  .teach-pdf-card{min-width:0}
+}

@@ -18,17 +18,24 @@
       points: entry.type === 'stroke' && Array.isArray(entry.points) ? entry.points.slice(0, 400).filter(p => Array.isArray(p) && p.length === 2).map(p => [clamp(p[0],0,1),clamp(p[1],0,1)]) : []
     }));
     let currentPage = 1, currentAspect = 1, mode = '', timer = null, dirty = false, saving = Promise.resolve(), drawing = null, retryCount = 0;
-    const actions = document.createElement('div'); actions.className = 'student-pdf-form-actions';
-    const addText = document.createElement('button'); addText.type = 'button'; addText.textContent = 'Ajouter du texte';
-    const addCheck = document.createElement('button'); addCheck.type = 'button'; addCheck.textContent = 'Ajouter une coche';
+    const actions = document.createElement('details'); actions.className = 'student-pdf-form-actions';
+    const summary = document.createElement('summary'); summary.textContent = '✎ Outils de réponse';
+    const tools = document.createElement('div'); tools.className = 'student-pdf-form-tools';
+    const addText = document.createElement('button'); addText.type = 'button'; addText.textContent = 'Texte'; addText.title = 'Ajouter un champ texte par double-clic ou double-tap';
+    const addCheck = document.createElement('button'); addCheck.type = 'button'; addCheck.textContent = 'Croix ×'; addCheck.title = 'Placer une petite croix par double-clic ou double-tap';
     const pen = document.createElement('button'); pen.type = 'button'; pen.textContent = '✎ Stylo';
     const colorLabel = document.createElement('label'); colorLabel.className = 'student-pdf-color-label'; colorLabel.textContent = 'Couleur ';
     const color = document.createElement('input'); color.type = 'color'; color.value = '#d12b2b'; color.setAttribute('aria-label','Couleur du stylo'); colorLabel.append(color);
-    const undo = document.createElement('button'); undo.type = 'button'; undo.textContent = 'Effacer le dernier trait';
+    const undo = document.createElement('button'); undo.type = 'button'; undo.textContent = '↶ Trait'; undo.title = 'Effacer le dernier trait';
     const status = document.createElement('span'); status.className = 'student-pdf-save-status'; status.setAttribute('role','status');
     status.textContent = 'Enregistrement automatique';
-    actions.append(addText,addCheck,pen,colorLabel,undo,status);
+    tools.append(addText,addCheck,pen,colorLabel,undo);
+    actions.append(summary,tools);
+    const compact = window.matchMedia('(max-width: 700px)');
+    const updateCompact = () => { if (!compact.matches) actions.open = true; else actions.open = false; };
+    updateCompact(); compact.addEventListener('change',updateCompact);
     panel.insertBefore(actions, stage.parentElement);
+    panel.insertBefore(status, stage.parentElement);
     const strokeLayer = document.createElementNS('http://www.w3.org/2000/svg','svg');
     strokeLayer.setAttribute('viewBox','0 0 1000 1000'); strokeLayer.setAttribute('preserveAspectRatio','none');
     strokeLayer.classList.add('student-pdf-stroke-layer');
@@ -41,7 +48,8 @@
       pen.setAttribute('aria-pressed', String(mode === 'pen'));
       stage.classList.toggle('student-pdf-placing', mode === 'text' || mode === 'check');
       stage.classList.toggle('student-pdf-pen-active', mode === 'pen');
-      if (mode) status.textContent = mode === 'pen' ? 'Dessinez sur la page avec le doigt, la souris ou le stylet.' : 'Touchez la page pour placer ' + (mode === 'text' ? 'une zone de texte.' : 'une case à cocher.');
+      if (mode) status.textContent = mode === 'pen' ? 'Tracez avec le doigt ou le stylet. Appuyez de nouveau sur Stylo pour quitter.' : 'Double-cliquez ou touchez deux fois le PDF pour placer ' + (mode === 'text' ? 'un texte.' : 'une croix.');
+      else status.textContent = 'Lecture du PDF · réponses enregistrées automatiquement.';
     }
     addText.onclick = () => setMode('text');
     addCheck.onclick = () => setMode('check');
@@ -140,9 +148,9 @@
         control.setAttribute('aria-label', entry.label || (entry.type === 'check' ? 'Case à cocher' : 'Réponse libre'));
         if (entry.type === 'check') {
           control.type = 'button'; control.className = 'student-pdf-cross';
-          control.textContent = entry.value ? '×' : '·';
+          control.textContent = entry.value ? '×' : '';
           control.setAttribute('aria-pressed',String(Boolean(entry.value)));
-          control.onclick = () => { if (!mayRead()) return; entry.value = !entry.value; control.textContent = entry.value ? '×' : '·'; control.setAttribute('aria-pressed',String(entry.value)); changed(); };
+          control.onclick = () => { if (!mayRead()) return; entry.value = !entry.value; control.textContent = entry.value ? '×' : ''; control.setAttribute('aria-pressed',String(entry.value)); changed(); };
         } else {
           control.value = String(entry.value || ''); control.maxLength = 1500;
           control.oninput = () => { if (!mayRead()) { control.value = entry.value; return; } entry.value = control.value; changed(); };
@@ -160,7 +168,7 @@
         layer.append(wrapper);
       }
     }
-    function addAtClick(event) {
+    function addAtPosition(event) {
       if (!['text','check'].includes(mode) || !mayRead() || event.target.closest('.student-pdf-field') || entries.length >= 500) return;
       const rect = stage.getBoundingClientRect();
       const type = mode;
@@ -168,15 +176,30 @@
       const y = clamp((event.clientY - rect.top) / rect.height, 0, type === 'check' ? .976 : .95);
       const entry = {
         id: 'manual:' + crypto.randomUUID(), page: currentPage, type,
-        x, y, w: type === 'check' ? .024 : Math.min(.3, 1 - x),
-        h: type === 'check' ? .024 : .05,
+        x, y, w: type === 'check' ? .016 : Math.min(.3, 1 - x),
+        h: type === 'check' ? .016 : .05,
         value: type === 'check' ? true : '',
         label: type === 'check' ? 'Coche ajoutée' : 'Réponse ajoutée', source: 'manual'
       };
       entries.push(entry); drawFields(); changed();
       if (type === 'text') layer.lastElementChild?.querySelector('textarea')?.focus();
+      setMode('');
     }
-    stage.addEventListener('click', addAtClick);
+    function onDoubleClick(event) { if (event.pointerType === 'touch') return; event.preventDefault(); addAtPosition(event); }
+    stage.addEventListener('dblclick',onDoubleClick);
+    let lastTouch = null;
+    function onTouchEnd(event) {
+      if (!['text','check'].includes(mode) || event.target.closest('.student-pdf-field')) return;
+      const touch = event.changedTouches[0]; if (!touch) return;
+      const now = Date.now();
+      const near = lastTouch && now - lastTouch.time < 400 && Math.hypot(touch.clientX-lastTouch.x,touch.clientY-lastTouch.y) < 32;
+      if (near) {
+        event.preventDefault();
+        addAtPosition({clientX:touch.clientX,clientY:touch.clientY,target:event.target});
+        lastTouch = null;
+      } else lastTouch = {time:now,x:touch.clientX,y:touch.clientY};
+    }
+    stage.addEventListener('touchend',onTouchEnd,{passive:false});
 
     function pointAt(event) {
       const rect = stage.getBoundingClientRect();
@@ -237,13 +260,16 @@
     function cleanup() {
       document.removeEventListener('visibilitychange',onVisibility);
       window.removeEventListener('beforeunload',onBeforeUnload);
-      stage.removeEventListener('click', addAtClick);
+      stage.removeEventListener('dblclick',onDoubleClick);
+      stage.removeEventListener('touchend',onTouchEnd);
+      compact.removeEventListener('change',updateCompact);
       stage.removeEventListener('pointerdown',onPointerDown);
       stage.removeEventListener('pointermove',onPointerMove);
       stage.removeEventListener('pointerup',onPointerEnd);
       stage.removeEventListener('pointercancel',onPointerEnd);
       if (timer) persist().catch(() => {});
       actions.remove();
+      status.remove();
     }
     return {renderPage, flush:persist, cleanup};
   }

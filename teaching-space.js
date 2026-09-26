@@ -500,7 +500,7 @@
     const pane = document.createElement('section'); pane.id = 'teachPreview'; pane.className = 'teach-preview';
     pane.innerHTML = `<div class="teach-preview-actions"><strong>Aperçu · ${esc(kindNames[tab])} · ${esc(title)}</strong>${hasPrintable ? '<button type="button" id="printLesson">Imprimer le contenu</button>' : ''}<button type="button" id="closePreview">Fermer</button></div>${hasPrintable ? `<header><p>BAC PRO MELEC · ${esc(classes.find(entry => entry.id === classId)?.name || '')}</p><h1>${esc(title)}</h1></header>` : ''}<div class="teach-preview-content${pdfAssets.length ? ' teach-preview-with-pdf' : ''}"></div>`;
     document.body.append(pane);
-    const pdfUrls = [];
+    const pdfUrls = [], pdfReaders = new Map();
     const close = () => { if (previewCleanup) { previewCleanup(); previewCleanup = null; } pane.remove(); document.body.classList.remove('print-lesson'); };
     pane.querySelector('#closePreview').onclick = close;
     if (hasPrintable) pane.querySelector('#printLesson').onclick = async () => {
@@ -509,7 +509,7 @@
     };
     try {
       const renderCleanup = await MelecContent.render(otherBlocks, pane.querySelector('.teach-preview-content'), assets);
-      previewCleanup = () => { renderCleanup(); pdfUrls.forEach(url => URL.revokeObjectURL(url)); };
+      previewCleanup = () => { renderCleanup(); pdfReaders.forEach(cleanup => cleanup()); pdfReaders.clear(); pdfUrls.forEach(url => URL.revokeObjectURL(url)); };
       if (pdfAssets.length) {
         const section = document.createElement('section'); section.className = 'teach-pdf-attachments';
         let firstOpen = null;
@@ -521,8 +521,9 @@
           const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Afficher le PDF'; actions.append(button);
           card.append(actions); section.append(card);
           const showPdf = async () => {
-            const existingFrame = card.querySelector('.teach-pdf-frame');
+            const existingFrame = card.querySelector('.teach-pdf-frame, .teach-pdf-reader');
             if (existingFrame) {
+              pdfReaders.get(card)?.(); pdfReaders.delete(card);
               existingFrame.remove(); actions.querySelector('.teach-pdf-open')?.remove();
               button.textContent = 'Afficher le PDF'; button.setAttribute('aria-expanded','false');
               return;
@@ -530,11 +531,17 @@
             button.disabled = true; button.textContent = 'Chargement…';
             try {
               const blob = asset.local_blob || await api.download(asset.object_path);
-              const url = URL.createObjectURL(blob); pdfUrls.push(url);
-              const frame = document.createElement('iframe'); frame.src = url + '#toolbar=1&navpanes=0';
-              frame.title = asset.file_name; frame.className = 'teach-pdf-frame'; card.append(frame);
-              const link = document.createElement('a'); link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
-              link.className = 'teach-pdf-open'; link.textContent = 'Ouvrir / imprimer ce PDF'; actions.append(link);
+              if (window.matchMedia('(max-width: 900px), (pointer: coarse)').matches) {
+                const mount = document.createElement('div'); mount.className='teach-pdf-reader'; card.append(mount);
+                try { pdfReaders.set(card,await MelecStudentPdf.render(blob,mount)); }
+                catch (error) { mount.remove(); throw error; }
+              } else {
+                const url = URL.createObjectURL(blob); pdfUrls.push(url);
+                const frame = document.createElement('iframe'); frame.src = url + '#toolbar=1&navpanes=0';
+                frame.title = asset.file_name; frame.className = 'teach-pdf-frame'; card.append(frame);
+                const link = document.createElement('a'); link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+                link.className = 'teach-pdf-open'; link.textContent = 'Ouvrir / imprimer ce PDF'; actions.append(link);
+              }
               button.textContent = 'Réduire le PDF'; button.setAttribute('aria-expanded','true');
             } catch (error) { button.textContent = 'Réessayer'; status('PDF inaccessible : ' + error.message,true); }
             finally { button.disabled = false; }

@@ -42,6 +42,7 @@
     .student-pdf-save-status{font-size:.78rem;color:#173c61}
     @media(max-width:600px){.student-pdf-controls button,.student-pdf-form-actions button{min-height:31px;padding:4px 5px;font-size:.76rem}.student-pdf-zoom output{min-width:40px}}
   </style>
+  <link rel="stylesheet" href="pdf-mobile.css?v=20260927-2">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
@@ -95,12 +96,12 @@
   <script src="portal-api.js?v=20260926-tp-fiabilite1"></script>
   <script src="content-render.js?v=20260926-apercu-pdf2"></script>
   <script src="portal-contact.js?v=20260925-1"></script>
-  <script src="student-pdf-forms.js?v=20260927-1"></script>
-  <script src="student-pdf-viewer.js?v=20260927-1"></script>
+  <script src="student-pdf-forms.js?v=20260927-2"></script>
+  <script src="student-pdf-viewer.js?v=20260927-2"></script>
   <script src="student-space.js?v=20260927-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=94',{updateViaCache:'none'}).catch(console.error));
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=95',{updateViaCache:'none'}).catch(console.error));
     }
   </script>
 </body>

@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="styles.css?v=20260911-1">
   <link rel="stylesheet" href="bo.css?v=20260924-5">
   <link rel="stylesheet" href="teaching.css?v=20260926-eleves-responsive1">
+  <link rel="stylesheet" href="pdf-mobile.css?v=20260927-2">
   <style>
     .teach-asset-options{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;width:100%;min-width:0;margin-top:14px;padding:16px;border:1px solid #a8c8e8;border-radius:14px;background:#f5f9ff;box-sizing:border-box}
     .teach-asset-options>.teach-help{margin:0}
@@ -190,12 +191,13 @@
   <script src="portal-api.js?v=20260926-tp-fiabilite1"></script>
   <script src="content-render.js?v=20260926-apercu-pdf2"></script>
   <script src="tp-response-export.js?v=20260927-1"></script>
-  <script src="teaching-space.js?v=20260927-1"></script>
+  <script src="student-pdf-viewer.js?v=20260927-2"></script>
+  <script src="teaching-space.js?v=20260927-2"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script src="cloud-sync.js?v=20260926-optimisation1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='94';
+      const swVersion='95';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>
