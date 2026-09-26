@@ -85,6 +85,8 @@
       .topbar #mobileExitButton svg{display:block;width:16px;height:16px;flex:0 0 16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
       #mobileMenuToggle{display:flex!important;min-width:135px!important;margin:10px auto 14px!important}
       .topbar .brand{display:flex!important;grid-column:2!important;grid-row:1!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;width:100%!important;min-width:0!important;height:auto!important;min-height:0!important;gap:7px!important;padding:0!important;text-align:center!important}
+      body.home-active .topbar .brand{grid-column:1/3!important;justify-content:flex-start!important;text-align:left!important}
+      body.home-active .topbar .brand-copy,body.home-active .topbar .brand-copy strong{ text-align:left!important }
       .topbar .brand-logo{position:static!important;width:clamp(52px,16vw,72px)!important;height:clamp(52px,16vw,72px)!important;flex:0 0 clamp(52px,16vw,72px)!important;margin:0!important}
       .topbar .brand-logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important}
       .topbar .brand-copy{flex:0 1 auto!important;width:auto!important;max-width:none!important;text-align:center!important}
@@ -182,7 +184,7 @@
   <script src="cloud-sync.js?v=20260925-speed1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='73';
+      const swVersion='74';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>
