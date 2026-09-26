@@ -1,7 +1,7 @@
-const CACHE_NAME = 'bac-pro-melec-v83-pdf-zoom';
+const CACHE_NAME = 'bac-pro-melec-v84-tp-responses';
 const APP_FILES = [
   './','./index.html','./eleve.html','./enseignant.html','./styles.css','./bo.css','./portal.css','./teaching.css','./referential.js','./app.js',
-  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js','./cloud-sync.js','./portal-api.js','./portal-contact.js','./student-space.js','./teaching-space.js','./content-render.js',
+  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js','./cloud-sync.js','./portal-api.js','./portal-contact.js','./student-space.js','./teaching-space.js','./content-render.js','./student-pdf-forms.js','./student-pdf-viewer.js',
   './background-melec-tools.webp','./logo-bac-pro-melec-v3.webp',
   './manifest.webmanifest','./icon-180.png','./icon-192.png'
 ];

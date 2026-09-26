@@ -170,6 +170,39 @@
         editItem(null,chapter.id);
       } catch (error) { status(error.message,true); }
     };
+    body.querySelectorAll('[data-tp]').forEach(card => {
+      const follow = document.createElement('details'); follow.className = 'teach-tp-responses';
+      const summary = document.createElement('summary'); summary.textContent = 'Suivi des réponses PDF';
+      const results = document.createElement('div'); results.className = 'teach-tp-response-results';
+      follow.append(summary,results); card.append(follow);
+      follow.addEventListener('toggle', async () => {
+        if (!follow.open) return;
+        results.textContent = 'Chargement des réponses…';
+        try {
+          const rows = await api.rest('tp_document_responses?tp_id=eq.' + encodeURIComponent(card.dataset.tp) + '&select=student_id,asset_id,answers,updated_at&order=updated_at.desc');
+          const assets = await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(card.dataset.tp) + '&select=id,file_name');
+          if (!follow.open) return;
+          if (!rows.length) { results.textContent = 'Aucune réponse enregistrée pour ce TP.'; return; }
+          results.replaceChildren();
+          for (const row of rows) {
+            const student = classStudents.find(candidate => candidate.user_id === row.student_id);
+            const asset = assets.find(candidate => candidate.id === row.asset_id);
+            const section = document.createElement('section'); section.className = 'teach-card';
+            const heading = document.createElement('h4'); heading.textContent = (student ? student.first_name + ' ' + student.last_name : 'Élève') + ' · ' + (asset?.file_name || 'Document PDF');
+            const date = document.createElement('p'); date.className = 'teach-help'; date.textContent = 'Enregistré le ' + new Date(row.updated_at).toLocaleString('fr-FR');
+            section.append(heading,date);
+            const answered = (Array.isArray(row.answers?.entries) ? row.answers.entries : []).filter(entry => entry && (entry.type === 'check' ? entry.value : String(entry.value || '').trim()));
+            if (!answered.length) { const empty = document.createElement('p'); empty.textContent = 'Aucune réponse renseignée.'; section.append(empty); }
+            for (const entry of answered) {
+              const answer = document.createElement('p'); answer.className = 'teach-tp-answer';
+              answer.textContent = 'Page ' + entry.page + ' · ' + (entry.label || (entry.type === 'check' ? 'Case cochée' : 'Texte')) + ' : ' + (entry.type === 'check' ? 'cochée' : String(entry.value));
+              section.append(answer);
+            }
+            results.append(section);
+          }
+        } catch (error) { results.textContent = 'Suivi indisponible : ' + error.message; }
+      });
+    });
     body.querySelectorAll('[data-preview-tp]').forEach(button => button.onclick = () => previewItem(items.find(item => item.id === button.dataset.previewTp)));
     body.querySelectorAll('[data-edit-tp]').forEach(button => button.onclick = () => editItem(button.dataset.editTp));
     body.querySelectorAll('[data-publish-tp]').forEach(button => button.onclick = async () => {

@@ -21,7 +21,21 @@
     .student-pdf-controls button{min-height:42px;padding:8px 12px;border:1px solid #8eacd0;border-radius:10px;background:#195a98;color:#fff;font-weight:700;cursor:pointer}
     .student-pdf-controls button:disabled{opacity:.5;cursor:default}
     .student-pdf-scroll{width:100%;max-height:80vh;max-height:80svh;overflow:auto;overscroll-behavior:contain}
-    .student-pdf-page{display:block;max-width:none;margin:0 auto;background:#fff;box-shadow:0 2px 12px #1235}
+    .student-pdf-stage{position:relative;margin:0 auto;background:#fff}
+    .student-pdf-page{display:block;max-width:none;margin:0;background:#fff;box-shadow:0 2px 12px #1235}
+    #studentDashboard .student-pdf-text-layer{position:absolute;inset:0;overflow:hidden;line-height:1;text-align:initial;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+    .student-pdf-text-layer span,.student-pdf-text-layer br{position:absolute;color:transparent;white-space:pre;cursor:text;transform-origin:0 0}
+    .student-pdf-text-layer ::selection{background:rgba(30,110,215,.35)}
+    .student-pdf-placing{cursor:crosshair}.student-pdf-placing .student-pdf-text-layer{pointer-events:none}
+    .student-pdf-field-layer{position:absolute;inset:0;pointer-events:none}
+    .student-pdf-field{position:absolute;box-sizing:border-box;pointer-events:auto}
+    .student-pdf-field textarea{box-sizing:border-box;width:100%;height:100%;min-height:22px;padding:3px;border:1px solid #1774c9;border-radius:3px;background:#fffffff0;color:#102e4b;font:14px Arial,sans-serif;resize:both;-webkit-user-select:text;user-select:text}
+    .student-pdf-field input[type=checkbox]{width:100%;height:100%;min-width:16px;min-height:16px;margin:0;accent-color:#1162aa;cursor:pointer}
+    .student-pdf-remove-field{position:absolute;right:-15px;top:-15px;width:23px;height:23px;padding:0;border-radius:50%;background:#a63b22;color:#fff;cursor:pointer}
+    .student-pdf-form-actions{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+    .student-pdf-form-actions button{min-height:40px;padding:7px 10px;border:1px solid #8eacd0;border-radius:8px;background:#195a98;color:#fff;font-weight:700;cursor:pointer}
+    .student-pdf-form-actions button[aria-pressed=true]{background:#b35c00}
+    .student-pdf-save-status{width:100%;text-align:center;font-size:.86rem;color:#173c61}
     @media(max-width:600px){.student-pdf-panel{padding:6px}.student-pdf-navigation,.student-pdf-zoom{gap:6px}.student-pdf-controls button{min-height:40px;padding:6px 8px}}
     @media print{#studentDashboard{display:none!important}body:after{content:'Impression non autorisée dans l’espace élève.';display:block;padding:30px;color:#111;background:#fff}}
   </style>
@@ -76,13 +90,14 @@
     </main>
   </div>
   <script src="portal-api.js?v=20260926-tp-fiabilite1"></script>
-  <script src="student-pdf-viewer.js?v=20260926-zoom2"></script>
+  <script src="student-pdf-forms.js?v=20260926-reponses1"></script>
+  <script src="student-pdf-viewer.js?v=20260926-reponses1"></script>
   <script src="content-render.js?v=20260926-protection1"></script>
   <script src="portal-contact.js?v=20260925-1"></script>
-  <script src="student-space.js?v=20260926-protection1"></script>
+  <script src="student-space.js?v=20260926-reponses1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=83',{updateViaCache:'none'}).catch(console.error));
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=84',{updateViaCache:'none'}).catch(console.error));
     }
   </script>
 </body>

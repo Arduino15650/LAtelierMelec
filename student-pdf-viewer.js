@@ -10,7 +10,7 @@
     return libraryPromise;
   }
 
-  async function render(blob, mount, mayRead = () => true) {
+  async function render(blob, mount, mayRead = () => true, formOptions = null) {
     const pdfjs = await library();
     if (!mayRead()) throw new Error('L’accès à ce document a expiré.');
     const task = pdfjs.getDocument({data: new Uint8Array(await blob.arrayBuffer()), isEvalSupported: false, enableScripting: false});
@@ -32,8 +32,12 @@
     zoomControls.append(zoomOut,zoomValue,zoomIn,fit);
     controls.append(navigation,zoomControls);
     const scroll = document.createElement('div'); scroll.className = 'student-pdf-scroll';
+    const stage = document.createElement('div'); stage.className = 'student-pdf-stage';
     const canvas = document.createElement('canvas'); canvas.className = 'student-pdf-page'; canvas.setAttribute('role','img');
-    scroll.append(canvas); panel.append(controls,scroll); mount.replaceChildren(panel);
+    const textLayer = document.createElement('div'); textLayer.className = 'student-pdf-text-layer textLayer';
+    const fieldLayer = document.createElement('div'); fieldLayer.className = 'student-pdf-field-layer';
+    stage.append(canvas,textLayer,fieldLayer); scroll.append(stage); panel.append(controls,scroll); mount.replaceChildren(panel);
+    const formController = window.MelecPdfForms?.create(panel,stage,fieldLayer,mayRead,formOptions) || null;
     // This removes the browser's ordinary "Save image as" menu on the canvas.
     // It is a UI deterrent, not protection against screenshots or developer tools.
     panel.addEventListener('contextmenu', event => event.preventDefault(), true);
@@ -63,10 +67,23 @@
         canvas.height = Math.floor(viewport.height * ratio);
         canvas.style.width = Math.floor(viewport.width) + 'px';
         canvas.style.height = Math.floor(viewport.height) + 'px';
+        stage.style.width = viewport.width + 'px';
+        stage.style.height = viewport.height + 'px';
+        stage.style.setProperty('--scale-factor', String(viewport.scale));
         canvas.setAttribute('aria-label', 'Page ' + pageNumber + ' sur ' + documentPdf.numPages);
         currentRender = page.render({canvasContext:canvas.getContext('2d'),viewport,transform:ratio === 1 ? null : [ratio,0,0,ratio,0,0]});
         await currentRender.promise;
         if (closed) return;
+        textLayer.replaceChildren();
+        if (pdfjs.TextLayer && page.streamTextContent) {
+          try {
+            const selectable = new pdfjs.TextLayer({
+              textContentSource:page.streamTextContent(), container:textLayer, viewport
+            });
+            await selectable.render();
+          } catch (error) { console.warn('Sélection de texte PDF indisponible', error); }
+        }
+        if (formController) await formController.renderPage(page,viewport,pageNumber);
         current = pageNumber;
         pageCount.textContent = 'Page ' + current + ' / ' + documentPdf.numPages;
         orientation.textContent = natural.width > natural.height ? 'Paysage' : 'Portrait';
@@ -107,9 +124,11 @@
       window.removeEventListener('resize',onResize);
       observer?.disconnect();
       currentRender?.cancel();
+      formController?.cleanup();
       documentPdf.destroy().catch(() => {});
       panel.remove();
     };
+    cleanup.flush = () => formController?.flush() || Promise.resolve();
     try { await showPage(1); } catch (error) { cleanup(); throw error; }
     return cleanup;
   }
