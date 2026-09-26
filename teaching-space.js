@@ -170,57 +170,6 @@
         editItem(null,chapter.id);
       } catch (error) { status(error.message,true); }
     };
-    body.querySelectorAll('[data-tp]').forEach(card => {
-      const follow = document.createElement('details'); follow.className = 'teach-tp-responses';
-      const summary = document.createElement('summary'); summary.textContent = 'Suivi des réponses PDF';
-      const results = document.createElement('div'); results.className = 'teach-tp-response-results';
-      follow.append(summary,results); card.append(follow);
-      follow.addEventListener('toggle', async () => {
-        if (!follow.open) return;
-        results.textContent = 'Chargement des réponses…';
-        try {
-          const rows = await api.rest('tp_document_responses?tp_id=eq.' + encodeURIComponent(card.dataset.tp) + '&select=student_id,asset_id,answers,updated_at&order=updated_at.desc');
-          const assets = await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(card.dataset.tp) + '&select=id,file_name');
-          if (!follow.open) return;
-          if (!rows.length) { results.textContent = 'Aucune réponse enregistrée pour ce TP.'; return; }
-          results.replaceChildren();
-          for (const row of rows) {
-            const student = classStudents.find(candidate => candidate.user_id === row.student_id);
-            const asset = assets.find(candidate => candidate.id === row.asset_id);
-            const section = document.createElement('section'); section.className = 'teach-card';
-            const heading = document.createElement('h4'); heading.textContent = (student ? student.first_name + ' ' + student.last_name : 'Élève') + ' · ' + (asset?.file_name || 'Document PDF');
-            const date = document.createElement('p'); date.className = 'teach-help'; date.textContent = 'Enregistré le ' + new Date(row.updated_at).toLocaleString('fr-FR');
-            section.append(heading,date);
-            const answered = (Array.isArray(row.answers?.entries) ? row.answers.entries : []).filter(entry => entry && (entry.type === 'stroke' ? Array.isArray(entry.points) && entry.points.length > 1 : entry.type === 'check' ? entry.value : String(entry.value || '').trim()));
-            if (!answered.length) { const empty = document.createElement('p'); empty.textContent = 'Aucune réponse renseignée.'; section.append(empty); }
-            for (const entry of answered) {
-              const answer = document.createElement('p'); answer.className = 'teach-tp-answer';
-              answer.textContent = 'Page ' + entry.page + ' · ' + (entry.label || (entry.type === 'check' ? 'Case cochée' : entry.type === 'stroke' ? 'Tracé' : 'Texte')) + ' : ' + (entry.type === 'check' ? 'cochée' : entry.type === 'stroke' ? 'dessin enregistré' : String(entry.value));
-              section.append(answer);
-            }
-            const drawnPages = [...new Set(answered.filter(entry => entry.type === 'stroke').map(entry => entry.page))];
-            for (const pageNumber of drawnPages) {
-              const label = document.createElement('p'); label.textContent = 'Tracés de la page ' + pageNumber; section.append(label);
-              const preview = document.createElementNS('http://www.w3.org/2000/svg','svg');
-              preview.setAttribute('viewBox','0 0 1000 1000'); preview.setAttribute('preserveAspectRatio','none');
-              const pageStroke = answered.find(entry => entry.type === 'stroke' && entry.page === pageNumber);
-              const aspect = Math.max(.4,Math.min(2.5,Number(pageStroke?.aspect) || 1));
-              preview.style.cssText = 'display:block;width:min(100%,360px);background:#fff;border:1px solid #9dbde0';
-              preview.style.aspectRatio = String(aspect);
-              for (const entry of answered.filter(candidate => candidate.type === 'stroke' && candidate.page === pageNumber)) {
-                const line = document.createElementNS('http://www.w3.org/2000/svg','polyline');
-                line.setAttribute('fill','none'); line.setAttribute('stroke',/^#[0-9a-f]{6}$/i.test(entry.color || '') ? entry.color : '#d12b2b');
-                line.setAttribute('stroke-width','4'); line.setAttribute('stroke-linecap','round');
-                line.setAttribute('points',entry.points.slice(0,400).filter(point => Array.isArray(point) && point.length === 2).map(point => `${Math.max(0,Math.min(1,Number(point[0]) || 0))*1000},${Math.max(0,Math.min(1,Number(point[1]) || 0))*1000}`).join(' '));
-                preview.append(line);
-              }
-              section.append(preview);
-            }
-            results.append(section);
-          }
-        } catch (error) { results.textContent = 'Suivi indisponible : ' + error.message; }
-      });
-    });
     body.querySelectorAll('[data-preview-tp]').forEach(button => button.onclick = () => previewItem(items.find(item => item.id === button.dataset.previewTp)));
     body.querySelectorAll('[data-edit-tp]').forEach(button => button.onclick = () => editItem(button.dataset.editTp));
     body.querySelectorAll('[data-publish-tp]').forEach(button => button.onclick = async () => {

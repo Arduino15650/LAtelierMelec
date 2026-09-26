@@ -20,11 +20,11 @@
   }
   let profile = null;
   let cleanupViewer = null;
-  let assignments = [], tpItems = [], activeTp = null, tpPdfCleanup = null, selectedContentTab = 'courses';
+  let assignments = [], tpItems = [], activeTp = null, tpUrls = [], selectedContentTab = 'courses';
   document.addEventListener('keydown', event => {
-    if ((event.ctrlKey || event.metaKey) && ['p','s','c','x'].includes(event.key.toLowerCase()) && !dashboard.hidden && !event.target.closest('input,textarea,[contenteditable]')) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p' && !dashboard.hidden) {
       event.preventDefault();
-      message($('studentRefreshStatus'), 'Copie, enregistrement et impression désactivés dans l’espace élève.');
+      message($('studentRefreshStatus'), 'Impression non autorisée dans l’espace élève.');
     }
   });
   function tpEnd(assignment) {
@@ -32,7 +32,7 @@
       Date.parse(assignment.reactivated_until || '') || 0);
   }
   function clearTpViewer() {
-    if (tpPdfCleanup) { tpPdfCleanup(); tpPdfCleanup = null; }
+    tpUrls.forEach(url => URL.revokeObjectURL(url)); tpUrls = [];
     $('studentTpViewer')?.remove();
   }
   function switchContentTab(next) {
@@ -191,46 +191,19 @@
         const button = document.createElement('button'); button.type='button'; button.textContent=asset.file_name;
         button.onclick = async () => {
           if (tpEnd(activeTp) <= Date.now()) { clearTpViewer(); await openDashboard(); return; }
-          const opened = viewer.querySelector('.student-pdf-mount');
+          const opened = viewer.querySelector('iframe');
           if (opened?.dataset.assetId === asset.id) {
-            tpPdfCleanup?.(); tpPdfCleanup = null; opened.remove(); button.textContent = asset.file_name; button.setAttribute('aria-expanded','false'); return;
+            opened.remove(); button.textContent = asset.file_name; button.setAttribute('aria-expanded','false'); return;
           }
           button.disabled=true;
           try {
             const blob = await api.download(asset.object_path);
             if (!viewer.isConnected || !activeTp || tpEnd(activeTp) <= Date.now()) throw new Error('L’accès à ce TP a expiré.');
-            tpPdfCleanup?.(); tpPdfCleanup = null;
-            viewer.querySelector('.student-pdf-mount')?.remove();
+            const url = URL.createObjectURL(blob); tpUrls.push(url);
+            viewer.querySelector('iframe')?.remove();
             viewer.querySelectorAll('button[aria-expanded="true"]').forEach(other => { other.textContent = other.dataset.fileName; other.setAttribute('aria-expanded','false'); });
-            const mount=document.createElement('div'); mount.className='student-pdf-mount'; mount.dataset.assetId=asset.id; group.append(mount);
-            try {
-              const mayRead = () => Boolean(activeTp && tpEnd(activeTp) > Date.now());
-              if (role === 'technical') {
-                // Reference documents are read-only: no response fetch, editing tools or save path.
-                tpPdfCleanup = await MelecStudentPdf.render(blob,mount,mayRead);
-              } else {
-                const responsePath = 'tp_document_responses?student_id=eq.' + encodeURIComponent(profile.user_id) + '&asset_id=eq.' + encodeURIComponent(asset.id);
-                const existing = await api.rest(responsePath + '&select=answers');
-                let hasResponse = existing.length > 0;
-                const formOptions = {
-                  entries: existing[0]?.answers?.entries || [],
-                  save: async entries => {
-                    if (!activeTp || activeTp.tp_id !== item.id || tpEnd(activeTp) <= Date.now()) throw new Error('Le temps du TP est écoulé.');
-                    const answers = {entries};
-                    if (hasResponse) {
-                      const updated = await api.rest(responsePath + '&select=asset_id', {method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({answers})});
-                      if (updated.length !== 1) throw new Error('Réponse non enregistrée : accès refusé ou document introuvable.');
-                    } else {
-                      const created = await api.rest('tp_document_responses?select=asset_id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({student_id:profile.user_id,tp_id:item.id,asset_id:asset.id,answers})});
-                      if (created.length !== 1) throw new Error('Réponse non enregistrée.');
-                      hasResponse = true;
-                    }
-                  }
-                };
-                tpPdfCleanup = await MelecStudentPdf.render(blob,mount,mayRead,formOptions);
-              }
-            }
-            catch (error) { mount.remove(); throw error; }
+            const frame=document.createElement('iframe'); frame.src=url+'#toolbar=0&navpanes=0&scrollbar=1';
+            frame.title='Consultation du document ' + asset.file_name; frame.dataset.assetId=asset.id; group.append(frame);
             button.dataset.fileName=asset.file_name; button.textContent='Réduire · '+asset.file_name; button.setAttribute('aria-expanded','true');
           } catch(error) { alert(error.message); } finally { button.disabled=false; }
         };
@@ -351,8 +324,7 @@
   window.addEventListener('pageshow', event => {
     if (event.persisted) refreshStudentAccess();
   });
-  for (const type of ['copy','cut','contextmenu','dragstart']) {
-    document.addEventListener(type, e => { if (!dashboard.hidden && e.target.closest('#studentDashboard')) e.preventDefault(); });
-  }
+  document.addEventListener('copy', e => { if (e.target.closest('.student-readonly')) e.preventDefault(); });
+  document.addEventListener('contextmenu', e => { if (e.target.closest('.student-readonly')) e.preventDefault(); });
   openDashboard().catch(() => { authPane.hidden = false; dashboard.hidden = true; });
 })();
