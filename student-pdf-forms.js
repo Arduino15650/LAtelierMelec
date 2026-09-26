@@ -17,7 +17,7 @@
       width: clamp(entry.width, 1, 8), aspect: clamp(entry.aspect || 1, .4, 2.5),
       points: entry.type === 'stroke' && Array.isArray(entry.points) ? entry.points.slice(0, 400).filter(p => Array.isArray(p) && p.length === 2).map(p => [clamp(p[0],0,1),clamp(p[1],0,1)]) : []
     }));
-    let currentPage = 1, currentAspect = 1, mode = '', timer = null, dirty = false, saving = Promise.resolve(), drawing = null;
+    let currentPage = 1, currentAspect = 1, mode = '', timer = null, dirty = false, saving = Promise.resolve(), drawing = null, retryCount = 0;
     const actions = document.createElement('div'); actions.className = 'student-pdf-form-actions';
     const addText = document.createElement('button'); addText.type = 'button'; addText.textContent = 'Ajouter du texte';
     const addCheck = document.createElement('button'); addCheck.type = 'button'; addCheck.textContent = 'Ajouter une coche';
@@ -25,10 +25,9 @@
     const colorLabel = document.createElement('label'); colorLabel.className = 'student-pdf-color-label'; colorLabel.textContent = 'Couleur ';
     const color = document.createElement('input'); color.type = 'color'; color.value = '#d12b2b'; color.setAttribute('aria-label','Couleur du stylo'); colorLabel.append(color);
     const undo = document.createElement('button'); undo.type = 'button'; undo.textContent = 'Effacer le dernier trait';
-    const saveButton = document.createElement('button'); saveButton.type = 'button'; saveButton.textContent = 'Enregistrer les réponses';
     const status = document.createElement('span'); status.className = 'student-pdf-save-status'; status.setAttribute('role','status');
-    status.textContent = 'Cliquez dans les champs bleus ou ajoutez du texte et des coches.';
-    actions.append(addText,addCheck,pen,colorLabel,undo,saveButton,status);
+    status.textContent = 'Enregistrement automatique';
+    actions.append(addText,addCheck,pen,colorLabel,undo,status);
     panel.insertBefore(actions, stage.parentElement);
     const strokeLayer = document.createElementNS('http://www.w3.org/2000/svg','svg');
     strokeLayer.setAttribute('viewBox','0 0 1000 1000'); strokeLayer.setAttribute('preserveAspectRatio','none');
@@ -63,21 +62,64 @@
       const copy = snapshot();
       status.textContent = 'Enregistrement…';
       saving = saving.catch(() => {}).then(() => options.save(copy)).then(() => {
+        retryCount = 0;
         if (!dirty) status.textContent = 'Réponses enregistrées.';
       }).catch(error => {
         dirty = true;
-        status.textContent = 'Échec de l’enregistrement : ' + error.message + ' — réessayez.';
+        status.textContent = 'Échec de l’enregistrement : ' + error.message + (retryCount < 3 ? ' — nouvel essai automatique.' : ' — modifiez une réponse pour réessayer.');
+        if (retryCount++ < 3 && mayRead()) timer = setTimeout(() => persist().catch(() => {}),3000 * retryCount);
         throw error;
       });
       return saving;
     }
     function changed() {
       dirty = true;
+      retryCount = 0;
       status.textContent = 'Modifications non encore enregistrées…';
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => persist().catch(() => {}), 600);
     }
-    saveButton.onclick = () => persist().catch(() => {});
+
+    function addPositionHandle(wrapper, entry, kind) {
+      const handle = document.createElement('button'); handle.type = 'button';
+      handle.className = kind === 'move' ? 'student-pdf-move-field' : 'student-pdf-resize-field';
+      handle.textContent = kind === 'move' ? '⠿' : '↘';
+      handle.setAttribute('aria-label', kind === 'move' ? 'Déplacer cette réponse' : 'Redimensionner cette zone de texte');
+      handle.addEventListener('pointerdown', event => {
+        if (!mayRead()) return;
+        event.preventDefault(); event.stopPropagation();
+        const startX = event.clientX, startY = event.clientY;
+        const start = {x:entry.x,y:entry.y,w:entry.w,h:entry.h};
+        const rect = stage.getBoundingClientRect();
+        let moved = false;
+        const move = next => {
+          next.preventDefault(); next.stopPropagation(); moved = true;
+          const dx = (next.clientX - startX) / rect.width;
+          const dy = (next.clientY - startY) / rect.height;
+          if (kind === 'move') {
+            entry.x = clamp(start.x + dx,0,1-entry.w);
+            entry.y = clamp(start.y + dy,0,1-entry.h);
+            wrapper.style.left = (entry.x * 100) + '%'; wrapper.style.top = (entry.y * 100) + '%';
+          } else {
+            entry.w = clamp(start.w + dx,Math.min(.04,1-entry.x),1-entry.x);
+            entry.h = clamp(start.h + dy,Math.min(.025,1-entry.y),1-entry.y);
+            wrapper.style.width = (entry.w * 100) + '%'; wrapper.style.height = (entry.h * 100) + '%';
+          }
+        };
+        const finish = finalEvent => {
+          finalEvent.preventDefault(); finalEvent.stopPropagation();
+          handle.removeEventListener('pointermove',move);
+          handle.removeEventListener('pointerup',finish);
+          handle.removeEventListener('pointercancel',finish);
+          if (moved) changed();
+        };
+        handle.setPointerCapture(event.pointerId);
+        handle.addEventListener('pointermove',move);
+        handle.addEventListener('pointerup',finish);
+        handle.addEventListener('pointercancel',finish);
+      });
+      wrapper.append(handle);
+    }
 
     function drawFields() {
       layer.replaceChildren();
@@ -94,11 +136,13 @@
         const wrapper = document.createElement('div'); wrapper.className = 'student-pdf-field';
         wrapper.style.left = (entry.x * 100) + '%'; wrapper.style.top = (entry.y * 100) + '%';
         wrapper.style.width = (entry.w * 100) + '%'; wrapper.style.height = (entry.h * 100) + '%';
-        const control = entry.type === 'check' ? document.createElement('input') : document.createElement('textarea');
+        const control = entry.type === 'check' ? document.createElement('button') : document.createElement('textarea');
         control.setAttribute('aria-label', entry.label || (entry.type === 'check' ? 'Case à cocher' : 'Réponse libre'));
         if (entry.type === 'check') {
-          control.type = 'checkbox'; control.checked = Boolean(entry.value);
-          control.onchange = () => { if (!mayRead()) { control.checked = !control.checked; return; } entry.value = control.checked; changed(); };
+          control.type = 'button'; control.className = 'student-pdf-cross';
+          control.textContent = entry.value ? '×' : '·';
+          control.setAttribute('aria-pressed',String(Boolean(entry.value)));
+          control.onclick = () => { if (!mayRead()) return; entry.value = !entry.value; control.textContent = entry.value ? '×' : '·'; control.setAttribute('aria-pressed',String(entry.value)); changed(); };
         } else {
           control.value = String(entry.value || ''); control.maxLength = 1500;
           control.oninput = () => { if (!mayRead()) { control.value = entry.value; return; } entry.value = control.value; changed(); };
@@ -106,6 +150,8 @@
         }
         wrapper.append(control);
         if (entry.source === 'manual') {
+          addPositionHandle(wrapper,entry,'move');
+          if (entry.type === 'text') addPositionHandle(wrapper,entry,'resize');
           const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'student-pdf-remove-field';
           remove.textContent = '×'; remove.setAttribute('aria-label', 'Supprimer cette réponse');
           remove.onclick = () => { if (!mayRead()) return; entries.splice(entries.indexOf(entry), 1); drawFields(); changed(); };
@@ -115,15 +161,15 @@
       }
     }
     function addAtClick(event) {
-      if (!mode || !mayRead() || event.target.closest('.student-pdf-field') || entries.length >= 500) return;
+      if (!['text','check'].includes(mode) || !mayRead() || event.target.closest('.student-pdf-field') || entries.length >= 500) return;
       const rect = stage.getBoundingClientRect();
-      const x = clamp((event.clientX - rect.left) / rect.width, 0, .98);
-      const y = clamp((event.clientY - rect.top) / rect.height, 0, .97);
       const type = mode;
+      const x = clamp((event.clientX - rect.left) / rect.width, 0, type === 'check' ? .976 : .96);
+      const y = clamp((event.clientY - rect.top) / rect.height, 0, type === 'check' ? .976 : .95);
       const entry = {
         id: 'manual:' + crypto.randomUUID(), page: currentPage, type,
-        x, y, w: type === 'check' ? .035 : Math.min(.3, 1 - x),
-        h: type === 'check' ? .035 : .05,
+        x, y, w: type === 'check' ? .024 : Math.min(.3, 1 - x),
+        h: type === 'check' ? .024 : .05,
         value: type === 'check' ? true : '',
         label: type === 'check' ? 'Coche ajoutée' : 'Réponse ajoutée', source: 'manual'
       };

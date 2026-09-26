@@ -20,17 +20,17 @@
     const controls = document.createElement('div'); controls.className = 'student-pdf-controls';
     const navigation = document.createElement('div'); navigation.className = 'student-pdf-navigation';
     const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = '← Page précédente';
-    const pageCount = document.createElement('span'); pageCount.setAttribute('aria-live','polite');
-    const orientation = document.createElement('span'); orientation.className = 'student-pdf-orientation';
+    const pageCount = document.createElement('span'); pageCount.className = 'student-pdf-sr-only'; pageCount.setAttribute('aria-live','polite');
+    const orientation = document.createElement('span'); orientation.className = 'student-pdf-sr-only';
     const next = document.createElement('button'); next.type = 'button'; next.textContent = 'Page suivante →';
-    navigation.append(previous,pageCount,orientation,next);
+    navigation.append(previous,next);
     const zoomControls = document.createElement('div'); zoomControls.className = 'student-pdf-zoom';
     const zoomOut = document.createElement('button'); zoomOut.type = 'button'; zoomOut.textContent = 'Zoom −';
     const zoomValue = document.createElement('output'); zoomValue.setAttribute('aria-live','polite'); zoomValue.textContent = '100 %';
     const zoomIn = document.createElement('button'); zoomIn.type = 'button'; zoomIn.textContent = 'Zoom +';
     const fit = document.createElement('button'); fit.type = 'button'; fit.textContent = 'Adapter à l’écran';
     zoomControls.append(zoomOut,zoomValue,zoomIn,fit);
-    controls.append(navigation,zoomControls);
+    controls.append(navigation,zoomControls,pageCount,orientation);
     const scroll = document.createElement('div'); scroll.className = 'student-pdf-scroll';
     const stage = document.createElement('div'); stage.className = 'student-pdf-stage';
     const canvas = document.createElement('canvas'); canvas.className = 'student-pdf-page'; canvas.setAttribute('role','img');
@@ -58,12 +58,9 @@
         const verticalFocus = scroll.scrollHeight > scroll.clientHeight ? (scroll.scrollTop + scroll.clientHeight / 2) / scroll.scrollHeight : 0;
         const natural = page.getViewport({scale:1});
         // Preserve the page's real proportions, including landscape pages and rotation.
-        const availableWidth = Math.max(1, mount.clientWidth - 22);
-        const availableHeight = Math.max(160, Math.min(window.innerHeight * .78, 900));
-        // Landscape drawings use the available width; portrait pages stay fully visible initially.
-        const fitScale = natural.width > natural.height
-          ? availableWidth / natural.width
-          : Math.min(availableWidth / natural.width, availableHeight / natural.height);
+        const availableWidth = Math.max(1, mount.clientWidth - 12);
+        // Fill the reading width for portrait and landscape pages; vertical scrolling remains available.
+        const fitScale = availableWidth / natural.width;
         const viewport = page.getViewport({scale: fitScale * zoom});
         const ratio = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(12000000 / (viewport.width * viewport.height)));
         canvas.width = Math.floor(viewport.width * ratio);
@@ -99,7 +96,7 @@
         previous.disabled = closed || current <= 1;
         next.disabled = closed || current >= documentPdf.numPages;
         zoomOut.disabled = closed || zoom <= .5;
-        zoomIn.disabled = closed || zoom >= 2;
+        zoomIn.disabled = closed || zoom >= 2.5;
         fit.disabled = closed || zoom === 1;
         if (!closed && pendingPage !== null) {
           const requested = pendingPage; pendingPage = null;
@@ -110,7 +107,7 @@
     previous.onclick = () => showPage(current - 1).catch(error => { pageCount.textContent = error.message; });
     next.onclick = () => showPage(current + 1).catch(error => { pageCount.textContent = error.message; });
     function setZoom(value) {
-      zoom = Math.max(.5, Math.min(2, value));
+      zoom = Math.max(.5, Math.min(2.5, value));
       zoomValue.textContent = Math.round(zoom * 100) + ' %';
       showPage(current).catch(error => { pageCount.textContent = error.message; });
     }
