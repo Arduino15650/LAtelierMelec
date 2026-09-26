@@ -23,8 +23,10 @@
   let assignments = [], tpItems = [], activeTp = null, selectedContentTab = 'courses';
   let tpItemsLoadedAt = 0;
   function tpEnd(assignment) {
-    return Math.max(assignment.started_at ? Date.parse(assignment.started_at) + 210 * 60000 : 0,
-      Date.parse(assignment.reactivated_until || '') || 0);
+    if (assignment.validated_at) return 0;
+    return assignment.reactivated_at
+      ? Date.parse(assignment.reactivated_until || '') || 0
+      : assignment.started_at ? Date.parse(assignment.started_at) + 210 * 60000 : 0;
   }
   function clearTpViewer() {
     tpPdfCleanup?.(); tpPdfCleanup = null;

@@ -148,8 +148,11 @@
     } catch (error) { status(error.message, true); }
   }
   function tpIsActive(assignment) {
-    const initialEnd = assignment.started_at ? Date.parse(assignment.started_at) + 210 * 60000 : 0;
-    return Math.max(initialEnd, Date.parse(assignment.reactivated_until || '') || 0) > Date.now();
+    if (assignment.validated_at) return false;
+    const end = assignment.reactivated_at
+      ? Date.parse(assignment.reactivated_until || '') || 0
+      : assignment.started_at ? Date.parse(assignment.started_at) + 210 * 60000 : 0;
+    return end > Date.now();
   }
   function renderTp() {
     const body = root.querySelector('#teachBody');
@@ -166,15 +169,19 @@
       ${accountNotice}${displayed.map(item => { const assignments = tpAssignments.filter(row => row.tp_id === item.id); return `<article class="teach-card teach-tp-card" data-tp="${item.id}"><div class="teach-section-heading"><div><h3>${esc(item.title)}</h3><span class="teach-meta">${assignments.length} élève(s) associé(s)</span></div><div class="teach-row"><button type="button" data-preview-tp="${item.id}" class="subtle">Voir</button><button type="button" data-edit-tp="${item.id}" class="subtle">Modifier</button><button type="button" data-publish-tp="${item.id}" class="subtle">${item.published ? 'Masquer' : 'Publier'}</button><button type="button" data-delete-tp="${item.id}" class="warn">Supprimer</button></div></div><details><summary>Associer des élèves et gérer le temps</summary><div class="teach-tp-students">${classStudents.map(student => { const assignment = assignments.find(row => row.student_id === student.user_id); const active = assignment && tpIsActive(assignment); const locked = assignment?.started_at && !active; return `<div class="teach-tp-student"><label><input type="checkbox" data-tp-student="${student.user_id}" ${assignment ? 'checked' : ''}><span>${esc(student.last_name)} ${esc(student.first_name)}</span></label><div class="teach-tp-time">${assignment ? active ? 'En cours' : locked ? 'Terminé / verrouillé' : 'Non commencé' : 'Non associé'}${locked ? `<select data-extend-time="${assignment.id}" aria-label="Prolongation"><option value="30">30 min</option><option value="60">1 h</option><option value="90">1 h 30</option><option value="120">2 h</option><option value="180">3 h</option></select><button type="button" data-extend="${assignment.id}">Réactiver</button>` : ''}</div></div>`; }).join('') || '<p>Aucun compte élève rattaché à cette classe.</p>'}</div><button type="button" data-save-tp="${item.id}" ${classStudents.length ? '' : 'disabled'}>Enregistrer les associations</button></details></article>`; }).join('') || '<div class="teach-card">Aucun TP pour cette classe. Cliquez sur « Ajouter un TP ».</div>'}<div id="teachEditor"></div>`;
     for (const assignment of tpAssignments) {
       const reactivate = body.querySelector(`[data-extend="${assignment.id}"]`);
-      if (!reactivate) continue;
-      const time = reactivate.closest('.teach-tp-time');
+      const card = body.querySelector(`[data-tp="${assignment.tp_id}"]`);
+      const time = card?.querySelector(`[data-tp-student="${assignment.student_id}"]`)?.closest('.teach-tp-student')?.querySelector('.teach-tp-time');
+      if (!time || !assignment.started_at) continue;
       if (assignment.validated_at && time.firstChild?.nodeType === Node.TEXT_NODE) {
         time.firstChild.textContent = 'Validé · TP terminé';
+        time.querySelector(`[data-extend-time="${assignment.id}"]`)?.remove();
+        reactivate?.remove();
+        continue;
       }
+      if (!reactivate) continue;
       const validate = document.createElement('button');
       validate.type='button'; validate.className='subtle'; validate.dataset.validateTp=assignment.id;
-      validate.textContent=assignment.validated_at ? 'Validé' : 'Valider';
-      validate.disabled=Boolean(assignment.validated_at);
+      validate.textContent='Valider';
       const actions = document.createElement('span'); actions.className='teach-tp-final-actions';
       reactivate.replaceWith(actions); actions.append(reactivate,validate);
     }
@@ -270,9 +277,9 @@
   async function validateTp(id) {
     const assignment = tpAssignments.find(row => row.id === id);
     if (!assignment || !assignment.started_at || tpIsActive(assignment) || assignment.validated_at)
-      return status('Seul un TP terminé et non encore validé peut être validé.',true);
+      return status('Le TP doit être expiré et non validé pour être validé.',true);
     const student = students.find(row => row.user_id === assignment.student_id);
-    if (!confirm(`Valider la fin du TP de ${student?.first_name || ''} ${student?.last_name || 'cet élève'} ? Une prolongation de 30 minutes à 3 heures restera possible ensuite.`)) return;
+    if (!confirm(`Valider définitivement le TP de ${student?.first_name || ''} ${student?.last_name || 'cet élève'} ? Aucune réactivation ne sera possible ensuite.`)) return;
     try {
       const changed = await api.rest('tp_assignments?id=eq.' + encodeURIComponent(id) + '&validated_at=is.null&select=id,validated_at',{
         method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=representation'},
@@ -280,7 +287,7 @@
       });
       if (!Array.isArray(changed) || changed.length !== 1 || !changed[0].validated_at)
         throw new Error('Validation non confirmée. Vérifiez l’installation du SQL et actualisez.');
-      await loadClass(); status('TP validé. La réactivation reste disponible pour cet élève.');
+      await loadClass(); status('TP validé définitivement. Aucune réactivation n’est possible.');
     } catch (error) { status(error.message,true); }
   }
   async function saveTpAssignments(tpId) {
@@ -305,7 +312,8 @@
   async function extendTp(id) {
     const assignment = tpAssignments.find(row => row.id === id);
     const select = root.querySelector(`[data-extend-time="${id}"]`);
-    if (!assignment || !select || tpIsActive(assignment)) return status('Ce TP est encore actif.',true);
+    if (!assignment || !select || tpIsActive(assignment) || assignment.validated_at)
+      return status(assignment?.validated_at ? 'Ce TP est validé : aucune réactivation n’est possible.' : 'Ce TP est encore actif.',true);
     const minutes = Number(select.value);
     if (!Number.isInteger(minutes) || minutes < 30 || minutes > 180) return status('Choisissez une prolongation de 30 minutes à 3 heures.',true);
     try {
