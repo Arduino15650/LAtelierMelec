@@ -204,25 +204,31 @@
             viewer.querySelectorAll('button[aria-expanded="true"]').forEach(other => { other.textContent = other.dataset.fileName; other.setAttribute('aria-expanded','false'); });
             const mount=document.createElement('div'); mount.className='student-pdf-mount'; mount.dataset.assetId=asset.id; group.append(mount);
             try {
-              const responsePath = 'tp_document_responses?student_id=eq.' + encodeURIComponent(profile.user_id) + '&asset_id=eq.' + encodeURIComponent(asset.id);
-              const existing = await api.rest(responsePath + '&select=answers');
-              let hasResponse = existing.length > 0;
-              const formOptions = {
-                entries: existing[0]?.answers?.entries || [],
-                save: async entries => {
-                  if (!activeTp || activeTp.tp_id !== item.id || tpEnd(activeTp) <= Date.now()) throw new Error('Le temps du TP est écoulé.');
-                  const answers = {entries};
-                  if (hasResponse) {
-                    const updated = await api.rest(responsePath + '&select=asset_id', {method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({answers})});
-                    if (updated.length !== 1) throw new Error('Réponse non enregistrée : accès refusé ou document introuvable.');
-                  } else {
-                    const created = await api.rest('tp_document_responses?select=asset_id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({student_id:profile.user_id,tp_id:item.id,asset_id:asset.id,answers})});
-                    if (created.length !== 1) throw new Error('Réponse non enregistrée.');
-                    hasResponse = true;
+              const mayRead = () => Boolean(activeTp && tpEnd(activeTp) > Date.now());
+              if (role === 'technical') {
+                // Reference documents are read-only: no response fetch, editing tools or save path.
+                tpPdfCleanup = await MelecStudentPdf.render(blob,mount,mayRead);
+              } else {
+                const responsePath = 'tp_document_responses?student_id=eq.' + encodeURIComponent(profile.user_id) + '&asset_id=eq.' + encodeURIComponent(asset.id);
+                const existing = await api.rest(responsePath + '&select=answers');
+                let hasResponse = existing.length > 0;
+                const formOptions = {
+                  entries: existing[0]?.answers?.entries || [],
+                  save: async entries => {
+                    if (!activeTp || activeTp.tp_id !== item.id || tpEnd(activeTp) <= Date.now()) throw new Error('Le temps du TP est écoulé.');
+                    const answers = {entries};
+                    if (hasResponse) {
+                      const updated = await api.rest(responsePath + '&select=asset_id', {method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({answers})});
+                      if (updated.length !== 1) throw new Error('Réponse non enregistrée : accès refusé ou document introuvable.');
+                    } else {
+                      const created = await api.rest('tp_document_responses?select=asset_id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({student_id:profile.user_id,tp_id:item.id,asset_id:asset.id,answers})});
+                      if (created.length !== 1) throw new Error('Réponse non enregistrée.');
+                      hasResponse = true;
+                    }
                   }
-                }
-              };
-              tpPdfCleanup = await MelecStudentPdf.render(blob,mount,() => Boolean(activeTp && tpEnd(activeTp) > Date.now()),formOptions);
+                };
+                tpPdfCleanup = await MelecStudentPdf.render(blob,mount,mayRead,formOptions);
+              }
             }
             catch (error) { mount.remove(); throw error; }
             button.dataset.fileName=asset.file_name; button.textContent='Réduire · '+asset.file_name; button.setAttribute('aria-expanded','true');
