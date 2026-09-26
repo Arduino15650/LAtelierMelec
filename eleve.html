@@ -12,11 +12,14 @@
     .student-refresh-actions #studentRefresh:disabled{opacity:.7;cursor:wait}
     @media(max-width:600px){.student-refresh-actions #studentRefresh{width:100%}}
     #studentDashboard .student-readonly,#studentDashboard .student-tp-viewer,#studentDashboard .student-pdf-page{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-    .student-pdf-panel{max-width:100%;overflow:hidden;padding:10px;border:1px solid #9dbde0;border-radius:12px;background:#eaf3ff}
+    .student-pdf-mount{width:100%;min-width:0;max-width:100%}
+    .student-pdf-panel{box-sizing:border-box;width:100%;max-width:100%;min-width:0;overflow:hidden;padding:10px;border:1px solid #9dbde0;border-radius:12px;background:#eaf3ff}
     .student-pdf-controls{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+    .student-pdf-orientation{font-size:.85rem;font-weight:700;color:#294d72}
     .student-pdf-controls button{min-height:42px;padding:8px 12px;border:1px solid #8eacd0;border-radius:10px;background:#195a98;color:#fff;font-weight:700;cursor:pointer}
     .student-pdf-controls button:disabled{opacity:.5;cursor:default}
-    .student-pdf-page{display:block;max-width:100%;height:auto!important;margin:auto;background:#fff;box-shadow:0 2px 12px #1235}
+    .student-pdf-page{display:block;max-width:100%;height:auto!important;margin:auto;background:#fff;box-shadow:0 2px 12px #1235;touch-action:pan-y}
+    @media(max-width:600px){.student-pdf-panel{padding:6px}.student-pdf-controls{gap:6px}.student-pdf-controls button{min-height:40px;padding:6px 8px}}
     @media print{#studentDashboard{display:none!important}body:after{content:'Impression non autorisée dans l’espace élève.';display:block;padding:30px;color:#111;background:#fff}}
   </style>
 </head>
@@ -70,13 +73,13 @@
     </main>
   </div>
   <script src="portal-api.js?v=20260926-tp-fiabilite1"></script>
-  <script src="student-pdf-viewer.js?v=20260926-protection1"></script>
+  <script src="student-pdf-viewer.js?v=20260926-a4-responsive1"></script>
   <script src="content-render.js?v=20260926-protection1"></script>
   <script src="portal-contact.js?v=20260925-1"></script>
   <script src="student-space.js?v=20260926-protection1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=81',{updateViaCache:'none'}).catch(console.error));
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=82',{updateViaCache:'none'}).catch(console.error));
     }
   </script>
 </body>
