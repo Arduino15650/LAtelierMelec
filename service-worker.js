@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v66-speed';
+const CACHE_NAME = 'bac-pro-melec-v67-acces-permanent';
 const APP_FILES = [
   './','./index.html','./eleve.html','./enseignant.html','./styles.css','./bo.css','./portal.css','./teaching.css','./referential.js','./app.js',
   './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js','./cloud-sync.js','./portal-api.js','./portal-contact.js','./student-space.js','./teaching-space.js','./content-render.js',
@@ -36,26 +36,10 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (['script', 'style', 'image', 'font'].includes(event.request.destination)) {
-    event.respondWith((async () => {
-      const cached = await caches.match(event.request);
-      if (cached) {
-        // Affichage immédiat ; mise à jour discrète pour la prochaine visite.
-        event.waitUntil(fetch(event.request).then(response => {
-          if (response.ok) return caches.open(CACHE_NAME).then(cache => cache.put(event.request, response));
-        }).catch(() => {}));
-        return cached;
-      }
-      try {
-        const response = await fetch(event.request);
-        if (response.ok) event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone())).catch(() => {}));
-        return response;
-      } catch {
-        return caches.match(event.request, {ignoreSearch: true});
-      }
-    })());
-    return;
-  }
-
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request, {ignoreSearch: true})));
+  event.respondWith(
+    fetch(event.request).then(response => {
+      if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
+      return response;
+    }).catch(() => caches.match(event.request, {ignoreSearch: true}))
+  );
 });

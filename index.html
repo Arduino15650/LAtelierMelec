@@ -7,7 +7,7 @@
   <title>BAC PRO MELEC — Accueil</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-180.png">
-  <link rel="stylesheet" href="portal.css?v=20260925-1">
+  <link rel="stylesheet" href="portal.css?v=20260926-acces-permanent1">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
@@ -23,11 +23,12 @@
         <div class="portal-cards">
           <a class="portal-card teacher-card" href="./enseignant.html"><span class="portal-card-icon">⚡</span><span><strong>Espace enseignant</strong><small>Activités, évaluations, contenus pédagogiques et suivi des élèves.</small></span><span aria-hidden="true">›</span></a>
           <a class="portal-card student-card" href="./eleve.html"><span class="portal-card-icon">▣</span><span><strong>Espace élève</strong><small>Consulter les cours, TD et TP de votre classe après validation.</small></span><span aria-hidden="true">›</span></a>
+          <button id="homeContactButton" class="portal-card contact-card" type="button" aria-expanded="false" aria-controls="homeContactPanel"><span class="portal-card-icon">✉</span><span><strong>Contacter l’enseignant</strong><small>Envoyer une question ou demander de l’aide.</small></span><span aria-hidden="true">›</span></button>
         </div>
       </section>
-      <section class="portal-panel contact-panel" aria-labelledby="contactTitle">
+      <section id="homeContactPanel" class="portal-panel contact-panel" aria-labelledby="contactTitle" hidden>
         <div><p class="eyebrow">Une question ?</p><h2 id="contactTitle">Contacter l’enseignant</h2><p>Décrivez votre demande. Les champs marqués * sont obligatoires.</p></div>
-        <form id="contactForm" class="portal-form">
+        <form id="contactForm" class="portal-form" autocomplete="off">
           <div class="portal-form-grid">
             <label>Nom *<input name="lastName" maxlength="80" autocomplete="family-name" required></label>
             <label>Prénom *<input name="firstName" maxlength="80" autocomplete="given-name" required></label>
@@ -46,8 +47,15 @@
   <script src="portal-api.js?v=20260925-1"></script>
   <script src="portal-contact.js?v=20260925-1"></script>
   <script>
+    const contactButton=document.getElementById('homeContactButton');
+    const contactPanel=document.getElementById('homeContactPanel');
+    contactButton.addEventListener('click',()=>{
+      contactPanel.hidden=!contactPanel.hidden;
+      contactButton.setAttribute('aria-expanded',String(!contactPanel.hidden));
+      if(!contactPanel.hidden){document.getElementById('contactForm').reset();contactPanel.scrollIntoView({block:'nearest'});}
+    });
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const version='65';
+      const version='67';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         if(sessionStorage.getItem('melec-sw-version')!==version){sessionStorage.setItem('melec-sw-version',version);location.reload()}
       });

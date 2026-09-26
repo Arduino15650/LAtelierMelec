@@ -41,7 +41,15 @@
     .cloud-menu-panel button{min-height:42px;padding:8px 14px;border:1px solid #8eb5de;border-radius:999px;background:#155395;color:#fff;font:700 14px Arial,sans-serif;cursor:pointer}
     .cloud-menu-panel button:hover,.cloud-menu-panel button:focus-visible{filter:brightness(1.12);outline:2px solid #174878;outline-offset:2px}
     .cloud-menu-panel .cloud-sync-error{color:#a12626}
-    @media(min-width:981px){.cloud-toolbar{margin-left:248px}}
+    .quick-nav .cloud-toolbar{padding:0;margin:0;justify-content:center;flex:0 0 auto}
+    .quick-nav .cloud-menu>summary{min-height:44px;white-space:nowrap}
+    @media(min-width:981px){.quick-nav .cloud-toolbar,.quick-nav .cloud-menu{width:100%}.quick-nav .cloud-menu>summary{width:100%;justify-content:flex-start;padding-left:14px}}
+    @media(max-width:980px){
+      .home-active .quick-nav,.quick-nav{display:flex!important;flex-wrap:nowrap!important;align-items:center;justify-content:flex-start!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:visible!important;scrollbar-width:thin}
+      .quick-nav .nav{flex:0 0 auto!important;width:auto!important;white-space:nowrap!important}
+      .quick-nav .cloud-toolbar{flex:0 0 auto;width:auto;grid-column:auto}
+      .quick-nav .cloud-menu-panel{position:fixed;top:110px;right:10px;max-height:calc(100dvh - 125px);overflow-y:auto}
+    }
   </style>
 </head>
 <body class="cloud-locked">
@@ -86,8 +94,7 @@
       <button class="nav" data-view="ccf"><span>◉</span> Récap Des CCF</button>
       <button class="nav" data-view="referential"><span>◎</span> Référentiel</button>
       <button class="nav" data-view="teaching"><span>▣</span> Cours · TD · TP</button>
-    </nav>
-  <div class="cloud-toolbar" hidden>
+      <div class="cloud-toolbar" hidden>
     <details class="cloud-menu">
       <summary>⚙ Mon compte</summary>
       <div class="cloud-menu-panel">
@@ -96,7 +103,8 @@
         <button id="cloudSignOut" type="button">Déconnexion</button>
       </div>
     </details>
-  </div>
+      </div>
+    </nav>
 
   <main class="shell">
     <section class="content">
@@ -122,12 +130,12 @@
   <script src="home.js?v=20260925-2"></script>
   <script src="portal-api.js?v=20260925-crud1"></script>
   <script src="content-render.js?v=20260926-impression-tp3"></script>
-  <script src="teaching-space.js?v=20260926-eleves-responsive1"></script>
+  <script src="teaching-space.js?v=20260926-acces-permanent1"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script src="cloud-sync.js?v=20260925-speed1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='66';
+      const swVersion='67';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>

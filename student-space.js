@@ -8,6 +8,16 @@
     $('studentSignupForm').reset();
     $('contactForm').reset();
   });
+  function showContact(show) {
+    $('studentContactPanel').hidden = !show;
+    $('studentContactTab').classList.toggle('active', show && !authPane.hidden);
+    if (show) {
+      $('contactForm').reset();
+      $('contactCount').textContent = '0 / 500 caractères';
+      $('contactStatus').textContent = '';
+      $('studentContactPanel').scrollIntoView({block:'nearest'});
+    }
+  }
   let profile = null;
   let cleanupViewer = null;
   let assignments = [], tpItems = [], activeTp = null, tpUrls = [], selectedContentTab = 'courses';
@@ -42,17 +52,20 @@
     target.textContent = text;
     target.classList.toggle('error', error);
   }
-  function switchTab(signup) {
-    if (signup) $('studentSignupForm').reset();
-    $('studentLoginForm').hidden = signup;
-    $('studentSignupForm').hidden = !signup;
-    $('studentLoginTab').classList.toggle('active', !signup);
-    $('studentSignupTab').classList.toggle('active', signup);
-    $('studentAuthTitle').textContent = signup ? 'Créer un compte élève' : 'Connexion élève';
+  function switchTab(tab) {
+    if (tab === 'signup') $('studentSignupForm').reset();
+    $('studentLoginForm').hidden = tab !== 'login';
+    $('studentSignupForm').hidden = tab !== 'signup';
+    $('studentLoginTab').classList.toggle('active', tab === 'login');
+    $('studentSignupTab').classList.toggle('active', tab === 'signup');
+    $('studentAuthTitle').textContent = tab === 'signup' ? 'Créer un compte élève' : tab === 'contact' ? 'Besoin d’aide ?' : 'Connexion élève';
+    showContact(tab === 'contact');
     message(authStatus, '');
   }
-  $('studentLoginTab').onclick = () => switchTab(false);
-  $('studentSignupTab').onclick = () => switchTab(true);
+  $('studentLoginTab').onclick = () => switchTab('login');
+  $('studentSignupTab').onclick = () => switchTab('signup');
+  $('studentContactTab').onclick = () => switchTab('contact');
+  $('studentContactButton').onclick = () => showContact($('studentContactPanel').hidden);
   $('studentLoginForm').onsubmit = async event => {
     event.preventDefault();
     const form = event.currentTarget, button = form.querySelector('button[type=submit]');
@@ -88,23 +101,26 @@
     if (!profiles.length) throw new Error('Profil élève introuvable. Contactez votre enseignant.');
     profile = profiles[0];
     authPane.hidden = true; dashboard.hidden = false;
+    showContact(false);
     const intro = $('studentProfileStatus');
     intro.textContent = `Bonjour ${profile.first_name} ${profile.last_name}.`;
-    const approved = Boolean(profile.approved_at && profile.class_id);
-    const active = approved && Date.parse(profile.access_until || '') > Date.now();
-    $('studentCodePane').hidden = !approved || active;
-    $('studentLessonsPane').hidden = !active;
+    const approved = Boolean(profile.approved_at && profile.class_id && !profile.blocked_at);
+    const classLabel = $('studentClassName');
+    classLabel.hidden = !approved;
+    if (approved) {
+      classLabel.textContent = 'Classe attribuée : chargement…';
+      try {
+        const assigned = await api.rest('teaching_classes?id=eq.' + encodeURIComponent(profile.class_id) + '&select=name');
+        classLabel.textContent = assigned.length ? 'Classe attribuée : ' + assigned[0].name : 'Classe attribuée : nom indisponible';
+      } catch { classLabel.textContent = 'Classe attribuée : nom indisponible'; }
+    }
+    $('studentLessonsPane').hidden = !approved;
     $('studentTpPane').hidden = true;
-    $('studentContentTabs').hidden = !active;
+    $('studentContentTabs').hidden = !approved;
     if (!approved) {
       intro.textContent += ' Votre inscription est en attente de validation par l’enseignant.';
       return;
     }
-    if (!active) {
-      intro.textContent += ' Votre accès aux contenus est expiré ou n’a pas encore été activé.';
-      return;
-    }
-    $('studentAccessUntil').textContent = 'Accès autorisé jusqu’au ' + new Date(profile.access_until).toLocaleString('fr-FR');
     await loadTpAssignments();
     if (activeTp) {
       if (cleanupViewer) { cleanupViewer(); cleanupViewer=null; }
@@ -200,6 +216,7 @@
     const ids = chapters.map(c => c.id);
     const items = await api.rest('learning_items?chapter_id=in.(' + ids.join(',') + ')&kind=in.(course,td)&published=is.true&select=id,chapter_id,kind,title,blocks,linked_course_id,position&order=position.asc,title.asc');
     target.replaceChildren();
+    if (!items.length) { target.textContent = 'Aucun cours ou TD publié n’est visible pour cette classe. Demandez à l’enseignant de vérifier la publication de la leçon.'; return; }
     const labels = { course: 'Cours', td: 'Travaux dirigés', tp: 'Travaux pratiques' };
     for (const chapter of chapters) {
       const chapterNode = document.createElement('details');
@@ -216,7 +233,7 @@
           const content = document.createElement('div'); content.className = 'student-readonly'; row.append(content);
           row.addEventListener('toggle', async () => {
             if (!row.open) { if (cleanupViewer) cleanupViewer(); content.replaceChildren(); return; }
-            if (Date.parse(profile.access_until || '') <= Date.now()) { row.open = false; await openDashboard(); return; }
+            if (activeTp) { row.open = false; await openDashboard(); return; }
             try {
               const assets = await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(item.id) + '&select=id,object_path,file_name,mime_type');
               if (cleanupViewer) cleanupViewer();
@@ -229,25 +246,13 @@
       target.append(chapterNode);
     }
   }
-  $('studentCodeForm').onsubmit = async event => {
-    event.preventDefault();
-    const form = event.currentTarget, button = form.querySelector('button[type=submit]');
-    button.disabled = true;
-    message($('studentCodeStatus'), 'Vérification du code…');
-    try {
-      await api.invoke('melec-access', { action: 'redeem', code: form.elements.code.value.trim() });
-      form.reset();
-      await openDashboard();
-      message($('studentCodeStatus'), 'Accès activé.');
-    } catch (error) { message($('studentCodeStatus'), error.message, true); }
-    finally { button.disabled = false; }
-  };
   $('studentRefresh').onclick = () => openDashboard().catch(error => alert(error.message));
   $('studentLogout').onclick = async () => {
     if (cleanupViewer) cleanupViewer();
     clearTpViewer(); activeTp=null; assignments=[]; tpItems=[];
     await api.signOut();
     dashboard.hidden = true; authPane.hidden = false; profile = null;
+    switchTab('login');
   };
   setInterval(() => {
     if (!activeTp) return;
@@ -259,24 +264,26 @@
   setInterval(async () => {
     if (!profile || $('studentLessonsPane').hidden) return;
     try {
-      const current = await api.rest('student_profiles?user_id=eq.' + encodeURIComponent(profile.user_id) + '&select=approved_at,class_id,access_until');
+      const current = await api.rest('student_profiles?user_id=eq.' + encodeURIComponent(profile.user_id) + '&select=approved_at,class_id,blocked_at');
       if (current[0]) profile = { ...profile, ...current[0] };
     } catch { /* Les requêtes de contenu restent protégées par RLS même hors réseau. */ }
-    if ((!profile.approved_at || !profile.class_id || Date.parse(profile.access_until || '') <= Date.now()) && !$('studentLessonsPane').hidden) {
+    if ((!profile.approved_at || !profile.class_id || profile.blocked_at) && !$('studentContentTabs').hidden) {
       if (cleanupViewer) cleanupViewer();
       $('studentLessons').replaceChildren();
       $('studentLessonsPane').hidden = true;
       $('studentTpPane').hidden = true;
       $('studentContentTabs').hidden = true;
       clearTpViewer(); activeTp=null;
-      $('studentCodePane').hidden = !profile.approved_at;
-      $('studentProfileStatus').textContent = profile.approved_at ? 'Votre accès de 24 h a expiré. Demandez un nouveau code à l’enseignant.' : 'Votre accès a été révoqué par l’enseignant.';
+      $('studentProfileStatus').textContent = 'Votre accès a été suspendu ou révoqué par l’enseignant.';
     }
-    if (profile.approved_at && profile.class_id && Date.parse(profile.access_until || '') > Date.now()) {
+    if (profile.approved_at && profile.class_id && !profile.blocked_at) {
       const wasActive = activeTp?.id || null;
       try {
         await loadTpAssignments(true);
-        if (activeTp) { $('studentCoursesTab').disabled=true; switchContentTab('tp'); }
+        if (activeTp) {
+          if (!wasActive) { if (cleanupViewer) { cleanupViewer(); cleanupViewer=null; } $('studentLessons').replaceChildren(); }
+          $('studentCoursesTab').disabled=true; switchContentTab('tp');
+        }
         else { $('studentCoursesTab').disabled=false; if (wasActive) { switchContentTab('courses'); await loadLessons(); } }
       } catch { /* Les règles RLS continuent à protéger chaque accès aux documents. */ }
     }
