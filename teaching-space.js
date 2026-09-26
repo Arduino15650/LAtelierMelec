@@ -375,8 +375,12 @@
       if (blocks[index]?.type === 'html') blocks[index].html = MelecContent.sanitize(node.querySelector('.teach-editable')?.innerHTML || '');
       if (blocks[index]?.type === 'video') blocks[index].url = node.querySelector('input')?.value || '';
       if (['asset','pending'].includes(blocks[index]?.type) && tab !== 'tp') {
-        blocks[index].title = node.querySelector('[data-asset-title]')?.value.trim().slice(0,180) || '';
-        blocks[index].comment = node.querySelector('[data-asset-comment]')?.value.trim().slice(0,500) || '';
+        const title = node.querySelector('[data-asset-title]');
+        const comment = node.querySelector('[data-asset-comment]');
+        blocks[index].title = (title?.textContent || '').trim().slice(0,180);
+        blocks[index].comment = (comment?.textContent || '').trim().slice(0,500);
+        blocks[index].titleHtml = blocks[index].title ? MelecContent.sanitize(title?.innerHTML || '') : '';
+        blocks[index].commentHtml = blocks[index].comment ? MelecContent.sanitize(comment?.innerHTML || '') : '';
         const width = Number(node.querySelector('[data-asset-width]')?.value);
         blocks[index].width = Number.isInteger(width) && width >= 25 && width <= 100 ? width : 100;
       }
@@ -385,11 +389,13 @@
   let savedRange = null;
   document.addEventListener('selectionchange', () => {
     const selection = window.getSelection();
-    const editable = selection?.anchorNode?.parentElement?.closest('.teach-editable');
+    const anchor = selection?.anchorNode;
+    const editable = (anchor?.nodeType === Node.ELEMENT_NODE ? anchor : anchor?.parentElement)?.closest('.teach-editable');
     if (editable && selection.rangeCount) savedRange = selection.getRangeAt(0).cloneRange();
   });
   function formatSelection(command, value) {
-    const editable = savedRange?.startContainer?.parentElement?.closest('.teach-editable') || root.querySelector('.teach-editable');
+    const start = savedRange?.startContainer;
+    const editable = (start?.nodeType === Node.ELEMENT_NODE ? start : start?.parentElement)?.closest('.teach-editable') || root.querySelector('.teach-editable:focus');
     if (!editable) return;
     editable.focus();
     if (savedRange && editable.contains(savedRange.commonAncestorContainer)) {
@@ -406,7 +412,7 @@
   }
   function renderBlocks() {
     const list = root.querySelector('#blockList'); if (!list) return;
-    const assetOptions = block => tab === 'tp' ? '' : `<div class="teach-asset-options"><label>Titre personnalisé (facultatif)<input data-asset-title maxlength="180" value="${esc(block.title || '')}" placeholder="Aucun titre affiché par défaut"></label><label>Commentaire (facultatif)<textarea data-asset-comment maxlength="500" rows="2" placeholder="Commentaire sous le document">${esc(block.comment || '')}</textarea></label>${(block.type === 'pending' ? draftAssets[block.index]?.type : originalAssets.find(asset => asset.id === block.assetId)?.mime_type || '').startsWith('image/') ? `<label>Largeur de l’image : <output>${Number(block.width) || 100} %</output><input data-asset-width type="range" min="25" max="100" step="5" value="${Number(block.width) || 100}"></label>` : ''}</div>`;
+    const assetOptions = block => tab === 'tp' ? '' : `<div class="teach-asset-options"><p class="teach-help">Sélectionnez du texte dans le titre ou le commentaire, puis utilisez la palette.</p>${editorToolbar()}<div class="teach-asset-field"><label>Titre personnalisé (facultatif)</label><div data-asset-title class="teach-editable teach-asset-input" contenteditable="true" role="textbox" aria-label="Titre personnalisé" data-placeholder="Aucun titre affiché par défaut">${MelecContent.sanitize(block.titleHtml || esc(block.title || ''))}</div></div><div class="teach-asset-field"><label>Commentaire (facultatif)</label><div data-asset-comment class="teach-editable teach-asset-input teach-asset-comment" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Commentaire" data-placeholder="Commentaire sous le document">${MelecContent.sanitize(block.commentHtml || esc(block.comment || ''))}</div></div>${(block.type === 'pending' ? draftAssets[block.index]?.type : originalAssets.find(asset => asset.id === block.assetId)?.mime_type || '').startsWith('image/') ? `<div class="teach-asset-field"><label>Largeur de l’image : <output>${Number(block.width) || 100} %</output><input data-asset-width type="range" min="25" max="100" step="5" value="${Number(block.width) || 100}"></label></div>` : ''}</div>`;
     list.innerHTML = blocks.map((block,index) => `<div class="teach-block" data-block-index="${index}"><div class="teach-block-actions"><button type="button" data-up="${index}" class="subtle" aria-label="Monter">↑</button><button type="button" data-down="${index}" class="subtle" aria-label="Descendre">↓</button><button type="button" data-remove="${index}" class="warn">Retirer</button></div>${block.type === 'html' ? `${editorToolbar()}<div class="teach-editable" contenteditable="true" role="textbox" aria-label="Contenu du cours">${MelecContent.sanitize(block.html)}</div>` : block.type === 'video' ? `<label>Adresse YouTube ou Vimeo <input type="url" value="${esc(block.url)}" placeholder="https://..."></label>` : `<span>${tab === 'tp' ? (block.type === 'pending' ? draftRoles[block.index] : originalAssets.find(asset => asset.id === block.assetId)?.asset_role) === 'technical' ? 'Dossier technique · ' : 'Document du TP · ' : ''}${block.type === 'pending' ? esc(draftAssets[block.index]?.name || 'Fichier') : esc(originalAssets.find(asset => asset.id === block.assetId)?.file_name || 'Document joint')}</span>${assetOptions(block)}`}</div>`).join('');
     list.querySelectorAll('[data-asset-width]').forEach(input => input.oninput = () => { input.closest('label').querySelector('output').textContent = input.value + ' %'; });
     list.querySelectorAll('[data-up],[data-down],[data-remove]').forEach(btn => btn.onclick = () => { captureBlocks(); const n = Number(btn.dataset.up ?? btn.dataset.down ?? btn.dataset.remove); if (btn.dataset.remove != null) blocks.splice(n,1); else { const m = btn.dataset.up != null ? n-1 : n+1; if (m >= 0 && m < blocks.length) [blocks[n],blocks[m]] = [blocks[m],blocks[n]]; } renderBlocks(); });
@@ -428,7 +434,7 @@
       if (!file) return null;
       const id = 'draft-' + block.index;
       assets.push({id,file_name:file.name,mime_type:file.type || 'application/octet-stream',local_blob:file});
-      return {type:'asset',assetId:id,title:block.title || '',comment:block.comment || '',width:block.width || 100};
+      return {type:'asset',assetId:id,title:block.title || '',titleHtml:block.titleHtml || '',comment:block.comment || '',commentHtml:block.commentHtml || '',width:block.width || 100};
     }).filter(Boolean);
     const assetMap = new Map(assets.map(asset => [asset.id,asset]));
     const isPdf = asset => asset && (asset.mime_type === 'application/pdf' || /\.pdf$/i.test(asset.file_name || ''));
@@ -454,8 +460,8 @@
         let firstOpen = null;
         for (const {asset,block} of pdfAssets) {
           const card = document.createElement('article'); card.className = 'teach-pdf-card';
-          if (block.title) { const name = document.createElement('strong'); name.textContent = String(block.title).slice(0,180); card.append(name); }
-          if (block.comment) { const comment = document.createElement('p'); comment.textContent = String(block.comment).slice(0,500); card.append(comment); }
+          if (block.titleHtml || block.title) { const name = document.createElement('div'); name.innerHTML = MelecContent.sanitize(block.titleHtml || esc(block.title)); card.append(name); }
+          if (block.commentHtml || block.comment) { const comment = document.createElement('div'); comment.innerHTML = MelecContent.sanitize(block.commentHtml || esc(block.comment)); card.append(comment); }
           const actions = document.createElement('div'); actions.className = 'teach-row';
           const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Afficher le PDF'; actions.append(button);
           card.append(actions); section.append(card);
@@ -511,7 +517,7 @@
         const path = id + '/' + crypto.randomUUID() + '-' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
         await api.upload(path,file);
         const asset = await api.rest('learning_assets?select=id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({item_id:id,object_path:path,file_name:file.name,mime_type:file.type || 'application/octet-stream',asset_role:draftRoles[block.index] || 'main'})});
-        payload.blocks.push({type:'asset',assetId:asset[0].id,title:block.title || '',comment:block.comment || '',width:block.width || 100});
+        payload.blocks.push({type:'asset',assetId:asset[0].id,title:block.title || '',titleHtml:block.titleHtml || '',comment:block.comment || '',commentHtml:block.commentHtml || '',width:block.width || 100});
       }
       if (pendingBlocks.length) await api.rest('learning_items?id=eq.' + id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({blocks:payload.blocks})});
       for (const asset of removedAssets) {

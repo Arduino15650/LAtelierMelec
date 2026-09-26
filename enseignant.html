@@ -18,6 +18,16 @@
   <link rel="stylesheet" href="bo.css?v=20260924-5">
   <link rel="stylesheet" href="teaching.css?v=20260926-eleves-responsive1">
   <style>
+    .teach-asset-options{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;width:100%;min-width:0;margin-top:14px;padding:16px;border:1px solid #a8c8e8;border-radius:14px;background:#f5f9ff;box-sizing:border-box}
+    .teach-asset-options>.teach-help{margin:0}
+    .teach-asset-options .teach-editor-toolbar{max-width:100%;min-width:0;flex-wrap:wrap}
+    .teach-asset-field{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;min-width:0}
+    .teach-asset-field>label{display:block;margin:0;font-weight:700}
+    .teach-asset-input{box-sizing:border-box;width:100%;min-width:0;min-height:48px;padding:11px 13px;border:1px solid #86a9d0;border-radius:10px;background:#fff;color:#173450;overflow-wrap:anywhere}
+    .teach-asset-comment{min-height:96px}
+    .teach-asset-input:empty:before{content:attr(data-placeholder);color:#63748a;pointer-events:none}
+    .teach-asset-field input[type=range]{display:block;width:min(100%,420px);margin-top:8px}
+    @media(max-width:600px){.teach-asset-options{padding:12px}.teach-asset-options .teach-editor-toolbar{overflow-x:auto}}
   </style>
   <style>
     body.cloud-locked > :not(#cloudGate):not(script){visibility:hidden!important}
@@ -178,8 +188,8 @@
   <script src="ccf-dashboard.js?v=20260924-5"></script>
   <script src="home.js?v=20260925-2"></script>
   <script src="portal-api.js?v=20260926-tp-fiabilite1"></script>
-  <script src="content-render.js?v=20260926-medias1"></script>
-  <script src="teaching-space.js?v=20260926-medias1"></script>
+  <script src="content-render.js?v=20260926-medias2"></script>
+  <script src="teaching-space.js?v=20260926-medias2"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script src="cloud-sync.js?v=20260925-speed1"></script>
   <script>

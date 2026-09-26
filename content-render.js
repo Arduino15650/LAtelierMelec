@@ -89,7 +89,7 @@
           const box = document.createElement('div'); box.className = 'lesson-file'; box.style.display = 'grid'; box.style.justifyItems = 'start';
           const customTitle = String(block.title || '').trim().slice(0,180);
           const comment = String(block.comment || '').trim().slice(0,500);
-          if (customTitle) { const label = document.createElement('strong'); label.textContent = customTitle; box.append(label); }
+          if (block.titleHtml || customTitle) { const label = document.createElement('div'); label.className = 'lesson-file-title'; label.innerHTML = sanitize(block.titleHtml || customTitle); box.append(label); }
           if (String(asset.mime_type || '').startsWith('image/')) {
             const image = document.createElement('img');
             image.className = 'lesson-image'; image.alt = customTitle || 'Image du cours'; image.style.maxWidth = '100%'; image.style.height = 'auto';
@@ -120,7 +120,7 @@
           } else {
             const note = document.createElement('span'); note.textContent = 'Consultation Word en préparation'; box.append(note);
           }
-          if (comment) { const caption = document.createElement('p'); caption.className = 'lesson-file-comment'; caption.textContent = comment; box.append(caption); }
+          if (block.commentHtml || comment) { const caption = document.createElement('div'); caption.className = 'lesson-file-comment'; caption.innerHTML = sanitize(block.commentHtml || comment); box.append(caption); }
           wrapper.append(box);
         }
       }
