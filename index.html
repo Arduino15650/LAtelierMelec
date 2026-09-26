@@ -55,7 +55,7 @@
       if(!contactPanel.hidden){document.getElementById('contactForm').reset();contactPanel.scrollIntoView({block:'nearest'});}
     });
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const version='72';
+      const version='73';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         if(sessionStorage.getItem('melec-sw-version')!==version){sessionStorage.setItem('melec-sw-version',version);location.reload()}
       });

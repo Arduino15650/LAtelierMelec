@@ -75,7 +75,7 @@
       .topbar .brand-copy{flex:0 1 auto!important;max-width:min(680px,calc(100vw - 135px))!important}
     }
     @media(max-width:600px){
-      .topbar{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;grid-template-rows:auto auto!important;align-items:center!important;column-gap:8px!important;row-gap:7px!important;box-sizing:border-box!important;height:auto!important;min-height:0!important;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 13px!important}
+      .topbar{position:relative!important;display:grid!important;grid-template-columns:clamp(44px,18vw,80px) minmax(0,1fr) clamp(44px,18vw,80px)!important;grid-template-rows:auto auto!important;align-items:center!important;column-gap:8px!important;row-gap:7px!important;box-sizing:border-box!important;height:auto!important;min-height:0!important;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 13px!important}
       .topbar #appBackButton,.topbar #mobileExitButton{position:static!important;inset:auto!important;z-index:5!important;align-items:center!important;justify-content:center!important;gap:4px!important;box-sizing:border-box!important;min-height:44px!important;max-width:100%!important;padding:6px!important;border:1px solid #e3a34c!important;border-radius:999px!important;background:#174878!important;color:#fff!important;font:700 12px Arial,sans-serif!important;white-space:nowrap!important;cursor:pointer!important}
       .topbar #appBackButton{grid-column:1!important;grid-row:1!important;justify-self:start!important}
       .topbar #appBackButton[hidden],body.home-active .topbar #appBackButton{display:none!important}
@@ -84,11 +84,11 @@
       .topbar #mobileExitButton{display:inline-flex!important;grid-column:3!important;grid-row:1!important;justify-self:end!important}
       .topbar #mobileExitButton svg{display:block;width:16px;height:16px;flex:0 0 16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
       #mobileMenuToggle{display:flex!important;min-width:135px!important;margin:10px auto 14px!important}
-      .topbar .brand{display:flex!important;grid-column:2!important;grid-row:1!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;width:auto!important;height:auto!important;min-height:0!important;gap:7px!important;padding:0!important;text-align:center!important}
+      .topbar .brand{display:flex!important;grid-column:2!important;grid-row:1!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;width:100%!important;min-width:0!important;height:auto!important;min-height:0!important;gap:7px!important;padding:0!important;text-align:center!important}
       .topbar .brand-logo{position:static!important;width:clamp(52px,16vw,72px)!important;height:clamp(52px,16vw,72px)!important;flex:0 0 clamp(52px,16vw,72px)!important;margin:0!important}
       .topbar .brand-logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important}
       .topbar .brand-copy{flex:0 1 auto!important;width:auto!important;max-width:none!important;text-align:center!important}
-      .topbar .brand-copy strong,.topbar .brand-copy strong span{font-size:clamp(16px,4.5vw,21px)!important;line-height:1.08!important;white-space:nowrap!important;overflow-wrap:normal!important;text-align:center!important}
+      .topbar .brand-copy strong,.topbar .brand-copy strong span{font-size:clamp(16px,4vw,20px)!important;line-height:1.08!important;white-space:nowrap!important;overflow-wrap:normal!important;text-align:center!important}
       .topbar .brand-copy p{display:none!important}
       .topbar .mobile-brand-subtitle{display:block!important;grid-column:1/-1!important;grid-row:2!important;width:100%!important;max-width:36em!important;margin:0 auto!important;padding:0 4px!important;color:#d6e3f3!important;font:400 clamp(11px,2.8vw,14px)/1.35 Arial,sans-serif!important;text-align:center!important;text-wrap:balance;overflow-wrap:anywhere}
       body.mobile-nav-open #teacherPrimaryNav,body.mobile-nav-open.home-active #teacherPrimaryNav{grid-template-columns:repeat(2,minmax(0,1fr))!important}
@@ -182,7 +182,7 @@
   <script src="cloud-sync.js?v=20260925-speed1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='72';
+      const swVersion='73';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>
