@@ -59,8 +59,10 @@
         const natural = page.getViewport({scale:1});
         // Preserve the page's real proportions, including landscape pages and rotation.
         const availableWidth = Math.max(1, mount.clientWidth - 12);
-        // Fill the reading width for portrait and landscape pages; vertical scrolling remains available.
-        const fitScale = availableWidth / natural.width;
+        const availableHeight = Math.max(240, Math.min(window.innerHeight * .72, 850));
+        // At 100 %, keep the whole page visible and cap enlargement on large screens.
+        // The explicit zoom buttons remain available up to 250 %.
+        const fitScale = Math.min(availableWidth / natural.width, availableHeight / natural.height, 1.3);
         const viewport = page.getViewport({scale: fitScale * zoom});
         const ratio = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(12000000 / (viewport.width * viewport.height)));
         canvas.width = Math.floor(viewport.width * ratio);
