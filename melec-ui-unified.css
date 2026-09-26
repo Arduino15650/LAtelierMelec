@@ -1,0 +1,39 @@
+/* Typographie et échelle communes aux espaces Cours · TD · TP et Élève. */
+#teachingView,#studentDashboard{
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+  font-size:16px;
+  line-height:1.5;
+  font-weight:400;
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+#teachingView :is(button,input,select,textarea),#studentDashboard :is(button,input,select,textarea){font-family:inherit}
+#teachingView :is(.teach-card h2,.teach-preview h2),#studentDashboard h2{
+  font-size:clamp(24px,2.6vw,30px);
+  line-height:1.2;
+  font-weight:750;
+}
+#teachingView h3,#studentDashboard h3{font-size:clamp(19px,2vw,22px);line-height:1.3;font-weight:750}
+#teachingView :is(.teach-tabs button,.teach-card>button,.teach-tp-card button),
+#studentDashboard :is(.portal-actions>button,.portal-tabs>button,.student-tp-card>button,.student-tp-viewer section>button){font-size:15px;line-height:1.25;font-weight:700}
+#teachingView :is(.teach-help,.teach-meta),#studentDashboard .portal-small{font-size:14px;line-height:1.45}
+#teachingView .teach-tp-response-list{grid-template-columns:minmax(0,1fr)}
+#teachingView .teach-tp-response-row{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;min-width:0;padding:12px;font-size:15px;line-height:1.4}
+#teachingView .teach-tp-response-label{display:block;min-width:0;overflow-wrap:anywhere;font-weight:600}
+#teachingView .teach-tp-response-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+#teachingView .teach-tp-response-actions button{min-width:0;max-width:100%;margin:0;white-space:normal;text-align:center}
+#teachingView .teach-tp-response-row .teach-help{display:block;min-height:0;overflow-wrap:anywhere}
+#teachingView .teach-tp-response-actions .warn{background:#a74e28;color:#fff}
+@media(max-width:700px){
+  #teachingView,#studentDashboard{font-size:15px;line-height:1.45}
+  #teachingView :is(.teach-card h2,.teach-preview h2),#studentDashboard h2{font-size:24px}
+  #teachingView h3,#studentDashboard h3{font-size:19px}
+  #teachingView :is(.teach-tabs button,.teach-card>button,.teach-tp-card button),
+  #studentDashboard :is(.portal-actions>button,.portal-tabs>button,.student-tp-card>button,.student-tp-viewer section>button){font-size:14px}
+  #teachingView .teach-card{min-width:0;padding:clamp(13px,3vw,20px)}
+  #teachingView .teach-tp-response-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+  #teachingView .teach-tp-response-actions button{width:100%}
+  #studentDashboard{min-width:0}
+  #studentDashboard .portal-actions{gap:7px}
+  #studentDashboard .portal-actions>button{min-width:0;white-space:normal}
+}

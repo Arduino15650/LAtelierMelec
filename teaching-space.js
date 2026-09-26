@@ -167,7 +167,7 @@
     body.querySelectorAll('.teach-tp-card').forEach(card => {
       const details = document.createElement('details');
       const summary = document.createElement('summary'); summary.textContent = 'Réponses des élèves · PDF complété'; details.append(summary);
-      const list = document.createElement('div'); list.className = 'teach-tp-students'; details.append(list); card.append(details);
+      const list = document.createElement('div'); list.className = 'teach-tp-students teach-tp-response-list'; details.append(list); card.append(details);
       details.addEventListener('toggle', async () => {
         if (!details.open) return;
         list.textContent = 'Chargement des réponses…';
@@ -182,8 +182,8 @@
             const asset = assets.find(candidate => candidate.id === row.asset_id && (candidate.asset_role || 'main') === 'main');
             if (!asset) continue;
             const student = students.find(candidate => candidate.user_id === row.student_id);
-            const line = document.createElement('div'); line.className = 'teach-tp-student';
-            const label = document.createElement('span'); label.textContent = `${student?.last_name || 'Élève'} ${student?.first_name || row.student_id} · ${asset.file_name} · ${new Date(row.updated_at).toLocaleString('fr-FR')}`;
+            const line = document.createElement('div'); line.className = 'teach-tp-student teach-tp-response-row';
+            const label = document.createElement('span'); label.className='teach-tp-response-label'; label.textContent = `${student?.last_name || 'Élève'} ${student?.first_name || row.student_id} · ${asset.file_name} · ${new Date(row.updated_at).toLocaleString('fr-FR')}`;
             const button = document.createElement('button'); button.type='button'; button.textContent='Télécharger le PDF complété';
             const progress = document.createElement('span'); progress.className='teach-help'; progress.setAttribute('role','status');
             button.onclick = async () => {
@@ -195,7 +195,28 @@
               } catch (error) { progress.textContent = 'Export impossible : ' + error.message; }
               finally { button.disabled = false; }
             };
-            line.append(label,button,progress); list.append(line);
+            const remove = document.createElement('button'); remove.type='button'; remove.className='warn'; remove.textContent='Supprimer cette réponse';
+            remove.setAttribute('aria-label',`Supprimer définitivement les réponses de ${student?.first_name || ''} ${student?.last_name || row.student_id} pour ${asset.file_name}`);
+            remove.onclick = async () => {
+              const typed = window.prompt(`Suppression définitive des réponses de ${student?.first_name || ''} ${student?.last_name || row.student_id} pour « ${asset.file_name} ». Le PDF original et les réponses des autres élèves seront conservés. Téléchargez le PDF complété avant de continuer si vous voulez en garder une copie.\n\nTapez SUPPRIMER pour confirmer :`);
+              if (typed !== 'SUPPRIMER') return;
+              remove.disabled = true; button.disabled = true; progress.textContent='Suppression en cours…';
+              try {
+                const path = 'tp_document_responses?student_id=eq.' + encodeURIComponent(row.student_id)
+                  + '&tp_id=eq.' + encodeURIComponent(card.dataset.tp)
+                  + '&asset_id=eq.' + encodeURIComponent(row.asset_id) + '&select=student_id,asset_id';
+                const deleted = await api.rest(path,{method:'DELETE',headers:{Prefer:'return=representation'}});
+                if (!Array.isArray(deleted) || deleted.length !== 1) throw new Error('Suppression non confirmée par la base. Vérifiez la règle SQL.');
+                line.remove();
+                if (!list.children.length) list.textContent='Aucune réponse enregistrée pour ce TP.';
+                status('Réponse supprimée définitivement de la base.');
+              } catch (error) {
+                progress.textContent='Suppression impossible : ' + error.message;
+                remove.disabled = false; button.disabled = false;
+              }
+            };
+            const actions = document.createElement('div'); actions.className='teach-tp-response-actions'; actions.append(button,remove);
+            line.append(label,actions,progress); list.append(line);
           }
           if (!list.children.length) list.textContent='Aucune réponse enregistrée pour ce TP.';
         } catch (error) { list.textContent='Réponses indisponibles : ' + error.message; }
