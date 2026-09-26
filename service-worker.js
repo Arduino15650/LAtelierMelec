@@ -1,20 +1,16 @@
-const CACHE_NAME = 'bac-pro-melec-v92-apercu-pdf-eleve';
-const APP_FILES = [
-  './','./index.html','./eleve.html','./enseignant.html','./styles.css','./bo.css','./portal.css','./teaching.css','./referential.js','./app.js',
-  './performance.js','./workshop-activities-v2.js','./evaluation-atelier-v2.js','./student-groups.js','./ccf-dashboard.js','./home.js','./pdf-generator-v2.js','./cloud-sync.js','./portal-api.js','./portal-contact.js','./student-space.js','./teaching-space.js','./content-render.js',
-  './background-melec-tools.webp','./logo-bac-pro-melec-v3.webp',
-  './manifest.webmanifest','./icon-180.png','./icon-192.png'
-];
+const CACHE_NAME = 'bac-pro-melec-v93-optimisation';
+// Les scripts de l'espace non visité sont mis en cache à la demande.
+const CORE_FILES = ['./','./index.html','./logo-bac-pro-melec-v3.webp'];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_FILES)));
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+      .then(keys => Promise.all(keys.filter(key => key.startsWith('bac-pro-melec-') && key !== CACHE_NAME).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
@@ -24,17 +20,16 @@ self.addEventListener('fetch', event => {
   // Ne jamais mettre en cache les réponses privées de Supabase.
   if (new URL(event.request.url).origin !== self.location.origin) return;
   const refresh = () => fetch(event.request).then(response => {
-    if (response.ok) event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone())));
+    if (response.ok) {
+      const copy = response.clone();
+      event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)));
+    }
     return response;
   });
-  event.respondWith(caches.match(event.request, {ignoreSearch: true}).then(cached => {
-    if (cached) {
-      if (event.request.mode === 'navigate') event.waitUntil(refresh().catch(() => {}));
-      return cached;
-    }
-    return refresh().catch(async () => {
-      if (event.request.mode === 'navigate') return caches.match('./index.html');
-      throw new Error('Ressource indisponible hors ligne.');
-    });
-  }));
+  const cached = () => caches.match(event.request, {ignoreSearch: true});
+  const current = event.request.mode === 'navigate'
+    || event.request.destination === 'script' || event.request.destination === 'style';
+  event.respondWith(current
+    ? refresh().catch(async () => (await cached()) || (event.request.mode === 'navigate' && await caches.match('./index.html')) || Response.error())
+    : cached().then(hit => hit || refresh().catch(() => Response.error())));
 });

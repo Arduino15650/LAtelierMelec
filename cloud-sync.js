@@ -17,6 +17,7 @@
   let revision = 0;
   let ready = false;
   let sending = false;
+  let refreshing = false;
   let conflicted = false;
   let timer = null;
   let serial = 0;
@@ -131,6 +132,10 @@
     const rows = await api('melec_state?user_id=eq.' + encodeURIComponent(userId) + '&select=data,revision');
     return rows && rows[0] || null;
   }
+  async function cloudRevision() {
+    const rows = await api('melec_state?user_id=eq.' + encodeURIComponent(userId) + '&select=revision');
+    return rows && rows[0] || null;
+  }
   async function ensureTeacher() {
     const rows = await api('teacher_accounts?user_id=eq.' + encodeURIComponent(userId) + '&select=user_id');
     if (!rows || rows.length !== 1) {
@@ -237,21 +242,26 @@
     }
   }
   async function refreshFromCloud() {
-    if (!ready || sending || conflicted) return;
+    if (!ready || sending || conflicted || refreshing) return;
     if (!document.querySelector('#editorView.hidden')) {
       status('Terminez ou annulez l’activité en cours avant d’actualiser.', true);
       return;
     }
     if (readPending()) { scheduleUpload(); return; }
+    refreshing = true;
     try {
+      const latest = await cloudRevision();
+      if (!latest) throw new Error('Données cloud introuvables.');
+      if (Number(latest.revision) <= revision) { status('Synchronisé'); return; }
       const row = await cloudRow();
       if (!row) throw new Error('Données cloud introuvables.');
       if (Number(row.revision) > revision) {
         revision = Number(row.revision);
         installData(row.data);
         status('Données actualisées');
-      } else status('Synchronisé');
+      }
     } catch (error) { status('Actualisation impossible : ' + error.message, true); }
+    finally { refreshing = false; }
   }
   save = function () {
     originalSave();

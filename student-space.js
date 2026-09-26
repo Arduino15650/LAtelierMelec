@@ -21,6 +21,7 @@
   let profile = null;
   let cleanupViewer = null;
   let assignments = [], tpItems = [], activeTp = null, selectedContentTab = 'courses';
+  let tpItemsLoadedAt = 0;
   function tpEnd(assignment) {
     return Math.max(assignment.started_at ? Date.parse(assignment.started_at) + 210 * 60000 : 0,
       Date.parse(assignment.reactivated_until || '') || 0);
@@ -127,10 +128,13 @@
   }
   async function loadTpAssignments(preserveViewer = false) {
     const previousActiveId = activeTp?.id;
+    const refreshItems = !preserveViewer || !tpItemsLoadedAt || Date.now() - tpItemsLoadedAt > 120000;
     [assignments,tpItems] = await Promise.all([
       api.rest('tp_assignments?student_id=eq.' + encodeURIComponent(profile.user_id) + '&select=*'),
-      api.rest('learning_items?kind=eq.tp&published=is.true&select=id,title')
+      refreshItems ? api.rest('learning_items?kind=eq.tp&published=is.true&select=id,title')
+        : Promise.resolve(tpItems)
     ]);
+    if (refreshItems) tpItemsLoadedAt = Date.now();
     activeTp = assignments.find(row => tpEnd(row) > Date.now()) || null;
     if (preserveViewer && previousActiveId && activeTp?.id === previousActiveId) return;
     clearTpViewer();
@@ -254,7 +258,7 @@
   };
   $('studentLogout').onclick = async () => {
     if (cleanupViewer) cleanupViewer();
-    clearTpViewer(); activeTp=null; assignments=[]; tpItems=[];
+    clearTpViewer(); activeTp=null; assignments=[]; tpItems=[]; tpItemsLoadedAt=0;
     await api.signOut();
     dashboard.hidden = true; authPane.hidden = false; profile = null;
     switchTab('login');

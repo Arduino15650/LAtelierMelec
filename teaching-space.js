@@ -8,6 +8,7 @@
   let requestClassId = '';
   let previewCleanup = null;
   let loadedSession = '', lastLoaded = 0, loadInFlight = null;
+  let studentsLoadedAt = 0;
   const kindNames = { course: 'Cours', td: 'Travaux dirigés', tp: 'Travaux pratiques' };
   const originalShow = window.show;
   function sessionKey() {
@@ -32,7 +33,7 @@
       render();
       if (Date.now() - lastLoaded > 30000) load(true).catch(error => status(error.message, true));
     } else {
-      classes = []; chapters = []; items = []; students = []; messages = [];
+      classes = []; chapters = []; items = []; students = []; messages = []; studentsLoadedAt = 0;
       loadedSession = '';
       load().catch(error => status(error.message, true));
     }
@@ -82,7 +83,11 @@
     finally { loadInFlight = null; }
   }
   async function loadClass() {
-    const profilesPromise = api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc');
+    const refreshStudents = !studentsLoadedAt || Date.now() - studentsLoadedAt > 120000
+      || tab === 'students' || tab === 'alerts' || tab === 'tp';
+    const profilesPromise = refreshStudents
+      ? api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc')
+      : Promise.resolve(students);
     const auxiliary = tab === 'messages'
         ? api.rest('contact_messages?select=*&order=created_at.desc&limit=100')
         : null;
@@ -102,6 +107,7 @@
       }
     } else { chapters = []; items = []; }
     students = await profilesPromise;
+    if (refreshStudents) studentsLoadedAt = Date.now();
     if (auxiliary) messages = await auxiliary;
     render();
   }
@@ -110,7 +116,7 @@
       ? await api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc')
       : await api.rest('contact_messages?select=*&order=created_at.desc&limit=100');
     if (tab !== selectedTab || !root.offsetParent) return;
-    if (selectedTab === 'students' || selectedTab === 'alerts') students = result;
+    if (selectedTab === 'students' || selectedTab === 'alerts') { students = result; studentsLoadedAt = Date.now(); }
     else messages = result;
     render();
   }
