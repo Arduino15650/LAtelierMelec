@@ -30,7 +30,7 @@
         if (!value) continue;
         const width = bounded(entry.w,.015,1) * canvas.width;
         const height = bounded(entry.h,.015,1) * canvas.height;
-        const fontSize = bounded(Math.min(14 * scale, height / 2), 9 * scale, 18 * scale);
+        const fontSize = bounded(entry.fontSize || 11,5,32) * scale;
         ctx.save(); ctx.beginPath(); ctx.rect(x,y,width,height); ctx.clip();
         ctx.fillStyle = '#102e4b'; ctx.font = `${fontSize}px Arial, sans-serif`;
         const lineHeight = fontSize * 1.2;

@@ -11,13 +11,25 @@
       id: entry.id, page: entry.page, type: entry.type,
       x: clamp(entry.x, 0, 1), y: clamp(entry.y, 0, 1),
       w: clamp(entry.w, .015, 1), h: clamp(entry.h, .015, 1),
+      fontSize: entry.type === 'text' && entry.fontSize != null && Number.isFinite(Number(entry.fontSize)) ? clamp(entry.fontSize, 5, 32) : null,
       value: entry.type === 'check' ? Boolean(entry.value) : entry.type === 'stroke' ? '' : String(entry.value || '').slice(0, 1500),
       label: String(entry.label || '').slice(0, 120), source: entry.source === 'pdf' ? 'pdf' : 'manual',
       color: /^#[0-9a-f]{6}$/i.test(entry.color || '') ? entry.color : '#d12b2b',
       width: clamp(entry.width, 1, 8), aspect: clamp(entry.aspect || 1, .4, 2.5),
       points: entry.type === 'stroke' && Array.isArray(entry.points) ? entry.points.slice(0, 400).filter(p => Array.isArray(p) && p.length === 2).map(p => [clamp(p[0],0,1),clamp(p[1],0,1)]) : []
     }));
-    let currentPage = 1, currentAspect = 1, mode = '', timer = null, dirty = false, saving = Promise.resolve(), drawing = null, retryCount = 0;
+    let currentPage = 1, currentAspect = 1, currentScale = 1, mode = '', timer = null, dirty = false, saving = Promise.resolve(), drawing = null, retryCount = 0;
+    const textSamplesByPage = new Map();
+    function nearbyFontSize(x, y) {
+      const samples = textSamplesByPage.get(currentPage) || [];
+      if (!samples.length) return 11;
+      let nearest = null, distance = Infinity;
+      for (const sample of samples) {
+        const d = Math.abs(sample.y - y) * 2 + Math.abs(sample.x - x) * .35;
+        if (d < distance) { distance = d; nearest = sample; }
+      }
+      return nearest?.size || 11;
+    }
     const actions = document.createElement('details'); actions.className = 'student-pdf-form-actions';
     const summary = document.createElement('summary'); summary.textContent = '✎ Outils de réponse';
     const tools = document.createElement('div'); tools.className = 'student-pdf-form-tools';
@@ -153,6 +165,8 @@
           control.onclick = () => { if (!mayRead()) return; entry.value = !entry.value; control.textContent = entry.value ? '×' : ''; control.setAttribute('aria-pressed',String(entry.value)); changed(); };
         } else {
           control.value = String(entry.value || ''); control.maxLength = 1500;
+          control.style.fontSize = (clamp(entry.fontSize || nearbyFontSize(entry.x,entry.y),5,32) * currentScale) + 'px';
+          control.style.lineHeight = '1.15';
           control.oninput = () => { if (!mayRead()) { control.value = entry.value; return; } entry.value = control.value; changed(); };
           control.onchange = () => persist().catch(() => {});
         }
@@ -178,6 +192,7 @@
         id: 'manual:' + crypto.randomUUID(), page: currentPage, type,
         x, y, w: type === 'check' ? .016 : Math.min(.3, 1 - x),
         h: type === 'check' ? .016 : .05,
+        fontSize: type === 'text' ? nearbyFontSize(x,y) : null,
         value: type === 'check' ? true : '',
         label: type === 'check' ? 'Coche ajoutée' : 'Réponse ajoutée', source: 'manual'
       };
@@ -236,9 +251,21 @@
 
     async function renderPage(page, viewport, number) {
       currentPage = number;
+      currentScale = viewport?.scale || 1;
       currentAspect = viewport?.width && viewport?.height ? viewport.width / viewport.height : 1;
       const annotations = await page.getAnnotations({intent:'display'});
       const natural = page.getViewport({scale:1});
+      if (!textSamplesByPage.has(number)) {
+        try {
+          const content = await page.getTextContent();
+          const samples = content.items.filter(item => item.str?.trim() && Array.isArray(item.transform)).map(item => {
+            const [px,py] = natural.convertToViewportPoint(item.transform[4],item.transform[5]);
+            const size = Number(item.height) || Math.hypot(item.transform[2],item.transform[3]);
+            return {x:clamp(px / natural.width,0,1),y:clamp((py - size / 2) / natural.height,0,1),size:clamp(size,5,32)};
+          }).filter(sample => Number.isFinite(sample.size));
+          textSamplesByPage.set(number,samples);
+        } catch { textSamplesByPage.set(number,[]); }
+      }
       for (const annotation of annotations) {
         const type = annotation.fieldType === 'Tx' ? 'text' : annotation.fieldType === 'Btn' && annotation.checkBox ? 'check' : null;
         if (!type || !annotation.rect || !annotation.id) continue;
@@ -252,10 +279,16 @@
           w:clamp(Math.abs(x2-x1) / natural.width, .015, 1-x),
           h:clamp(Math.abs(y2-y1) / natural.height, .015, 1-y),
           value:type === 'check' ? Boolean(annotation.fieldValue && annotation.fieldValue !== 'Off') : String(annotation.fieldValue || ''),
-          label:String(annotation.fieldName || 'Champ du PDF').slice(0,120), source:'pdf'
+          label:String(annotation.fieldName || 'Champ du PDF').slice(0,120), source:'pdf',
+          fontSize:type === 'text' ? clamp(annotation.defaultAppearanceData?.fontSize || nearbyFontSize(x,y),5,32) : null
         });
       }
+      let adapted = false;
+      for (const entry of entries) if (entry.page === number && entry.type === 'text' && !entry.fontSize) {
+        entry.fontSize = nearbyFontSize(entry.x,entry.y); adapted = true;
+      }
       drawFields();
+      if (adapted) changed();
     }
     function cleanup() {
       document.removeEventListener('visibilitychange',onVisibility);
