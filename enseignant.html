@@ -69,7 +69,21 @@
       #teacherPrimaryNav .cloud-menu>summary{box-sizing:border-box!important;width:100%!important;justify-content:center!important}
       #teacherPrimaryNav .cloud-menu-panel{position:static!important;width:100%!important;margin-top:8px;max-height:none!important;overflow:visible!important}
     }
-    @media(max-width:600px){body.mobile-nav-open #teacherPrimaryNav,body.mobile-nav-open.home-active #teacherPrimaryNav{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+    @media(min-width:601px) and (max-width:980px){
+      .topbar .brand{display:flex!important;align-items:center!important;justify-content:center!important;gap:18px!important}
+      .topbar .brand-logo{width:clamp(70px,10vw,90px)!important;height:clamp(70px,10vw,90px)!important;flex:0 0 clamp(70px,10vw,90px)!important}
+      .topbar .brand-copy{flex:0 1 auto!important;max-width:min(680px,calc(100vw - 135px))!important}
+    }
+    @media(max-width:600px){
+      .topbar{height:auto!important;min-height:0!important;padding:calc(env(safe-area-inset-top,0px) + 14px) 14px 16px!important}
+      .topbar .brand{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;height:auto!important;min-height:0!important;gap:10px!important;text-align:center!important}
+      .topbar .brand-logo{position:static!important;width:clamp(72px,22vw,96px)!important;height:clamp(72px,22vw,96px)!important;flex:0 0 auto!important;margin:0 auto!important}
+      .topbar .brand-logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important}
+      .topbar .brand-copy{flex:0 1 auto!important;width:100%!important;max-width:100%!important;text-align:center!important}
+      .topbar .brand-copy strong,.topbar .brand-copy strong span{font-size:clamp(23px,6vw,34px)!important;line-height:1.12!important;text-align:center!important}
+      .topbar .brand-copy p{max-width:34em!important;margin:7px auto 0!important;font-size:clamp(11px,2.8vw,14px)!important;line-height:1.35!important;text-align:center!important}
+      body.mobile-nav-open #teacherPrimaryNav,body.mobile-nav-open.home-active #teacherPrimaryNav{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    }
   </style>
 </head>
 <body class="cloud-locked">
@@ -156,7 +170,7 @@
   <script src="cloud-sync.js?v=20260925-speed1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='69';
+      const swVersion='70';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>
