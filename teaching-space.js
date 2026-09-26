@@ -386,22 +386,26 @@
       }
     });
   }
-  let savedRange = null;
-  document.addEventListener('selectionchange', () => {
+  const blockSelections = new WeakMap();
+  function rememberSelection() {
     const selection = window.getSelection();
     const anchor = selection?.anchorNode;
     const editable = (anchor?.nodeType === Node.ELEMENT_NODE ? anchor : anchor?.parentElement)?.closest('.teach-editable');
-    if (editable && selection.rangeCount) savedRange = selection.getRangeAt(0).cloneRange();
-  });
-  function formatSelection(command, value) {
-    const start = savedRange?.startContainer;
-    const editable = (start?.nodeType === Node.ELEMENT_NODE ? start : start?.parentElement)?.closest('.teach-editable') || root.querySelector('.teach-editable:focus');
-    if (!editable) return;
-    editable.focus();
-    if (savedRange && editable.contains(savedRange.commonAncestorContainer)) {
-      const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(savedRange);
+    const block = editable?.closest('[data-block-index]');
+    if (block && selection.rangeCount && editable.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+      blockSelections.set(block, {editable,range:selection.getRangeAt(0).cloneRange()});
     }
+  }
+  document.addEventListener('selectionchange', rememberSelection);
+  function formatSelection(command, value, control) {
+    const block = control.closest('[data-block-index]');
+    const saved = block && blockSelections.get(block);
+    if (!saved || !saved.editable.isConnected || !block.contains(saved.editable) || !saved.editable.contains(saved.range.commonAncestorContainer)) return;
+    const {editable,range} = saved;
+    editable.focus();
+    const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
     document.execCommand(command, false, value);
+    rememberSelection();
     captureBlocks();
   }
   function editorToolbar() {
@@ -416,11 +420,12 @@
     list.innerHTML = blocks.map((block,index) => `<div class="teach-block" data-block-index="${index}"><div class="teach-block-actions"><button type="button" data-up="${index}" class="subtle" aria-label="Monter">↑</button><button type="button" data-down="${index}" class="subtle" aria-label="Descendre">↓</button><button type="button" data-remove="${index}" class="warn">Retirer</button></div>${block.type === 'html' ? `${editorToolbar()}<div class="teach-editable" contenteditable="true" role="textbox" aria-label="Contenu du cours">${MelecContent.sanitize(block.html)}</div>` : block.type === 'video' ? `<label>Adresse YouTube ou Vimeo <input type="url" value="${esc(block.url)}" placeholder="https://..."></label>` : `<span>${tab === 'tp' ? (block.type === 'pending' ? draftRoles[block.index] : originalAssets.find(asset => asset.id === block.assetId)?.asset_role) === 'technical' ? 'Dossier technique · ' : 'Document du TP · ' : ''}${block.type === 'pending' ? esc(draftAssets[block.index]?.name || 'Fichier') : esc(originalAssets.find(asset => asset.id === block.assetId)?.file_name || 'Document joint')}</span>${assetOptions(block)}`}</div>`).join('');
     list.querySelectorAll('[data-asset-width]').forEach(input => input.oninput = () => { input.closest('label').querySelector('output').textContent = input.value + ' %'; });
     list.querySelectorAll('[data-up],[data-down],[data-remove]').forEach(btn => btn.onclick = () => { captureBlocks(); const n = Number(btn.dataset.up ?? btn.dataset.down ?? btn.dataset.remove); if (btn.dataset.remove != null) blocks.splice(n,1); else { const m = btn.dataset.up != null ? n-1 : n+1; if (m >= 0 && m < blocks.length) [blocks[n],blocks[m]] = [blocks[m],blocks[n]]; } renderBlocks(); });
-    list.querySelectorAll('[data-format]').forEach(btn => { btn.onmousedown = event => event.preventDefault(); btn.onclick = () => formatSelection(btn.dataset.format); });
-    list.querySelectorAll('[data-format-select]').forEach(select => select.onchange = () => { if (select.value) formatSelection(select.dataset.formatSelect, select.value); select.value = ''; });
-    list.querySelectorAll('[data-color]').forEach(input => input.oninput = () => formatSelection(input.dataset.color, input.value));
-    list.querySelectorAll('[data-swatch]').forEach(button => { button.onmousedown = event => event.preventDefault(); button.onclick = () => formatSelection(button.dataset.swatch,button.dataset.value); });
-    list.querySelectorAll('[data-table]').forEach(btn => { btn.onmousedown = event => event.preventDefault(); btn.onclick = () => formatSelection('insertHTML', '<table><tbody><tr><td>Cellule 1</td><td>Cellule 2</td></tr><tr><td>Cellule 3</td><td>Cellule 4</td></tr></tbody></table><p></p>'); });
+    list.querySelectorAll('.teach-editable').forEach(editable => { editable.addEventListener('keyup',rememberSelection); editable.addEventListener('pointerup',rememberSelection); editable.addEventListener('touchend',rememberSelection); });
+    list.querySelectorAll('[data-format]').forEach(btn => { btn.onmousedown = event => event.preventDefault(); btn.onclick = () => formatSelection(btn.dataset.format, undefined, btn); });
+    list.querySelectorAll('[data-format-select]').forEach(select => select.onchange = () => { if (select.value) formatSelection(select.dataset.formatSelect, select.value, select); select.value = ''; });
+    list.querySelectorAll('[data-color]').forEach(input => input.oninput = () => formatSelection(input.dataset.color, input.value, input));
+    list.querySelectorAll('[data-swatch]').forEach(button => { button.onmousedown = event => event.preventDefault(); button.onclick = () => formatSelection(button.dataset.swatch,button.dataset.value,button); });
+    list.querySelectorAll('[data-table]').forEach(btn => { btn.onmousedown = event => event.preventDefault(); btn.onclick = () => formatSelection('insertHTML', '<table><tbody><tr><td>Cellule 1</td><td>Cellule 2</td></tr><tr><td>Cellule 3</td><td>Cellule 4</td></tr></tbody></table><p></p>',btn); });
   }
   async function previewItem(item, draft = false) {
     if (previewCleanup) { previewCleanup(); previewCleanup = null; }
