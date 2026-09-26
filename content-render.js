@@ -1,5 +1,51 @@
 (function () {
   'use strict';
+  let pdfPreviewClose = null;
+  function closePdfPreview() {
+    if (pdfPreviewClose) pdfPreviewClose();
+  }
+  function openPdfPreview(blob, title, category) {
+    closePdfPreview();
+    const url = URL.createObjectURL(blob);
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    const pane = document.createElement('section');
+    pane.className = 'student-pdf-preview';
+    pane.setAttribute('role', 'dialog');
+    pane.setAttribute('aria-modal', 'true');
+    pane.setAttribute('aria-label', 'Aperçu du PDF ' + title);
+    const heading = document.createElement('div'); heading.className = 'student-pdf-preview-heading';
+    const label = document.createElement('strong'); label.textContent = 'Aperçu · ' + category + ' · ' + title;
+    const closeButton = document.createElement('button'); closeButton.type = 'button'; closeButton.textContent = 'Fermer';
+    heading.append(label, closeButton);
+    const card = document.createElement('div'); card.className = 'student-pdf-preview-card';
+    const actions = document.createElement('div'); actions.className = 'student-pdf-preview-actions';
+    const toggle = document.createElement('button'); toggle.type = 'button'; toggle.textContent = 'Réduire le PDF';
+    const link = document.createElement('a'); link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+    link.textContent = 'Ouvrir / imprimer ce PDF';
+    actions.append(toggle, link);
+    const frame = document.createElement('iframe'); frame.src = url + '#toolbar=1&navpanes=0';
+    frame.title = title; frame.className = 'student-pdf-preview-frame';
+    card.append(actions, frame); pane.append(heading, card); document.body.append(pane);
+    document.body.style.overflow = 'hidden';
+    const onKeydown = event => { if (event.key === 'Escape') closePdfPreview(); };
+    document.addEventListener('keydown', onKeydown);
+    pdfPreviewClose = () => {
+      document.removeEventListener('keydown', onKeydown);
+      pane.remove();
+      document.body.style.overflow = previousOverflow;
+      URL.revokeObjectURL(url);
+      pdfPreviewClose = null;
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+    closeButton.onclick = closePdfPreview;
+    toggle.onclick = () => {
+      frame.hidden = !frame.hidden;
+      toggle.textContent = frame.hidden ? 'Afficher le PDF' : 'Réduire le PDF';
+    };
+    closeButton.focus();
+  }
+  window.MelecPdfPreview = {open:openPdfPreview, close:closePdfPreview};
   const allowed = new Set(['P','DIV','BR','STRONG','B','EM','I','U','S','STRIKE','SUB','SUP','SPAN','FONT','H2','H3','H4','UL','OL','LI','BLOCKQUOTE','TABLE','THEAD','TBODY','TR','TH','TD','A']);
   const fonts = new Set(['Arial','Aptos','Calibri','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS']);
   const sizes = {'1':'10px','2':'12px','3':'14px','4':'16px','5':'18px','6':'24px','7':'32px'};
@@ -103,15 +149,10 @@
           } else if (asset.mime_type === 'application/pdf') {
             const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Consulter';
             button.onclick = async () => {
-              const opened = box.querySelector('iframe');
-              if (opened) { opened.remove(); button.textContent = 'Consulter'; button.setAttribute('aria-expanded','false'); return; }
               button.disabled = true;
               try {
                 const blob = asset.local_blob || await MelecPortal.download(asset.object_path);
-                const url = URL.createObjectURL(blob); urls.push(url);
-                const frame = document.createElement('iframe'); frame.src = url + '#toolbar=1&navpanes=0';
-                frame.title = asset.file_name; frame.loading = 'lazy'; box.append(frame);
-                button.textContent = 'Réduire le PDF'; button.setAttribute('aria-expanded','true');
+                openPdfPreview(blob, customTitle || asset.file_name, 'Cours et TD');
               } catch (error) { alert(error.message); }
               finally { button.disabled = false; }
             };
@@ -125,7 +166,7 @@
       }
       target.append(wrapper);
     }
-    return () => urls.forEach(url => URL.revokeObjectURL(url));
+    return () => { closePdfPreview(); urls.forEach(url => URL.revokeObjectURL(url)); };
   }
   window.MelecContent = { sanitize, videoUrl, render };
 })();

@@ -20,13 +20,13 @@
   }
   let profile = null;
   let cleanupViewer = null;
-  let assignments = [], tpItems = [], activeTp = null, tpUrls = [], selectedContentTab = 'courses';
+  let assignments = [], tpItems = [], activeTp = null, selectedContentTab = 'courses';
   function tpEnd(assignment) {
     return Math.max(assignment.started_at ? Date.parse(assignment.started_at) + 210 * 60000 : 0,
       Date.parse(assignment.reactivated_until || '') || 0);
   }
   function clearTpViewer() {
-    tpUrls.forEach(url => URL.revokeObjectURL(url)); tpUrls = [];
+    window.MelecPdfPreview?.close();
     $('studentTpViewer')?.remove();
   }
   function switchContentTab(next) {
@@ -184,20 +184,11 @@
         const button = document.createElement('button'); button.type='button'; button.textContent=asset.file_name;
         button.onclick = async () => {
           if (tpEnd(activeTp) <= Date.now()) { clearTpViewer(); await openDashboard(); return; }
-          const opened = viewer.querySelector('iframe');
-          if (opened?.dataset.assetId === asset.id) {
-            opened.remove(); button.textContent = asset.file_name; button.setAttribute('aria-expanded','false'); return;
-          }
           button.disabled=true;
           try {
             const blob = await api.download(asset.object_path);
             if (!viewer.isConnected || !activeTp || tpEnd(activeTp) <= Date.now()) throw new Error('L’accès à ce TP a expiré.');
-            const url = URL.createObjectURL(blob); tpUrls.push(url);
-            viewer.querySelector('iframe')?.remove();
-            viewer.querySelectorAll('button[aria-expanded="true"]').forEach(other => { other.textContent = other.dataset.fileName; other.setAttribute('aria-expanded','false'); });
-            const frame=document.createElement('iframe'); frame.src=url+'#toolbar=1&navpanes=0';
-            frame.title='Consultation du document ' + asset.file_name; frame.dataset.assetId=asset.id; group.append(frame);
-            button.dataset.fileName=asset.file_name; button.textContent='Réduire · '+asset.file_name; button.setAttribute('aria-expanded','true');
+            MelecPdfPreview.open(blob, asset.file_name, role === 'main' ? 'Travaux pratiques' : 'Dossier technique');
           } catch(error) { alert(error.message); } finally { button.disabled=false; }
         };
         group.append(button);
