@@ -58,9 +58,12 @@
         const verticalFocus = scroll.scrollHeight > scroll.clientHeight ? (scroll.scrollTop + scroll.clientHeight / 2) / scroll.scrollHeight : 0;
         const natural = page.getViewport({scale:1});
         // Preserve the page's real proportions, including landscape pages and rotation.
-        const availableWidth = Math.max(1, Math.min(mount.clientWidth - 20, 1200));
+        const availableWidth = Math.max(1, mount.clientWidth - 22);
         const availableHeight = Math.max(160, Math.min(window.innerHeight * .78, 900));
-        const fitScale = Math.min(availableWidth / natural.width, availableHeight / natural.height);
+        // Landscape drawings use the available width; portrait pages stay fully visible initially.
+        const fitScale = natural.width > natural.height
+          ? availableWidth / natural.width
+          : Math.min(availableWidth / natural.width, availableHeight / natural.height);
         const viewport = page.getViewport({scale: fitScale * zoom});
         const ratio = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(12000000 / (viewport.width * viewport.height)));
         canvas.width = Math.floor(viewport.width * ratio);
