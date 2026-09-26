@@ -18,7 +18,7 @@
           <label>Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>
           <button class="portal-button" type="submit">Se connecter</button>
         </form>
-        <form id="studentSignupForm" class="portal-form" hidden>
+        <form id="studentSignupForm" class="portal-form" autocomplete="off" hidden>
           <div class="portal-form-grid"><label>Nom<input name="lastName" maxlength="80" autocomplete="family-name" required></label><label>Prénom<input name="firstName" maxlength="80" autocomplete="given-name" required></label></div>
           <label>Classe demandée<input name="className" maxlength="80" placeholder="Ex. 1MELEC" required></label>
           <label>Adresse e-mail<input name="email" type="email" maxlength="254" autocomplete="email" required></label>
@@ -48,8 +48,8 @@
       </section>
       <section class="portal-panel contact-panel" aria-labelledby="contactTitle" style="margin-top:28px">
         <div><p class="eyebrow">Besoin d’aide ?</p><h2 id="contactTitle">Contacter l’enseignant</h2></div>
-        <form id="contactForm" class="portal-form">
-          <div class="portal-form-grid"><label>Nom *<input name="lastName" maxlength="80" autocomplete="family-name" required></label><label>Prénom *<input name="firstName" maxlength="80" autocomplete="given-name" required></label><label>Adresse e-mail *<input name="email" type="email" maxlength="254" autocomplete="email" required></label><label>Classe *<input name="className" maxlength="80" required></label></div>
+        <form id="contactForm" class="portal-form" autocomplete="off">
+          <div class="portal-form-grid"><label>Nom *<input name="lastName" maxlength="80" autocomplete="off" required></label><label>Prénom *<input name="firstName" maxlength="80" autocomplete="off" required></label><label>Adresse e-mail *<input name="email" type="email" maxlength="254" autocomplete="off" required></label><label>Classe *<input name="className" maxlength="80" autocomplete="off" required></label></div>
           <label>Commentaire *<textarea name="comment" maxlength="500" rows="5" required aria-describedby="contactCount"></textarea></label><span id="contactCount" class="field-help">0 / 500 caractères</span>
           <div class="honeypot" aria-hidden="true"><label>Ne pas remplir ce champ<input name="website" tabindex="-1" autocomplete="off"></label></div>
           <button class="portal-button" type="submit">Envoyer le message</button><p id="contactStatus" class="form-status" role="status" aria-live="polite"></p>
@@ -60,6 +60,6 @@
   <script src="portal-api.js?v=20260925-1"></script>
   <script src="content-render.js?v=20260926-impression-tp3"></script>
   <script src="portal-contact.js?v=20260925-1"></script>
-  <script src="student-space.js?v=20260926-impression-tp3"></script>
+  <script src="student-space.js?v=20260926-securite-eleves1"></script>
 </body>
 </html>

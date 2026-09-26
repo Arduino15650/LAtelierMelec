@@ -2,6 +2,12 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const api = MelecPortal;
+  $('studentSignupForm').reset();
+  $('contactForm').reset();
+  window.addEventListener('pageshow', () => {
+    $('studentSignupForm').reset();
+    $('contactForm').reset();
+  });
   let profile = null;
   let cleanupViewer = null;
   let assignments = [], tpItems = [], activeTp = null, tpUrls = [], selectedContentTab = 'courses';
@@ -37,6 +43,7 @@
     target.classList.toggle('error', error);
   }
   function switchTab(signup) {
+    if (signup) $('studentSignupForm').reset();
     $('studentLoginForm').hidden = signup;
     $('studentSignupForm').hidden = !signup;
     $('studentLoginTab').classList.toggle('active', !signup);
@@ -68,7 +75,7 @@
       await api.signUp({ lastName: form.elements.lastName.value.trim(), firstName: form.elements.firstName.value.trim(),
         className: form.elements.className.value.trim(), email: form.elements.email.value.trim(),
         password: form.elements.password.value });
-      form.elements.password.value = '';
+      form.reset();
       message(authStatus, 'Vérifiez votre boîte e-mail pour confirmer l’adresse, puis revenez vous connecter. L’accès reste soumis à la validation de l’enseignant.');
     } catch (error) { message(authStatus, error.message, true); }
     finally { button.disabled = false; }
@@ -81,13 +88,6 @@
     if (!profiles.length) throw new Error('Profil élève introuvable. Contactez votre enseignant.');
     profile = profiles[0];
     authPane.hidden = true; dashboard.hidden = false;
-    const form = $('contactForm');
-    if (form) {
-      form.elements.lastName.value = profile.last_name;
-      form.elements.firstName.value = profile.first_name;
-      form.elements.email.value = profile.email;
-      form.elements.className.value = profile.requested_class;
-    }
     const intro = $('studentProfileStatus');
     intro.textContent = `Bonjour ${profile.first_name} ${profile.last_name}.`;
     const approved = Boolean(profile.approved_at && profile.class_id);

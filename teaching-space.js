@@ -5,6 +5,7 @@
   let classId = '', tab = 'course', editing = null, blocks = [], draftAssets = [], activeItem = null, originalAssets = [];
   let selectedChapterId = '', selectedItemId = '';
   let tpAssignments = [], classStudents = [], pendingStudents = [], selectedTpId = 'all', draftRoles = [];
+  let requestClassId = '';
   let previewCleanup = null;
   let loadedSession = '', lastLoaded = 0, loadInFlight = null;
   const kindNames = { course: 'Cours', td: 'Travaux dirigés', tp: 'Travaux pratiques' };
@@ -46,6 +47,16 @@
     (state?.activities || []).forEach(a => { if (a.className) names.add(a.className.trim()); });
     return [...names].filter(Boolean).sort((a,b) => a.localeCompare(b, 'fr'));
   }
+  function normalized(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  }
+  function rosterMatches(student) {
+    return (state?.students || []).filter(entry => normalized(entry.name) === normalized(student.last_name + student.first_name)
+      && classes.some(item => normalized(item.name) === normalized(entry.className)));
+  }
+  function rosterNameExists(student) {
+    return (state?.students || []).some(entry => normalized(entry.name) === normalized(student.last_name + student.first_name));
+  }
   async function load(background = false) {
     if (loadInFlight) return loadInFlight;
     if (!background) root.innerHTML = '<div class="teach-head"><div><h1>Cours · TD · TP</h1><p>Contenus de classe et accès élèves</p></div></div><div class="teach-card">Chargement… <span id="teachStatus"></span></div>';
@@ -71,9 +82,8 @@
     finally { loadInFlight = null; }
   }
   async function loadClass() {
-    const auxiliary = tab === 'students'
-      ? api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc')
-      : tab === 'messages'
+    const profilesPromise = api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc');
+    const auxiliary = tab === 'messages'
         ? api.rest('contact_messages?select=*&order=created_at.desc&limit=100')
         : null;
     if (classId) {
@@ -83,10 +93,7 @@
       ]);
       items = items.filter(i => chapters.some(c => c.id === i.chapter_id));
       if (tab === 'tp') {
-        [students,tpAssignments] = await Promise.all([
-          api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc'),
-          api.rest('tp_assignments?select=*')
-        ]);
+        [students,tpAssignments] = await Promise.all([profilesPromise, api.rest('tp_assignments?select=*')]);
         const selectedClass = classes.find(candidate => candidate.id === classId);
         classStudents = students.filter(student => student.class_id === classId);
         pendingStudents = students.filter(student =>
@@ -94,35 +101,33 @@
           (student.class_id === classId || (!student.class_id && student.requested_class?.trim().toLocaleLowerCase('fr') === selectedClass?.name.trim().toLocaleLowerCase('fr'))));
       }
     } else { chapters = []; items = []; }
-    if (auxiliary) {
-      const result = await auxiliary;
-      if (tab === 'students') students = result;
-      if (tab === 'messages') messages = result;
-    }
+    students = await profilesPromise;
+    if (auxiliary) messages = await auxiliary;
     render();
   }
   async function refreshAuxiliary(selectedTab) {
-    const result = selectedTab === 'students'
+    const result = selectedTab === 'students' || selectedTab === 'alerts'
       ? await api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc')
       : await api.rest('contact_messages?select=*&order=created_at.desc&limit=100');
     if (tab !== selectedTab || !root.offsetParent) return;
-    if (selectedTab === 'students') students = result;
+    if (selectedTab === 'students' || selectedTab === 'alerts') students = result;
     else messages = result;
     render();
   }
   function render() {
     root.innerHTML = `<div class="teach-head"><div><h1>Cours · TD · TP</h1><p>Créer et publier des ressources par classe.</p></div></div>
       <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><button type="button" id="teachSyncClasses" class="subtle">Ajouter les classes de l’application</button></div><p class="teach-help">Les cours sont visibles par les élèves approuvés de la classe uniquement après publication et activation de leur code de 24 h.</p></div>
-      <div class="teach-tabs" role="tablist">${[['course','Cours'],['td','Travaux dirigés'],['tp','Travaux pratiques'],['students','Accès élèves'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}</button>`).join('')}</div>
+      <div class="teach-tabs" role="tablist">${[['course','Cours'],['td','Travaux dirigés'],['tp','Travaux pratiques'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
       <div id="teachBody"></div><p id="teachStatus" class="teach-status" role="status"></p>`;
     root.querySelector('#teachClass').onchange = e => { classId = e.target.value; selectedChapterId = ''; selectedItemId = ''; editing = null; loadClass().catch(err => status(err.message, true)); };
     root.querySelector('#teachSyncClasses').onclick = syncClasses;
     root.querySelectorAll('[data-teach-tab]').forEach(button => button.onclick = () => {
       tab = button.dataset.teachTab; selectedItemId = ''; editing = null; render();
-      if (tab === 'students' || tab === 'messages') refreshAuxiliary(tab).catch(err => status(err.message, true));
+      if (tab === 'students' || tab === 'alerts' || tab === 'messages') refreshAuxiliary(tab).catch(err => status(err.message, true));
       if (tab === 'tp') loadClass().catch(err => status(err.message, true));
     });
     if (tab === 'students') renderStudents();
+    else if (tab === 'alerts') renderAlerts();
     else if (tab === 'messages') renderMessages();
     else if (tab === 'tp') renderTp();
     else renderContent();
@@ -518,10 +523,25 @@
   }
   function renderStudents() {
     const body = root.querySelector('#teachBody');
-    body.innerHTML = `<div class="teach-card"><h2>Demandes d’accès élèves</h2><p class="teach-help">Vérifiez l’identité avant d’associer un compte à une classe. Le code généré est à transmettre personnellement ; il n’est visible qu’une fois.</p><div class="teach-students">${students.map(s => `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)} · classe demandée : ${esc(s.requested_class)}</small><small>${s.approved_at ? 'Approuvé' : 'En attente'}${s.access_until ? ' · accès jusqu’au ' + esc(new Date(s.access_until).toLocaleString('fr-FR')) : ''}</small></div><select data-class-student="${s.user_id}"><option value="">Choisir la classe</option>${classes.map(c => `<option value="${c.id}" ${s.class_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><div class="teach-row"><button type="button" data-approve="${s.user_id}">Valider</button>${s.approved_at ? `<button type="button" data-code="${s.user_id}" class="subtle">Nouveau code</button><button type="button" data-revoke="${s.user_id}" class="warn">Révoquer</button>` : ''}</div></div>`).join('') || '<p>Aucune demande pour le moment.</p>'}</div><div id="issuedCode"></div></div>`;
-    body.querySelectorAll('[data-approve]').forEach(btn => btn.onclick = async () => { const classId = body.querySelector(`[data-class-student="${btn.dataset.approve}"]`).value; if (!classId) return status('Choisissez une classe.',true); await update('student_profiles',btn.dataset.approve,{class_id:classId,approved_at:new Date().toISOString()}); });
+    const pending = students.filter(s => !s.approved_at && !s.blocked_at && rosterMatches(s).length);
+    const approved = students.filter(s => s.approved_at && !s.blocked_at);
+    const selected = classes.find(c => c.id === requestClassId);
+    const visible = selected ? pending.filter(s => rosterMatches(s).some(r => normalized(r.className) === normalized(selected.name))) : pending;
+    body.innerHTML = `<div class="teach-card"><h2>Demandes d’accès élèves (${pending.length})</h2><p class="teach-help">Seuls les élèves retrouvés dans la liste de l’application peuvent être proposés à la validation. Vérifiez leur identité et leur adresse e-mail avant de remettre le code.</p><div class="teach-row"><label for="requestClassFilter">Afficher la classe</label><select id="requestClassFilter"><option value="">Toutes les classes</option>${classes.map(c => `<option value="${c.id}" ${requestClassId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div><div class="teach-students">${visible.map(s => { const matches = rosterMatches(s); return `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)} · classe demandée : ${esc(s.requested_class)}</small><small>En attente</small></div><select data-roster-student="${s.user_id}"><option value="">Confirmer l’élève du registre</option>${matches.map(r => `<option value="${esc(r.id)}">${esc(r.name)} · ${esc(r.className)}</option>`).join('')}</select><button type="button" data-approve="${s.user_id}">Valider</button></div>`; }).join('') || '<p>Aucune demande concordante pour cette classe.</p>'}</div><h3>Élèves approuvés (${approved.length})</h3><div class="teach-students">${approved.filter(s => !selected || s.class_id === selected.id).map(s => `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)}${s.access_until ? ' · accès jusqu’au ' + esc(new Date(s.access_until).toLocaleString('fr-FR')) : ''}</small></div><div class="teach-row"><button type="button" data-code="${s.user_id}" class="subtle">Nouveau code</button><button type="button" data-unlock="${s.user_id}" class="subtle">Débloquer et renouveler</button><button type="button" data-revoke="${s.user_id}" class="warn">Révoquer</button></div></div>`).join('') || '<p>Aucun élève approuvé dans cette classe.</p>'}</div><div id="issuedCode"></div></div>`;
+    body.querySelector('#requestClassFilter').onchange = e => { requestClassId = e.target.value; renderStudents(); };
+    body.querySelectorAll('[data-approve]').forEach(btn => btn.onclick = async () => { const rosterId = body.querySelector(`[data-roster-student="${btn.dataset.approve}"]`).value; if (!rosterId) return status('Confirmez l’élève dans le registre.', true); try { await api.invoke('melec-access', {action:'approve', studentId:btn.dataset.approve, rosterId}); await loadClass(); status('Élève validé. Générez puis transmettez son code.'); } catch (error) { status(error.message, true); } });
     body.querySelectorAll('[data-code]').forEach(btn => btn.onclick = async () => { try { const result = await api.invoke('melec-access',{action:'issue',studentId:btn.dataset.code}); body.querySelector('#issuedCode').innerHTML = `<div class="teach-code">Code à remettre à l’élève : ${esc(result.code)}<br><small>Valide jusqu’au ${esc(new Date(result.expiresAt).toLocaleString('fr-FR'))}. Cette valeur ne sera plus affichée.</small></div>`; } catch (err) { status(err.message,true); } });
-    body.querySelectorAll('[data-revoke]').forEach(btn => btn.onclick = async () => { if (!confirm('Révoquer immédiatement l’accès de cet élève ?')) return; await update('student_profiles',btn.dataset.revoke,{access_until:null,approved_at:null}); });
+    body.querySelectorAll('[data-unlock]').forEach(btn => btn.onclick = async () => { if (!confirm('Débloquer cet élève et générer un nouveau code ?')) return; try { const result = await api.invoke('melec-access',{action:'unlock',studentId:btn.dataset.unlock}); await loadClass(); root.querySelector('#issuedCode').innerHTML = `<div class="teach-code">Nouveau code : ${esc(result.code)}<br><small>Valide jusqu’au ${esc(new Date(result.expiresAt).toLocaleString('fr-FR'))}.</small></div>`; } catch (error) { status(error.message,true); } });
+    body.querySelectorAll('[data-revoke]').forEach(btn => btn.onclick = async () => { if (!confirm('Révoquer immédiatement l’accès de cet élève ?')) return; try { await api.invoke('melec-access',{action:'revoke',studentId:btn.dataset.revoke}); await loadClass(); status('Accès révoqué.'); } catch (error) { status(error.message,true); } });
+  }
+  function renderAlerts() {
+    const body = root.querySelector('#teachBody');
+    const unknown = students.filter(s => !s.approved_at && !s.blocked_at && !rosterNameExists(s));
+    const missingClass = students.filter(s => !s.approved_at && !s.blocked_at && rosterNameExists(s) && !rosterMatches(s).length);
+    const blocked = students.filter(s => s.blocked_at);
+    body.innerHTML = `<div class="teach-card"><h2>Alertes (${unknown.length + missingClass.length})</h2><p class="teach-help">Vérifiez les demandes avant toute suppression. Un compte inconnu ne peut pas être validé.</p><h3>Élèves absents du registre (${unknown.length})</h3><div class="teach-students">${unknown.map(s => `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)} · classe demandée : ${esc(s.requested_class)}</small></div><div class="teach-row"><button type="button" data-block="${s.user_id}" class="warn">Bloquer</button><button type="button" data-delete="${s.user_id}" class="warn">Supprimer le compte</button></div></div>`).join('') || '<p>Aucune demande inconnue.</p>'}</div><h3>Classe du registre non créée (${missingClass.length})</h3><p class="teach-help">Ces noms existent dans le registre, mais leur classe n’est pas encore disponible dans les contenus. Utilisez « Ajouter les classes de l’application » en haut de la page.</p><div class="teach-students">${missingClass.map(s => `<div class="teach-student"><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)} · classe demandée : ${esc(s.requested_class)}</small></div>`).join('') || '<p>Aucun écart de classe.</p>'}</div><h3>Demandes bloquées (${blocked.length})</h3><div class="teach-students">${blocked.map(s => `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)}</small></div><button type="button" data-delete="${s.user_id}" class="warn">Supprimer le compte</button></div>`).join('') || '<p>Aucune demande bloquée.</p>'}</div></div>`;
+    body.querySelectorAll('[data-block]').forEach(btn => btn.onclick = async () => { if (!confirm('Bloquer cette demande inconnue ?')) return; try { await api.invoke('melec-access',{action:'block',studentId:btn.dataset.block}); await loadClass(); status('Demande bloquée.'); } catch (error) { status(error.message,true); } });
+    body.querySelectorAll('[data-delete]').forEach(btn => btn.onclick = async () => { if (!confirm('Supprimer définitivement ce compte Supabase et toutes ses données associées ?')) return; try { await api.invoke('melec-access',{action:'delete_unknown',studentId:btn.dataset.delete}); await loadClass(); status('Compte supprimé.'); } catch (error) { status(error.message,true); } });
   }
   function renderMessages() {
     root.querySelector('#teachBody').innerHTML = `<div class="teach-card"><h2>Messages du formulaire</h2>${messages.map(m => `<article class="teach-message"><strong>${esc(m.last_name)} ${esc(m.first_name)}</strong> · ${esc(m.class_name)}<small class="teach-meta">${esc(m.email)} · ${esc(new Date(m.created_at).toLocaleString('fr-FR'))}</small><p>${esc(m.comment)}</p></article>`).join('') || '<p>Aucun message.</p>'}</div>`;
