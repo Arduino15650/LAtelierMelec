@@ -111,6 +111,7 @@
   <link rel="stylesheet" href="melec-ui-unified.css?v=20260927-2">
   <link rel="stylesheet" href="melec-color-refresh.css?v=20260927-1">
   <link rel="stylesheet" href="ccf-compact.css?v=20260927-2">
+  <link rel="stylesheet" href="melec-responsive-performance.css?v=20260927-1">
 </head>
 <body class="cloud-locked">
   <div id="cloudGate" role="dialog" aria-modal="true" aria-label="Connexion à LAtelierMelec">
@@ -196,12 +197,12 @@
   <script src="content-render.js?v=20260926-apercu-pdf2"></script>
   <script src="tp-response-export.js?v=20260927-4"></script>
   <script src="student-pdf-viewer.js?v=20260927-2"></script>
-  <script src="teaching-space.js?v=20260927-6"></script>
+  <script src="teaching-space.js?v=20260927-7"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script src="cloud-sync.js?v=20260926-optimisation1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='106';
+      const swVersion='107';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>

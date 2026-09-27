@@ -9,6 +9,7 @@
   <link rel="apple-touch-icon" href="icon-180.png">
   <link rel="stylesheet" href="portal.css?v=20260926-alignement2">
   <link rel="stylesheet" href="melec-color-refresh.css?v=20260927-1">
+  <link rel="stylesheet" href="melec-responsive-performance.css?v=20260927-1">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
@@ -56,7 +57,7 @@
       if(!contactPanel.hidden){document.getElementById('contactForm').reset();contactPanel.scrollIntoView({block:'nearest'});}
     });
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const version='99';
+      const version='107';
       navigator.serviceWorker.addEventListener('controllerchange',()=>{
         if(sessionStorage.getItem('melec-sw-version')!==version){sessionStorage.setItem('melec-sw-version',version);location.reload()}
       });

@@ -7,6 +7,7 @@
   let tpAssignments = [], classStudents = [], pendingStudents = [], selectedTpId = 'all', draftRoles = [];
   let requestClassId = '';
   let previewCleanup = null;
+  let previewEpoch = 0;
   let loadedSession = '', lastLoaded = 0, loadInFlight = null;
   let studentsLoadedAt = 0;
   const kindNames = { course: 'Cours', td: 'Travaux dirigés', tp: 'Travaux pratiques' };
@@ -21,7 +22,14 @@
     catch { return ''; }
   }
   window.show = show = function (name) {
-    if (name !== 'teaching') return originalShow(name);
+    if (name !== 'teaching') {
+      // Libérer le lecteur PDF (canvas, observateurs et URL) dès que l'on quitte cette vue.
+      previewEpoch++;
+      if (previewCleanup) { previewCleanup(); previewCleanup = null; }
+      document.querySelector('#teachPreview')?.remove();
+      document.body.classList.remove('print-lesson');
+      return originalShow(name);
+    }
     history.replaceState(null, '', location.pathname + location.search + '#teaching');
     document.body.classList.remove('home-active'); document.body.classList.add('subpage-active');
     document.querySelectorAll('.view').forEach(node => node.classList.add('hidden'));
@@ -30,7 +38,8 @@
     window.scrollTo(0, 0);
     const key = sessionKey();
     if (key && loadedSession === key) {
-      render();
+      // Le DOM est déjà à jour : éviter sa reconstruction à chaque retour dans le menu.
+      if (!root.querySelector('#teachClass')) render();
       if (Date.now() - lastLoaded > 30000) load(true).catch(error => status(error.message, true));
     } else {
       classes = []; chapters = []; items = []; students = []; messages = []; studentsLoadedAt = 0;
@@ -538,11 +547,13 @@
     list.querySelectorAll('[data-table]').forEach(btn => { btn.onmousedown = event => event.preventDefault(); btn.onclick = () => formatSelection('insertHTML', '<table><tbody><tr><td>Cellule 1</td><td>Cellule 2</td></tr><tr><td>Cellule 3</td><td>Cellule 4</td></tr></tbody></table><p></p>',btn); });
   }
   async function previewItem(item, draft = false) {
+    const epoch = ++previewEpoch;
     if (previewCleanup) { previewCleanup(); previewCleanup = null; }
     document.querySelector('#teachPreview')?.remove();
     const title = draft ? root.querySelector('#itemTitle')?.value.trim() || 'Sans titre' : item.title;
     let previewBlocks = draft ? (captureBlocks(), structuredClone(blocks)) : (await api.rest('learning_items?id=eq.' + encodeURIComponent(item.id) + '&select=blocks'))[0]?.blocks || [];
     let assets = draft ? [...originalAssets] : await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(item.id) + '&select=id,object_path,file_name,mime_type');
+    if (epoch !== previewEpoch || root.classList.contains('hidden')) return;
     if (draft) previewBlocks = previewBlocks.map(block => {
       if (block.type !== 'pending') return block;
       const file = draftAssets[block.index];
@@ -561,7 +572,7 @@
     pane.innerHTML = `<div class="teach-preview-actions"><strong>Aperçu · ${esc(kindNames[tab])} · ${esc(title)}</strong>${hasPrintable ? '<button type="button" id="printLesson">Imprimer le contenu</button>' : ''}<button type="button" id="closePreview">Fermer</button></div>${hasPrintable ? `<header><p>BAC PRO MELEC · ${esc(classes.find(entry => entry.id === classId)?.name || '')}</p><h1>${esc(title)}</h1></header>` : ''}<div class="teach-preview-content${pdfAssets.length ? ' teach-preview-with-pdf' : ''}"></div>`;
     document.body.append(pane);
     const pdfUrls = [], pdfReaders = new Map();
-    const close = () => { if (previewCleanup) { previewCleanup(); previewCleanup = null; } pane.remove(); document.body.classList.remove('print-lesson'); };
+    const close = () => { previewEpoch++; if (previewCleanup) { previewCleanup(); previewCleanup = null; } pane.remove(); document.body.classList.remove('print-lesson'); };
     pane.querySelector('#closePreview').onclick = close;
     if (hasPrintable) pane.querySelector('#printLesson').onclick = async () => {
       await Promise.all([...pane.querySelectorAll('img')].map(image => image.decode?.().catch(() => {}) || Promise.resolve()));
@@ -569,6 +580,7 @@
     };
     try {
       const renderCleanup = await MelecContent.render(otherBlocks, pane.querySelector('.teach-preview-content'), assets);
+      if (epoch !== previewEpoch || !pane.isConnected) { renderCleanup(); pane.remove(); return; }
       previewCleanup = () => { renderCleanup(); pdfReaders.forEach(cleanup => cleanup()); pdfReaders.clear(); pdfUrls.forEach(url => URL.revokeObjectURL(url)); };
       if (pdfAssets.length) {
         const section = document.createElement('section'); section.className = 'teach-pdf-attachments';
@@ -591,6 +603,7 @@
             button.disabled = true; button.textContent = 'Chargement…';
             try {
               const blob = asset.local_blob || await api.download(asset.object_path);
+              if (epoch !== previewEpoch || !pane.isConnected) return;
               if (window.matchMedia('(max-width: 900px), (pointer: coarse)').matches) {
                 const mount = document.createElement('div'); mount.className='teach-pdf-reader'; card.append(mount);
                 try { pdfReaders.set(card,await MelecStudentPdf.render(blob,mount)); }
