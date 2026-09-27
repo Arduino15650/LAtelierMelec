@@ -8,9 +8,11 @@
 #ccfView .ccf-compact-filters :is(select,summary){min-width:0;max-width:100%}
 #ccfView .ccf-compact-groups .scope-choices{display:flex;flex-wrap:wrap;gap:6px}
 #ccfView .ccf-compact-groups .scope-choice{min-height:36px;padding:6px 10px;white-space:normal}
-#ccfView .ccf-student-picker{position:relative;border:1px solid #81afe0;border-radius:12px;background:#fff;color:#173b5d}
+#ccfView .ccf-student-picker{border:1px solid #81afe0;border-radius:12px;background:#fff;color:#173b5d}
 #ccfView .ccf-student-picker>summary{min-height:42px;padding:9px 12px;cursor:pointer;font-weight:700;overflow-wrap:anywhere}
-#ccfView .ccf-student-picker-body{position:absolute;z-index:10;top:calc(100% + 5px);right:0;width:min(320px,85vw);max-height:min(360px,60dvh);overflow:auto;padding:10px;border:1px solid #81afe0;border-radius:12px;background:#f0f7ff;box-shadow:0 12px 30px #09274245}
+#ccfView .ccf-student-picker-body{position:static;width:100%;max-height:min(340px,55dvh);overflow-y:auto;overflow-x:hidden;padding:10px;border-top:1px solid #a5c7e5;background:#f0f7ff}
+#ccfView .ccf-student-actions{display:flex;flex-wrap:wrap;gap:6px}
+#ccfView .ccf-student-actions button{min-width:0;max-width:100%;white-space:normal;text-align:center}
 #ccfView .ccf-student-checks{display:grid;gap:4px;margin-top:8px}
 #ccfView .ccf-student-checks label{display:flex;align-items:center;gap:8px;padding:6px;border-radius:7px;cursor:pointer;font-size:13px;overflow-wrap:anywhere}
 #ccfView .ccf-student-checks label:hover{background:#dcecff}
@@ -37,4 +39,4 @@
 #ccfView .ccf-scroll-hint{display:none;margin:0 0 6px;color:#dcecff;font-size:12px}
 #ccfView .ccf-empty{padding:16px;color:#173b5d}
 @media(max-width:900px){#ccfView .ccf-compact-filters{grid-template-columns:repeat(2,minmax(0,1fr))}#ccfView .ccf-compact-students{grid-column:1/-1}#ccfView .ccf-scroll-hint{display:block}}
-@media(max-width:600px){#ccfView .ccf-submenus{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#ccfView .ccf-submenu:first-child{grid-column:1/-1}#ccfView .ccf-submenu{min-width:0;padding:8px}#ccfView .ccf-compact-filters{grid-template-columns:minmax(0,1fr);padding:11px!important}#ccfView .ccf-compact-students{grid-column:auto}#ccfView .ccf-student-picker-body{left:0;right:auto;width:min(320px,calc(100vw - 48px))}#ccfView .ccf-compact-table th,#ccfView .ccf-compact-table td{padding:7px 8px}}
+@media(max-width:600px){#ccfView .ccf-submenus{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#ccfView .ccf-submenu:first-child{grid-column:1/-1}#ccfView .ccf-submenu{min-width:0;padding:8px}#ccfView .ccf-compact-filters{grid-template-columns:minmax(0,1fr);padding:11px!important}#ccfView .ccf-compact-students{grid-column:auto}#ccfView .ccf-compact-table th,#ccfView .ccf-compact-table td{padding:7px 8px}}
