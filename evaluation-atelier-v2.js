@@ -2,7 +2,7 @@
   const LEVELS=[{code:'NE',label:'Non évalué',factor:null},{code:'N1',label:'Non maîtrisé',factor:0},{code:'N2',label:'Insuffisamment maîtrisé',factor:1/3},{code:'N3',label:'Maîtrisé',factor:2/3},{code:'N4',label:'Très bien maîtrisé',factor:1}];
   function levelCode(value){if(LEVELS.some(level=>level.code===value))return value;if(value===0||value===1)return'N1';if(value===2)return'N2';if(value===3)return'N3';if(value===4)return'N4';return'NE'}
   function levelFactor(value){const level=LEVELS.find(item=>item.code===levelCode(value));return level?level.factor:null}
-  function assignedStudents(activity){const ids=Array.isArray(activity.studentIds)?activity.studentIds:[];if(ids.length)return state.students.filter(student=>ids.includes(student.id));if(activity.audience==='selected')return[];return state.students.filter(student=>student.className===activity.className)}
+  function assignedStudents(activity){const ids=Array.isArray(activity.studentIds)?activity.studentIds:[];const queue=window.melecEvaluationQueue;const pupils=ids.length?state.students.filter(student=>ids.includes(student.id)):activity.audience==='selected'?[]:state.students.filter(student=>student.className===activity.className);return queue?.activityId===activity.id?pupils.filter(student=>queue.studentIds.includes(student.id)):pupils}
   function taskIds(activity,competencyId){const selected=activity.taskSelections?.[competencyId];return Array.isArray(selected)?selected:(activity.tasks||[])}
   function competencyResult(activity,student,competencyId){
     const scores=activity.scores?.[student.id]||{},criterionKeys=(activity.criteria||[]).filter(key=>key.split(':')[0]===competencyId),taskKeys=taskIds(activity,competencyId).map(id=>`task:${competencyId}:${id}`),masteryKey=`mastery:${competencyId}`;
@@ -55,6 +55,12 @@
       if(locked&&!window.confirm('Déverrouiller l’évaluation de cet élève pour pouvoir la modifier ?'))return;
       activity.evaluationLocks??={};
       activity.evaluationLocks[student.id]=!locked;
+      if(!locked){
+        const queue=window.melecEvaluationQueue?.activityId===id?window.melecEvaluationQueue.studentIds:activity.studentIds||[];
+        const next=queue.map(sid=>state.students.find(entry=>entry.id===sid)).find(entry=>entry&&entry.className===activity.className&&!activity.evaluationLocks[entry.id]);
+        if(next)gradeStudent=next.id;
+        else toast('Tous les élèves de cette sélection sont verrouillés.');
+      }
       save();
       window.grade(id);
     });
