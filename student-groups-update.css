@@ -1,0 +1,21 @@
+#studentsView .student-groups-panel{min-width:0;overflow:visible}
+#studentsView .student-groups-panel .group-form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:12px}
+#studentsView .student-groups-panel .group-form-grid .field{min-width:0}
+#studentsView .student-groups-panel .group-form-grid input,#studentsView .student-groups-panel .group-form-grid select{width:100%;min-width:0}
+#studentsView .group-assignment{margin-top:18px;padding:clamp(12px,2vw,20px);border:1px solid #90bce1;border-radius:18px;background:#e8f4ff;color:#17314f;min-width:0}
+#studentsView .group-assignment h3{margin:0 0 8px;font-size:clamp(18px,2vw,22px)}
+#studentsView .group-assignment p{margin:0 0 12px;line-height:1.45}
+#studentsView .group-select-tools{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px}
+#studentsView .student-groups-panel .group-member-list{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))!important;gap:8px!important;width:100%!important;max-width:none!important;margin:0!important;max-height:min(42dvh,380px);overflow-y:auto;overflow-x:hidden}
+#studentsView .student-groups-panel .group-member-row{display:flex!important;align-items:center!important;gap:10px;min-width:0;min-height:46px;padding:8px 10px;line-height:1.35;overflow-wrap:anywhere}
+#studentsView .student-groups-panel .group-member-row input[type=checkbox]{display:block!important;appearance:auto!important;flex:0 0 20px!important;width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;margin:0!important;padding:0!important;accent-color:#1766a7}
+#studentsView .student-groups-panel .group-member-row span{min-width:0;overflow-wrap:anywhere}
+#studentsView .group-member-row.already-linked{background:#edf0f5!important;color:#617082!important}
+#studentsView .group-assignment-actions{display:flex;align-items:end;flex-wrap:wrap;gap:10px;margin-top:13px}
+#studentsView .group-assignment-actions .field{flex:1 1 220px;min-width:0}
+#studentsView .group-assignment-actions select{width:100%;min-width:0}
+#studentsView .group-edit-hint{font-weight:700;color:#254767;line-height:1.45}
+#studentsView .group-remove-selected:disabled,#studentsView #addStudentsToGroup:disabled{opacity:.5;cursor:not-allowed}
+#studentsView .student-group-item-body{min-width:0}
+@media(max-width:850px){#studentsView .student-groups-panel .group-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#studentsView .student-groups-panel .group-form-grid button{grid-column:1/-1;justify-self:start}}
+@media(max-width:600px){#studentsView .student-groups-panel .group-form-grid{grid-template-columns:minmax(0,1fr)}#studentsView .student-groups-panel .group-form-grid button{grid-column:auto;width:100%}#studentsView .group-assignment{padding:12px}#studentsView .student-groups-panel .group-member-list{grid-template-columns:minmax(0,1fr)!important;max-height:48dvh}#studentsView .group-assignment-actions{align-items:stretch;flex-direction:column}#studentsView .group-assignment-actions .field,#studentsView .group-assignment-actions button{width:100%}#studentsView .group-item-actions{display:grid;grid-template-columns:minmax(0,1fr)}#studentsView .group-item-actions button{width:100%;white-space:normal}}
