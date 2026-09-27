@@ -1,0 +1,61 @@
+/* Couleurs plus soutenues sur les cartes, sans colorer les documents ni les champs. */
+:root{
+  --melec-ink:#102f4f;
+  --melec-blue-card:#d5eaff;
+  --melec-blue-border:#74afe3;
+  --melec-teal-card:#d3f2ef;
+  --melec-teal-border:#69beb0;
+  --melec-green-card:#dcf3dc;
+  --melec-green-border:#81bd86;
+  --melec-violet-card:#e7defb;
+  --melec-violet-border:#af95dc;
+  --melec-amber-card:#ffebc5;
+  --melec-amber-border:#dea64d;
+}
+
+/* Accueil enseignant : chaque raccourci garde une couleur reconnaissable. */
+#homeView .home-access-card:nth-child(1){background:linear-gradient(140deg,#ffdfab,#fff0d3)!important;border-color:#d99531!important}
+#homeView .home-access-card:nth-child(2){background:linear-gradient(140deg,#c4e1ff,#e4f1ff)!important;border-color:#6ba9df!important}
+#homeView .home-access-card:nth-child(3){background:linear-gradient(140deg,#c4ecdc,#e4f7eb)!important;border-color:#68b18b!important}
+#homeView .home-access-card:nth-child(4){background:linear-gradient(140deg,#d9caf6,#efe8fc)!important;border-color:#a388d4!important}
+#homeView .home-access-card:nth-child(5){background:linear-gradient(140deg,#ffd4c9,#fff0e9)!important;border-color:#d88a75!important}
+#homeView .home-access-card :is(strong,small){color:var(--melec-ink)!important}
+
+/* Les panneaux principaux du menu Cours · TD · TP. */
+#teachingView .teach-card{background:linear-gradient(145deg,#dcecff,#edf5ff)!important;border:1.5px solid var(--melec-blue-border)!important;color:var(--melec-ink)!important}
+#teachingView .teach-content-manager{background:linear-gradient(145deg,#c9e6ff,#e3f2ff)!important;border-color:#5ba3dc!important}
+#teachingView .teach-tp-card{background:linear-gradient(145deg,#cceee9,#e5f7f3)!important;border-color:var(--melec-teal-border)!important}
+#teachingView .teach-tp-student,#teachingView .teach-tp-response-row{background:#e2f1ff!important;border:1px solid #9bc9e9!important;color:var(--melec-ink)!important}
+#teachingView .teach-tp-student:nth-child(even),#teachingView .teach-tp-response-row:nth-child(even){background:#e0f4e8!important;border-color:#95cdae!important}
+#teachingView .teach-card :is(h2,h3,strong,label,summary){color:var(--melec-ink)}
+#teachingView .teach-card :is(input,select,textarea){background:#fff;color:#173653}
+
+/* Activités, élèves, résultats et référentiel : plus de profondeur, même lecture. */
+#activitiesView>.panel,#studentsView>.panel,#resultsView>.panel,#referentialView>.panel{background:linear-gradient(150deg,#d8eaff,#edf5ff)!important;border-color:var(--melec-blue-border)!important}
+#activitiesView .activity-class-group,#activity-listView .activity-list-card{background:var(--melec-blue-card)!important;border-color:var(--melec-blue-border)!important}
+#activitiesView .activity-class-group:nth-child(3n+2),#activity-listView .activity-list-card:nth-child(3n+2){background:var(--melec-teal-card)!important;border-color:var(--melec-teal-border)!important}
+#activitiesView .activity-class-group:nth-child(3n),#activity-listView .activity-list-card:nth-child(3n){background:var(--melec-violet-card)!important;border-color:var(--melec-violet-border)!important}
+#activitiesView .activity-card,#activity-listView .activity-entry,#resultsView .result-card{background:#e2f0ff!important;border-color:#8cbae3!important}
+#activitiesView .activity-card:nth-child(even),#activity-listView .activity-entry:nth-child(even),#resultsView .result-card:nth-child(even){background:var(--melec-green-card)!important;border-color:var(--melec-green-border)!important}
+#studentsView .class-fold,#studentsView .student-group-item{background:var(--melec-teal-card)!important;border-color:var(--melec-teal-border)!important}
+#studentsView .class-fold:nth-of-type(even),#studentsView .student-group-item:nth-of-type(even){background:var(--melec-violet-card)!important;border-color:var(--melec-violet-border)!important}
+#referentialView .referential-section,#referentialView .block-card{background:var(--melec-blue-card)!important;border-color:var(--melec-blue-border)!important}
+#referentialView .referential-section:nth-child(even),#referentialView .block-card:nth-child(even){background:var(--melec-teal-card)!important;border-color:var(--melec-teal-border)!important}
+#activitiesView :is(.activity-class-group,.activity-card),#activity-listView .activity-list-card,#studentsView .class-fold,#resultsView .result-card,#referentialView .referential-section{color:var(--melec-ink)!important}
+
+/* Élève : cartes différenciées ; contenus PDF et zones de réponse inchangés. */
+.portal-panel{background:linear-gradient(145deg,#dbeaff,#eef5ff)!important;border-color:#83b5df!important;color:var(--melec-ink)!important}
+#studentDashboard{background:linear-gradient(145deg,#d3e8ff,#eaf3ff)!important}
+#studentDashboard .portal-list details{background:var(--melec-blue-card)!important;border-color:var(--melec-blue-border)!important;color:var(--melec-ink)!important}
+#studentDashboard .portal-list details:nth-child(even){background:var(--melec-teal-card)!important;border-color:var(--melec-teal-border)!important}
+#studentDashboard .student-tp-card{background:linear-gradient(145deg,#c9e9e3,#e3f6ef)!important;border-color:#6bbbaa!important;color:var(--melec-ink)!important}
+#studentDashboard .student-tp-card:nth-child(even){background:linear-gradient(145deg,#dcd3f5,#f0eafb)!important;border-color:var(--melec-violet-border)!important}
+#studentDashboard .portal-message{background:#cde5ff!important;color:#143856!important}
+#studentDashboard .portal-warning{background:var(--melec-amber-card)!important;color:#633d0d!important}
+.lesson-file{background:#d5eafe!important;color:var(--melec-ink)!important}
+
+/* Une légère bordure renforce la séparation des rectangles sur mobile. */
+@media(max-width:700px){
+  #teachingView .teach-card,.portal-panel{box-shadow:0 8px 22px rgba(2,33,67,.15)!important}
+  #homeView .home-access-card{box-shadow:0 8px 20px rgba(2,33,67,.2)!important}
+}

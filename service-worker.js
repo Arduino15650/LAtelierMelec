@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v102-accueil-sans-doublon';
+const CACHE_NAME = 'bac-pro-melec-v103-couleurs';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
 const CORE_FILES = ['./','./index.html','./logo-bac-pro-melec-v3.webp'];
 
