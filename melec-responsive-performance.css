@@ -8,6 +8,15 @@
 .teaching-space .teach-head h1,.teaching-space .teach-card h2,.teaching-space .teach-card h3,.portal-panel h1,.portal-panel h2,.portal-panel h3{overflow-wrap:anywhere;line-height:1.2}
 .teaching-space .teach-editable,.lesson-content{min-width:0}
 
+/* Le format A4 ne doit limiter que l'impression, pas la lecture à l'écran. */
+@media screen{
+  .teach-preview .teach-preview-content:not(.teach-preview-with-pdf){width:100%;max-width:min(100%,1600px);margin-inline:auto}
+  .teach-preview .teach-preview-content .lesson-content{width:100%;max-width:100%}
+}
+@media print{
+  body.print-lesson .teach-preview-content{width:100%;max-width:210mm;margin-inline:auto}
+}
+
 @media(max-width:980px){
   .content{max-width:100%;padding-inline:clamp(12px,2.6vw,24px)!important}
   .teaching-space .teach-card,.portal-panel{max-width:100%}
