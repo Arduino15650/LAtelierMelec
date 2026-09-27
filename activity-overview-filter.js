@@ -65,7 +65,7 @@
     root.querySelectorAll('.activity-group-fold').forEach(function (fold) {
       const count = fold.querySelectorAll('.activity-card:not([hidden])').length;
       fold.hidden = count === 0;
-      fold.open = selection !== 'all' && count > 0;
+      fold.open = false;
       const label = fold.querySelector(':scope > summary span');
       if (label) label.textContent = count + ' activité(s)';
     });
@@ -76,7 +76,7 @@
         return action && action.getAttribute('onclick');
       }));
       fold.hidden = ids.size === 0;
-      fold.open = ids.size > 0;
+      fold.open = false;
       const label = fold.querySelector(':scope > summary span');
       if (label) label.textContent = ids.size + ' activité(s)';
     });
