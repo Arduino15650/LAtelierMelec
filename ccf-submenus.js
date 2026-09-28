@@ -2,7 +2,7 @@
   'use strict';
 
   const modes={all:'Récap CCF',formative:'CCF formatif',certificative:'CCF certificatif'};
-  const choice={mode:'all',className:'',groupId:'',showAllStudents:false,studentIds:new Set()};
+  const choice={mode:'all',className:'',groupId:'',studentIds:new Set()};
   const safe=value=>esc(String(value??''));
   const byName=(a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'});
   const note=value=>Number.isFinite(value)?value.toFixed(2):'—';
@@ -28,19 +28,19 @@
     const classes=[...new Set(allStudents.map(student=>student.className).filter(Boolean))]
       .sort((a,b)=>a.localeCompare(b,'fr',{numeric:true}));
     if(choice.className&&!classes.includes(choice.className)){
-      choice.className='';choice.groupId='';choice.showAllStudents=false;choice.studentIds.clear();
+      choice.className='';choice.groupId='';choice.studentIds.clear();
     }
     const classGroups=groups.filter(group=>group.className===choice.className);
     const group=classGroups.find(item=>item.id===choice.groupId);
-    if(choice.groupId&&!group){choice.groupId='';choice.showAllStudents=false;choice.studentIds.clear()}
+    if(choice.groupId&&!group){choice.groupId='';choice.studentIds.clear()}
     const eligible=allStudents.filter(student=>student.className===choice.className&&
       (!group||group.studentIds.includes(student.id))).sort(byName);
     const eligibleIds=new Set(eligible.map(student=>student.id));
     for(const id of choice.studentIds)if(!eligibleIds.has(id))choice.studentIds.delete(id);
-    const students=choice.showAllStudents?eligible:eligible.filter(student=>choice.studentIds.has(student.id));
-    const selectedLabel=choice.showAllStudents
-      ? (choice.groupId?'Tout le groupe':'Toute la classe')
-      : choice.studentIds.size?`${choice.studentIds.size} élève(s) sélectionné(s)`:'Choisir les élèves à afficher';
+    const students=choice.studentIds.size
+      ? eligible.filter(student=>choice.studentIds.has(student.id)):eligible;
+    const selectedLabel=choice.studentIds.size
+      ? `${choice.studentIds.size} élève(s) sélectionné(s)`:'Tous les élèves';
 
     const scoreCache=new Map();
     const score=(activity,student)=>{
@@ -69,9 +69,9 @@
         `<option value="${safe(name)}" ${choice.className===name?'selected':''}>${safe(name)}</option>`).join('')}</select></div>
       ${choice.className?`<div class="field ccf-compact-groups"><label>Groupe</label><div class="scope-choices" role="group" aria-label="Choisir un groupe"><button type="button" data-ccf-group="" class="scope-choice ${!choice.groupId?'active':''}" aria-pressed="${!choice.groupId}">Toute la classe</button>${classGroups.map(item=>
         `<button type="button" data-ccf-group="${safe(item.id)}" class="scope-choice ${choice.groupId===item.id?'active':''}" aria-pressed="${choice.groupId===item.id}">${safe(item.name)}</button>`).join('')}</div></div>
-      <div class="field ccf-compact-students"><label>Élèves</label><details class="ccf-student-picker"><summary>${safe(selectedLabel)}</summary><div class="ccf-student-picker-body"><div class="ccf-student-actions"><button type="button" class="button small" id="ccfAllStudents">${choice.groupId?'Afficher tout le groupe':'Afficher toute la classe'}</button><button type="button" class="button small" id="ccfClearStudents">Effacer</button></div><div class="ccf-student-checks">${eligible.map(student=>
+      <div class="field ccf-compact-students"><label>Élèves</label><details class="ccf-student-picker"><summary>${safe(selectedLabel)}</summary><div class="ccf-student-picker-body"><button type="button" class="button small" id="ccfAllStudents">Tous les élèves</button><div class="ccf-student-checks">${eligible.map(student=>
         `<label><input type="checkbox" data-ccf-student="${safe(student.id)}" ${choice.studentIds.has(student.id)?'checked':''}><span>${safe(student.name)}</span></label>`).join('')||'<p>Aucun élève dans cette sélection.</p>'}</div></div></details></div>`:''}</section>
-      ${choice.className?(!choice.showAllStudents&&!choice.studentIds.size)?`<div class="panel ccf-empty">Choisissez « ${choice.groupId?'Afficher tout le groupe':'Afficher toute la classe'} » ou sélectionnez un ou plusieurs élèves pour voir le récapitulatif.</div>`:activities.length?`<p class="ccf-scroll-hint">Sur petit écran, faites glisser le tableau horizontalement.</p><div class="panel dashboard-table-wrap ccf-table-wrap" style="--ccf-table-width:${tableWidth}px"><table class="dashboard-table ccf-compact-table" aria-label="${safe(modes[choice.mode])}"><colgroup><col class="ccf-name-col">${activities.map(()=>'<col class="ccf-activity-col">').join('')}<col class="ccf-bilan-col"><col class="ccf-comment-col"></colgroup><thead><tr><th scope="col">Élève</th>${activities.map(activity=>{
+      ${choice.className?activities.length?`<p class="ccf-scroll-hint">Sur petit écran, faites glisser le tableau horizontalement.</p><div class="ccf-top-scroll" style="--ccf-table-width:${tableWidth}px" role="region" aria-label="Défilement horizontal du tableau CCF" tabindex="0" hidden><div class="ccf-top-scroll-track"></div></div><div class="panel dashboard-table-wrap ccf-table-wrap" style="--ccf-table-width:${tableWidth}px"><table class="dashboard-table ccf-compact-table" aria-label="${safe(modes[choice.mode])}"><colgroup><col class="ccf-name-col">${activities.map(()=>'<col class="ccf-activity-col">').join('')}<col class="ccf-bilan-col"><col class="ccf-comment-col"></colgroup><thead><tr><th scope="col">Élève</th>${activities.map(activity=>{
         const period=periods.find(item=>item.id===activity.periodId);
         return `<th scope="col"><span class="ccf-activity-title">${safe(activity.title)}</span><small>${safe(activity.date||'Sans date')}${period?' · '+safe(period.name):''}</small></th>`;
       }).join('')}<th scope="col">Bilan</th><th scope="col">Commentaire (100 caractères)</th></tr></thead><tbody>${displayedStudents.map(student=>{
@@ -97,21 +97,15 @@
     });
     const classSelect=target.querySelector('#ccfCompactClass');
     if(classSelect)classSelect.onchange=()=>{
-      choice.className=classSelect.value;choice.groupId='';choice.showAllStudents=false;choice.studentIds.clear();renderCcfCompact();
+      choice.className=classSelect.value;choice.groupId='';choice.studentIds.clear();renderCcfCompact();
     };
     target.querySelectorAll('[data-ccf-group]').forEach(button=>button.onclick=()=>{
-      choice.groupId=button.dataset.ccfGroup;choice.showAllStudents=false;choice.studentIds.clear();renderCcfCompact();
+      choice.groupId=button.dataset.ccfGroup;choice.studentIds.clear();renderCcfCompact();
     });
     target.querySelector('#ccfAllStudents')?.addEventListener('click',()=>{
-      choice.showAllStudents=true;choice.studentIds.clear();renderCcfCompact();
-    });
-    target.querySelector('#ccfClearStudents')?.addEventListener('click',()=>{
-      choice.showAllStudents=false;choice.studentIds.clear();renderCcfCompact();
-      const picker=target.querySelector('.ccf-student-picker');
-      if(picker)picker.open=true;
+      choice.studentIds.clear();renderCcfCompact();
     });
     target.querySelectorAll('[data-ccf-student]').forEach(input=>input.onchange=()=>{
-      choice.showAllStudents=false;
       if(input.checked)choice.studentIds.add(input.dataset.ccfStudent);
       else choice.studentIds.delete(input.dataset.ccfStudent);
       renderCcfCompact();
@@ -123,6 +117,17 @@
       textarea.nextElementSibling.textContent=`${textarea.value.length}/100`;
       save();
     });
+    const topScroll=target.querySelector('.ccf-top-scroll');
+    const tableScroll=target.querySelector('.ccf-table-wrap');
+    if(topScroll&&tableScroll){
+      topScroll.hidden=tableScroll.scrollWidth<=tableScroll.clientWidth;
+      topScroll.addEventListener('scroll',()=>{
+        if(Math.abs(tableScroll.scrollLeft-topScroll.scrollLeft)>1)tableScroll.scrollLeft=topScroll.scrollLeft;
+      });
+      tableScroll.addEventListener('scroll',()=>{
+        if(Math.abs(topScroll.scrollLeft-tableScroll.scrollLeft)>1)topScroll.scrollLeft=tableScroll.scrollLeft;
+      });
+    }
   }
 
   window.renderCcf=renderCcfCompact;
