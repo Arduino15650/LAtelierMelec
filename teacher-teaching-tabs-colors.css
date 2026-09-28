@@ -1,0 +1,49 @@
+/* Capsules Cours · TD · TP : couleurs propres à chaque rubrique. */
+#teachingView .teach-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+}
+#teachingView .teach-tabs button[data-teach-tab] {
+  --tab-color: #185c99;
+  --tab-border: #75aee0;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  padding: 9px 16px;
+  border: 1.5px solid var(--tab-border);
+  border-radius: 999px;
+  background: var(--tab-color);
+  color: #fff;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-shadow: 0 2px 5px #001b3640;
+}
+#teachingView .teach-tabs button[data-teach-tab="course"] { --tab-color: #9c570e; --tab-border: #f2bd70; }
+#teachingView .teach-tabs button[data-teach-tab="td"] { --tab-color: #185c99; --tab-border: #83bbea; }
+#teachingView .teach-tabs button[data-teach-tab="tp"] { --tab-color: #286e4d; --tab-border: #89c9a7; }
+#teachingView .teach-tabs button[data-teach-tab="students"] { --tab-color: #654a96; --tab-border: #bba7e6; }
+#teachingView .teach-tabs button[data-teach-tab="alerts"] { --tab-color: #a13e52; --tab-border: #e6a2b0; }
+#teachingView .teach-tabs button[data-teach-tab="messages"] { --tab-color: #236978; --tab-border: #8ac6d2; }
+#teachingView .teach-tabs button[data-teach-tab].active {
+  background: var(--tab-color);
+  border-color: #fff;
+  color: #fff;
+  box-shadow: 0 0 0 3px var(--tab-border), 0 3px 8px #001b3659;
+}
+#teachingView .teach-tabs button[data-teach-tab]:hover { filter: brightness(1.12); }
+#teachingView .teach-tabs button[data-teach-tab]:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+@media (max-width: 600px) {
+  #teachingView .teach-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  #teachingView .teach-tabs button[data-teach-tab] { width: 100%; padding: 10px 7px; font-size: clamp(12px, 3.4vw, 15px); }
+}
+@media (max-width: 340px) {
+  #teachingView .teach-tabs { grid-template-columns: 1fr; }
+}
