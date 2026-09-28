@@ -7,7 +7,7 @@
   if (!tabs || !dashboard || !window.MelecPortal || !window.MELEC) return;
 
   const labels = {
-    reference: 'Référentiel', all: 'Récap CCF',
+    reference: 'Référentiel',
     formative: 'CCF formatif', certificative: 'CCF certificatif'
   };
   const buttons = new Map();
@@ -194,8 +194,7 @@
     content.replaceChildren();
     const list = results.filter(activity => {
       const evaluated = score(activity).note !== null;
-      return evaluated && (key === 'all' ||
-        String(activity.situation || '').trim().toLocaleLowerCase('fr') === key);
+      return evaluated && String(activity.situation || '').trim().toLocaleLowerCase('fr') === key;
     });
     message.textContent = list.length ? list.length + ' activité(s) évaluée(s).' :
       'Aucune évaluation personnelle dans cette rubrique.';

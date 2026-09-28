@@ -30,15 +30,13 @@
 #studentContentTabs button:nth-child(1) { background: #d1e8ff; border-color: #74aee0; color: #153b61; }
 #studentContentTabs button:nth-child(2) { background: #d6f0e6; border-color: #79bc9c; color: #174638; }
 #studentContentTabs button:nth-child(3) { background: #e7ddfa; border-color: #ad91dc; color: #49346d; }
-#studentContentTabs button:nth-child(4) { background: #ffe7cc; border-color: #dc9f59; color: #693e14; }
-#studentContentTabs button:nth-child(5) { background: #ffdde6; border-color: #d790a5; color: #72334a; }
-#studentContentTabs button:nth-child(6) { background: #d1eef4; border-color: #75b7c8; color: #19505e; }
+#studentContentTabs button:nth-child(4) { background: #ffdde6; border-color: #d790a5; color: #72334a; }
+#studentContentTabs button:nth-child(5) { background: #d1eef4; border-color: #75b7c8; color: #19505e; }
 #studentContentTabs button:nth-child(1).active { background: #175a98; border-color: #124879; color: #fff; }
 #studentContentTabs button:nth-child(2).active { background: #287451; border-color: #1b5b3e; color: #fff; }
 #studentContentTabs button:nth-child(3).active { background: #69499b; border-color: #54377f; color: #fff; }
-#studentContentTabs button:nth-child(4).active { background: #995718; border-color: #75410f; color: #fff; }
-#studentContentTabs button:nth-child(5).active { background: #a13d60; border-color: #7e2d49; color: #fff; }
-#studentContentTabs button:nth-child(6).active { background: #246d7e; border-color: #195461; color: #fff; }
+#studentContentTabs button:nth-child(4).active { background: #a13d60; border-color: #7e2d49; color: #fff; }
+#studentContentTabs button:nth-child(5).active { background: #246d7e; border-color: #195461; color: #fff; }
 #studentContentTabs button:hover:not(.active) { filter: brightness(.96); }
 #studentContentTabs button:focus-visible { outline: 3px solid #112f50; outline-offset: 2px; }
 
