@@ -1,0 +1,117 @@
+/* Chaque rubrique reprend la teinte de sa capsule, sans colorer les champs ni les documents. */
+#teachingView {
+  --teach-page: #ffe8c6;
+  --teach-page-light: #fff3df;
+  --teach-page-deep: #ffda9c;
+  --teach-page-border: #d69a48;
+  --teach-page-ink: #57330e;
+}
+#teachingView:has(.teach-tabs [data-teach-tab="td"].active) {
+  --teach-page: #d6eaff; --teach-page-light: #ecf5ff;
+  --teach-page-deep: #bcdcff; --teach-page-border: #75aee0; --teach-page-ink: #174b77;
+}
+#teachingView:has(.teach-tabs [data-teach-tab="tp"].active) {
+  --teach-page: #d6f1e3; --teach-page-light: #ecfaf2;
+  --teach-page-deep: #bce7d0; --teach-page-border: #7bbc9b; --teach-page-ink: #205a3e;
+}
+#teachingView:has(.teach-tabs [data-teach-tab="students"].active) {
+  --teach-page: #e6ddfa; --teach-page-light: #f4efff;
+  --teach-page-deep: #d5c6f3; --teach-page-border: #aa91d7; --teach-page-ink: #543b81;
+}
+#teachingView:has(.teach-tabs [data-teach-tab="alerts"].active) {
+  --teach-page: #ffe0e8; --teach-page-light: #fff1f4;
+  --teach-page-deep: #f8c7d5; --teach-page-border: #dc93a6; --teach-page-ink: #853a52;
+}
+#teachingView:has(.teach-tabs [data-teach-tab="messages"].active) {
+  --teach-page: #d5eef2; --teach-page-light: #ebf8fa;
+  --teach-page-deep: #bce1e8; --teach-page-border: #79b8c5; --teach-page-ink: #255a67;
+}
+#teachingView #teachBody > .teach-card {
+  background: linear-gradient(145deg, var(--teach-page), var(--teach-page-light)) !important;
+  border-color: var(--teach-page-border) !important;
+  color: #15324c !important;
+}
+#teachingView #teachBody > .teach-card:nth-child(even) {
+  background: linear-gradient(145deg, var(--teach-page-light), var(--teach-page-deep)) !important;
+}
+#teachingView #teachBody > .teach-card.teach-content-manager {
+  background: linear-gradient(135deg, var(--teach-page-deep), var(--teach-page-light)) !important;
+}
+#teachingView #teachBody > .teach-card > :is(h2,h3,strong),
+#teachingView #teachBody > .teach-card > .teach-section-heading :is(h2,h3) {
+  color: var(--teach-page-ink) !important;
+}
+#teachingView #teachBody > .teach-card > .teach-help,
+#teachingView #teachBody > .teach-card > .teach-content-manager > .teach-help {
+  color: #294862 !important;
+}
+#teachingView #teachBody .teach-card .teach-card,
+#teachingView #teachBody .teach-tp-card details,
+#teachingView #teachBody .teach-message {
+  background: var(--teach-page-light) !important;
+  border: 1px solid var(--teach-page-border) !important;
+  border-radius: 13px;
+}
+#teachingView #teachBody .teach-card .teach-card:nth-child(even),
+#teachingView #teachBody .teach-message:nth-child(even) {
+  background: var(--teach-page-deep) !important;
+}
+#teachingView #teachBody .teach-student:nth-child(odd),
+#teachingView #teachBody .teach-tp-student:nth-child(odd) {
+  background: var(--teach-page-light) !important;
+  border-color: var(--teach-page-border) !important;
+}
+#teachingView #teachBody .teach-student:nth-child(even),
+#teachingView #teachBody .teach-tp-student:nth-child(even) {
+  background: var(--teach-page-deep) !important;
+  border-color: var(--teach-page-border) !important;
+}
+#teachingView #teachBody :is(input,select,textarea,.teach-editable,.teach-preview-content) {
+  background: #fff !important;
+  color: #173653 !important;
+}
+
+/* Liste des activités : trois niveaux visuels, plusieurs teintes d'une carte à l'autre. */
+#activitiesView .activity-overview-picker {
+  background: linear-gradient(135deg, #e2dafa, #f3efff) !important;
+  border: 1.5px solid #ac91d9 !important;
+  color: #2b2350 !important;
+}
+#activitiesView .activity-class-group:nth-of-type(4n + 1) { --activity-main: #d7eaff; --activity-soft: #edf6ff; --activity-border: #7fb1e0; }
+#activitiesView .activity-class-group:nth-of-type(4n + 2) { --activity-main: #d9f2e7; --activity-soft: #effaf4; --activity-border: #7dc2a0; }
+#activitiesView .activity-class-group:nth-of-type(4n + 3) { --activity-main: #e8e0f9; --activity-soft: #f5f1ff; --activity-border: #b39add; }
+#activitiesView .activity-class-group:nth-of-type(4n) { --activity-main: #ffebd1; --activity-soft: #fff6e8; --activity-border: #dba563; }
+#activitiesView .activity-class-group {
+  background: var(--activity-soft, #edf6ff) !important;
+  border-color: var(--activity-border, #7fb1e0) !important;
+  color: #12324f !important;
+}
+#activitiesView .activity-class-group > summary {
+  background: var(--activity-main, #d7eaff) !important;
+  color: #12324f !important;
+}
+#activitiesView .activity-group-fold {
+  background: var(--activity-soft, #edf6ff) !important;
+  border-color: var(--activity-border, #7fb1e0) !important;
+}
+#activitiesView .activity-group-fold > summary {
+  background: var(--activity-main, #d7eaff) !important;
+  color: #12324f !important;
+}
+#activitiesView .activity-group-fold:nth-of-type(even) > summary { background: var(--activity-soft, #edf6ff) !important; }
+#activitiesView .activity-card:nth-of-type(4n + 1) { background: #e1f0ff !important; border-color: #7eafe1 !important; }
+#activitiesView .activity-card:nth-of-type(4n + 2) { background: #e0f4e9 !important; border-color: #86c5a2 !important; }
+#activitiesView .activity-card:nth-of-type(4n + 3) { background: #efe6fb !important; border-color: #baa1dd !important; }
+#activitiesView .activity-card:nth-of-type(4n) { background: #fff0d9 !important; border-color: #dba966 !important; }
+#activitiesView .activity-card :is(h3,strong,summary,span) { color: #12324f; overflow-wrap: anywhere; }
+#activitiesView .activity-card .activity-entry-body {
+  background: #ffffffb8;
+  border-top: 1px solid #8da9c5;
+  border-radius: 0 0 12px 12px;
+}
+@media (max-width: 600px) {
+  #teachingView #teachBody > .teach-card { padding: 14px; }
+  #activitiesView .activity-class-group,
+  #activitiesView .activity-group-fold,
+  #activitiesView .activity-card { max-width: 100%; overflow-wrap: anywhere; }
+}
