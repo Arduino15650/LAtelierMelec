@@ -315,12 +315,16 @@
     userId = '';
     revision = 0;
     conflicted = false;
+    if (!force) {
+      ready = false;
+      window.location.replace('./index.html');
+      return;
+    }
     lock();
     byId('cloudLoginPane').hidden = false;
     byId('cloudImportPane').hidden = true;
     byId('cloudSignOutGate').hidden = true;
     gateMessage('Vous êtes déconnecté.');
-    if (!force) window.location.replace('./index.html');
   }
   byId('cloudSignOut').addEventListener('click', () => signOut(false));
   byId('cloudSignOutGate').addEventListener('click', () => signOut(true));

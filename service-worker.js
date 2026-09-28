@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v127-fast-exit';
+const CACHE_NAME = 'bac-pro-melec-v128-no-login-flash';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
 const CORE_FILES = ['./logo-bac-pro-melec-v3.webp'];
 

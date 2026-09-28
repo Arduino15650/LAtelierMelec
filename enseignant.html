@@ -208,13 +208,13 @@
   <script src="student-pdf-viewer.js?v=20260927-2"></script>
   <script src="teaching-space.js?v=20260927-7"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
-  <script src="cloud-sync.js?v=20260929-sortie1"></script>
+  <script src="cloud-sync.js?v=20260929-sans-eclair1"></script>
   <script src="activity-reuse.js?v=20260928-3"></script>
   <script src="activity-overview-filter.js?v=20260928-4"></script>
   <script src="evaluation-student-filter.js?v=20260928-2"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='127';
+      const swVersion='128';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>
