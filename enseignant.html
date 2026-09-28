@@ -35,6 +35,9 @@
     #cloudGate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;overflow:auto;padding:20px;background:#06182d;color:#172b45;font-family:Arial,sans-serif}
     #cloudGate[hidden]{display:none}
     .cloud-card{width:min(100%,500px);box-sizing:border-box;padding:clamp(20px,5vw,34px);border:2px solid #ef9e31;border-radius:24px;background:#eff6ff;box-shadow:0 20px 60px #0008}
+    .cloud-home-link{display:inline-flex;align-items:center;min-height:36px;margin-bottom:18px;color:#165a9d;font-size:16px;font-weight:700;text-decoration:none}
+    .cloud-home-link:hover{text-decoration:underline}
+    .cloud-home-link:focus-visible{outline:3px solid #ef9e31;outline-offset:3px;border-radius:4px}
     .cloud-brand{display:flex;align-items:center;gap:14px;margin-bottom:18px}.cloud-brand img{width:72px;height:72px;object-fit:contain}.cloud-brand strong{font-size:clamp(21px,5vw,29px)}
     .cloud-card h1{font-size:24px;margin:0 0 10px}.cloud-card p{line-height:1.5}.cloud-card label{display:block;margin:14px 0 6px;font-weight:700}
     .cloud-card input[type=email],.cloud-card input[type=password],.cloud-card input[type=file]{box-sizing:border-box;width:100%;min-height:46px;padding:10px;border:1px solid #8ca9c9;border-radius:12px;background:#fff;color:#172b45;font-size:16px}
@@ -122,6 +125,7 @@
 <body class="cloud-locked">
   <div id="cloudGate" role="dialog" aria-modal="true" aria-label="Connexion à LAtelierMelec">
     <div class="cloud-card">
+      <a class="cloud-home-link" href="./index.html">← Retour à l’accueil</a>
       <div class="cloud-brand"><img src="logo-bac-pro-melec-v3.webp" alt=""><strong>BAC PRO MELEC</strong></div>
       <section id="cloudLoginPane">
         <h1>Espace enseignant</h1>
@@ -145,7 +149,6 @@
       </section>
       <p id="cloudGateStatus" class="cloud-status" role="status" aria-live="polite"></p>
       <button id="cloudSignOutGate" class="secondary" type="button" hidden>Changer de compte</button>
-      <p><a href="./index.html">← Retour à l’accueil</a></p>
     </div>
   </div>
   <header class="topbar">
@@ -205,13 +208,13 @@
   <script src="student-pdf-viewer.js?v=20260927-2"></script>
   <script src="teaching-space.js?v=20260927-7"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
-  <script src="cloud-sync.js?v=20260926-optimisation1"></script>
+  <script src="cloud-sync.js?v=20260928-retour-accueil1"></script>
   <script src="activity-reuse.js?v=20260928-3"></script>
   <script src="activity-overview-filter.js?v=20260928-4"></script>
   <script src="evaluation-student-filter.js?v=20260928-2"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='123';
+      const swVersion='124';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>
