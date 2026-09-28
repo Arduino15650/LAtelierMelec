@@ -3,6 +3,7 @@
 
   const modes={all:'Récap CCF',formative:'CCF formatif',certificative:'CCF certificatif'};
   const choice={mode:'all',className:'',groupId:'',studentIds:new Set()};
+  let scrollListeners;
   const safe=value=>esc(String(value??''));
   const byName=(a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'});
   const note=value=>Number.isFinite(value)?value.toFixed(2):'—';
@@ -19,6 +20,8 @@
   }
 
   function renderCcfCompact(){
+    scrollListeners?.abort();
+    scrollListeners=new AbortController();
     const target=document.querySelector('#ccfView');
     if(!target)return;
     state.ccfComments=state.ccfComments&&typeof state.ccfComments==='object'?state.ccfComments:{};
@@ -90,7 +93,7 @@
           const values=graded.map(activity=>score(activity,student).competencies?.find(item=>item.id===id)?.factor).filter(Number.isFinite);
           return pill(id,values.length?values.reduce((sum,value)=>sum+value,0)/values.length:null);
         }).join('')}</div></td><td><textarea data-ccf-comment="${safe(student.id)}" maxlength="100" rows="2" placeholder="Bilan de l’élève…">${safe(comment)}</textarea><small class="char-count">${comment.length}/100</small></td></tr>`;
-      }).join('')}</tbody></table></div>`:`<div class="panel ccf-empty">Aucune évaluation ${choice.mode==='all'?'':choice.mode} dans cette sélection.</div>`:''}`;
+      }).join('')}</tbody></table></div><div class="ccf-follow-scroll" style="--ccf-table-width:${tableWidth}px" role="region" aria-label="Défilement horizontal du tableau CCF, accessible pendant la lecture" tabindex="0" hidden><div class="ccf-top-scroll-track"></div></div>`:`<div class="panel ccf-empty">Aucune évaluation ${choice.mode==='all'?'':choice.mode} dans cette sélection.</div>`:''}`;
 
     target.querySelectorAll('[data-ccf-mode]').forEach(button=>button.onclick=()=>{
       choice.mode=button.dataset.ccfMode;renderCcfCompact();
@@ -119,14 +122,34 @@
     });
     const topScroll=target.querySelector('.ccf-top-scroll');
     const tableScroll=target.querySelector('.ccf-table-wrap');
+    const followScroll=target.querySelector('.ccf-follow-scroll');
     if(topScroll&&tableScroll){
-      topScroll.hidden=tableScroll.scrollWidth<=tableScroll.clientWidth;
+      const hasOverflow=()=>tableScroll.scrollWidth>tableScroll.clientWidth+1;
+      const updateFollow=()=>{
+        topScroll.hidden=!hasOverflow();
+        const bounds=tableScroll.getBoundingClientRect();
+        const topBounds=topScroll.getBoundingClientRect();
+        followScroll.hidden=!hasOverflow()||topBounds.bottom>=0||bounds.bottom<=window.innerHeight;
+        if(!followScroll.hidden){
+          followScroll.style.left=`${bounds.left}px`;
+          followScroll.style.width=`${bounds.width}px`;
+        }
+      };
+      const syncFrom=source=>{
+        [topScroll,tableScroll,followScroll].forEach(other=>{
+          if(other!==source&&Math.abs(other.scrollLeft-source.scrollLeft)>1)other.scrollLeft=source.scrollLeft;
+        });
+      };
       topScroll.addEventListener('scroll',()=>{
-        if(Math.abs(tableScroll.scrollLeft-topScroll.scrollLeft)>1)tableScroll.scrollLeft=topScroll.scrollLeft;
+        syncFrom(topScroll);
       });
       tableScroll.addEventListener('scroll',()=>{
-        if(Math.abs(topScroll.scrollLeft-tableScroll.scrollLeft)>1)topScroll.scrollLeft=tableScroll.scrollLeft;
+        syncFrom(tableScroll);
       });
+      followScroll.addEventListener('scroll',()=>syncFrom(followScroll));
+      window.addEventListener('scroll',updateFollow,{passive:true,signal:scrollListeners.signal});
+      window.addEventListener('resize',updateFollow,{passive:true,signal:scrollListeners.signal});
+      updateFollow();
     }
   }
 
