@@ -1,4 +1,4 @@
-/* Sépare les élèves encore à évaluer des évaluations déjà commencées ou verrouillées. */
+/* Un seul sélecteur d'élèves, cohérent avec le filtre de la liste des activités. */
 (function () {
   'use strict';
   const renderGrade = window.grade;
@@ -9,38 +9,27 @@
   }
 
   window.grade = grade = function (id) {
-    renderGrade(id);
     const activity = state.activities.find(item => item.id === id);
+    const mode = window.melecActivityEvaluationFilter;
+    const matches = student => {
+      const done = activity && evaluated(activity, student);
+      return mode === 'pending' ? !done : mode === 'evaluated' ? done : true;
+    };
+    // Garder l'élève en cours de saisie jusqu'au verrouillage de sa fiche.
+    const current = state.students.find(item => item.id === gradeStudent);
+    if (current && mode === 'pending' && activity?.evaluationLocks?.[current.id]) gradeStudent = '';
+    else if (current && mode === 'evaluated' && !matches(current)) gradeStudent = '';
+    renderGrade(id);
     const pendingSelect = document.querySelector('#editorView #gradeStudent');
     if (!activity || !pendingSelect) return;
-
-    const completed = [];
+    if (mode !== 'pending' && mode !== 'evaluated') return;
     Array.from(pendingSelect.options).forEach(option => {
       if (!option.value) return;
       const student = state.students.find(item => item.id === option.value);
-      if (student && evaluated(activity, student)) {
-        completed.push({id: student.id, name: student.name});
-        option.remove();
-      }
+      if (student && !matches(student) && option.value !== gradeStudent) option.remove();
     });
-
-    if (pendingSelect.options.length === 1 && completed.length) {
-      pendingSelect.options[0].textContent = 'Tous les élèves sont déjà évalués';
-    }
-
-    if (!completed.length) return;
-    const field = document.createElement('div');
-    field.className = 'field grade-completed-picker';
-    const label = document.createElement('label');
-    label.htmlFor = 'gradeCompletedStudent';
-    label.textContent = 'Évaluations déjà faites';
-    const select = document.createElement('select');
-    select.id = 'gradeCompletedStudent';
-    select.append(new Option('Consulter ou corriger une évaluation…', ''));
-    completed.forEach(student => select.append(new Option(student.name, student.id)));
-    select.value = completed.some(student => student.id === gradeStudent) ? gradeStudent : '';
-    select.addEventListener('change', event => changeGradeStudent(event.target.value));
-    field.append(label, select);
-    pendingSelect.closest('.field').after(field);
+    if (pendingSelect.options.length === 1) pendingSelect.options[0].textContent =
+      mode === 'pending' ? 'Aucun élève à évaluer' : 'Aucune évaluation enregistrée';
+    if (mode === 'evaluated') pendingSelect.closest('.field').querySelector('label').textContent = 'Élève évalué';
   };
 })();

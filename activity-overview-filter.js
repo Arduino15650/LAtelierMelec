@@ -19,6 +19,7 @@
     section.querySelector('select').value = selection;
     section.querySelector('select').addEventListener('change', function (event) {
       selection = event.target.value;
+      window.melecActivityEvaluationFilter = selection;
       renderActivities();
     });
     return section;
@@ -26,8 +27,9 @@
 
   function assignedStudents(activity, groupId) {
     const pupils = state.students.filter(function (student) {
+      const ids = Array.isArray(activity.studentIds) ? activity.studentIds : [];
       return student.className === activity.className &&
-        (activity.audience !== 'students' || (activity.studentIds || []).includes(student.id));
+        (ids.length ? ids.includes(student.id) : activity.audience !== 'selected' && activity.audience !== 'students');
     });
     const groups = (state.studentGroups || []).filter(function (group) {
       return group.className === activity.className;
@@ -104,6 +106,7 @@
 
   show = function (name) {
     if (name === 'activities') selection = '';
+    if (name !== 'editor') window.melecActivityEvaluationFilter = '';
     return previousShow.apply(this, arguments);
   };
   window.show = show;

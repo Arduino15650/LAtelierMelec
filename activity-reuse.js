@@ -22,8 +22,6 @@
     return group?all.filter(student=>(group.studentIds||[]).includes(student.id)):[];
   };
   const instance=()=>state.activities.find(activity=>familyId(activity)===choice.familyId&&activity.className===choice.className);
-  const evaluated=(activity,student)=>Boolean(activity?.evaluationLocks?.[student.id])||
-    Boolean(activity&&scoreResult(activity,student).count>0);
   function tone(id){
     let hash=2166136261;
     for(const char of String(id)){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619)}
@@ -45,7 +43,7 @@
     if(choice.groupId&&choice.groupId!=='__all__'&&!groups().some(group=>group.id===choice.groupId)){choice.groupId='';choice.studentIds.clear()}
     const students=choice.familyId&&choice.className&&choice.groupId?pupils():[];
     const current=instance();
-    const valid=new Set(students.filter(student=>!evaluated(current,student)).map(student=>student.id));
+    const valid=new Set(students.filter(student=>!current?.evaluationLocks?.[student.id]).map(student=>student.id));
     choice.studentIds=new Set([...choice.studentIds].filter(id=>valid.has(id)));
     view.innerHTML='<div class="page-head"><div><h1>Liste des activités</h1><p>Réutilisez une activité existante pour une classe, un groupe et les élèves de votre choix.</p></div></div>'+
       '<section class="panel activity-reuse-panel"><div class="activity-reuse-fields">'+
@@ -58,8 +56,8 @@
       (template?'<p class="activity-reuse-template"><strong>Modèle :</strong> '+esc(template.title)+' · '+esc(template.situation||'Formative')+' · '+(template.competencies||[]).length+' compétence(s) · '+(template.criteria||[]).length+' critère(s). Les évaluations des autres classes restent séparées.</p>':'')+
       (choice.groupId?'<div class="activity-reuse-students"><div class="activity-reuse-students-head"><h2>4. Élèves à évaluer</h2><button type="button" class="button small" id="reuseSelectAll">Sélectionner les élèves disponibles</button></div>'+
       (students.length?'<div class="activity-reuse-student-list">'+students.map(student=>{
-        const done=evaluated(current,student);
-        return '<label class="activity-reuse-student'+(done?' is-locked':'')+'"><input type="checkbox" value="'+esc(student.id)+'"'+(choice.studentIds.has(student.id)?' checked':'')+(done?' disabled':'')+'><span>'+esc(student.name)+(done?' · déjà évalué':'')+'</span></label>';
+        const locked=Boolean(current?.evaluationLocks?.[student.id]);
+        return '<label class="activity-reuse-student'+(locked?' is-locked':'')+'"><input type="checkbox" value="'+esc(student.id)+'"'+(choice.studentIds.has(student.id)?' checked':'')+(locked?' disabled':'')+'><span>'+esc(student.name)+(locked?' · évaluation verrouillée':'')+'</span></label>';
       }).join('')+'</div>':'<p>Aucun élève dans ce groupe.</p>')+'</div>':'<p class="activity-reuse-hint">Choisissez explicitement un groupe ou « Toute la classe » pour afficher les élèves.</p>')+
       '<div class="activity-reuse-actions"><span id="reuseCount">'+choice.studentIds.size+' élève(s) sélectionné(s)</span><button type="button" class="button primary" id="reuseLaunch"'+(!choice.studentIds.size?' disabled':'')+'>Ouvrir l’évaluation</button></div></section>';
     view.querySelector('#reuseActivity').onchange=event=>{choice.familyId=event.target.value;choice.studentIds.clear();render()};
@@ -80,7 +78,7 @@
   }
   function launch(){
     const source=templates().find(item=>item.id===choice.familyId)?.activity;
-    const allowed=new Set(pupils().filter(student=>!evaluated(instance(),student)).map(student=>student.id));
+    const allowed=new Set(pupils().filter(student=>!instance()?.evaluationLocks?.[student.id]).map(student=>student.id));
     const ids=pupils().filter(student=>choice.studentIds.has(student.id)&&allowed.has(student.id)).map(student=>student.id);
     if(!source||!choice.className||!choice.groupId||!ids.length)return toast('Choisissez une activité, une classe, un groupe et au moins un élève disponible.');
     let target=instance();
