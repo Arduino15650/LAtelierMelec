@@ -1,6 +1,6 @@
-const CACHE_NAME = 'bac-pro-melec-v126-restore-portal';
+const CACHE_NAME = 'bac-pro-melec-v127-fast-exit';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
-const CORE_FILES = ['./','./index.html','./logo-bac-pro-melec-v3.webp'];
+const CORE_FILES = ['./logo-bac-pro-melec-v3.webp'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_FILES)));
@@ -19,7 +19,7 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   // Ne jamais mettre en cache les réponses privées de Supabase.
   if (new URL(event.request.url).origin !== self.location.origin) return;
-  const refresh = () => fetch(event.request).then(response => {
+  const refresh = () => fetch(event.request, event.request.mode === 'navigate' ? {cache:'no-store'} : undefined).then(response => {
     if (response.ok) {
       const copy = response.clone();
       event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)));

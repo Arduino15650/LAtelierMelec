@@ -320,7 +320,7 @@
     byId('cloudImportPane').hidden = true;
     byId('cloudSignOutGate').hidden = true;
     gateMessage('Vous êtes déconnecté.');
-    if (!force) window.location.assign('./index.html');
+    if (!force) window.location.replace('./index.html');
   }
   byId('cloudSignOut').addEventListener('click', () => signOut(false));
   byId('cloudSignOutGate').addEventListener('click', () => signOut(true));
