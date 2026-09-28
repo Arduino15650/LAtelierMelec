@@ -1,0 +1,63 @@
+/* Couleurs de navigation et de cartes propres à l'espace élève. */
+#studentDashboard {
+  color: #102f4f;
+  background: linear-gradient(150deg, #d6eaff, #ecf5ff 65%, #e6f3f0) !important;
+}
+#studentDashboard .portal-message:not(.portal-warning) {
+  background: #c9e4ff !important;
+  border: 1px solid #86b6e1;
+  color: #123757 !important;
+}
+#studentDashboard .student-class-name {
+  background: #d7f4e7;
+  border-color: #78bea0;
+  color: #123b35;
+}
+#studentContentTabs {
+  justify-content: center;
+  align-items: stretch;
+}
+#studentContentTabs button {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  line-height: 1.25;
+  border-width: 1.5px;
+  transition: background-color .15s ease, box-shadow .15s ease;
+}
+#studentContentTabs button:nth-child(1) { background: #d1e8ff; border-color: #74aee0; color: #153b61; }
+#studentContentTabs button:nth-child(2) { background: #d6f0e6; border-color: #79bc9c; color: #174638; }
+#studentContentTabs button:nth-child(3) { background: #e7ddfa; border-color: #ad91dc; color: #49346d; }
+#studentContentTabs button:nth-child(4) { background: #ffe7cc; border-color: #dc9f59; color: #693e14; }
+#studentContentTabs button:nth-child(5) { background: #ffdde6; border-color: #d790a5; color: #72334a; }
+#studentContentTabs button:nth-child(6) { background: #d1eef4; border-color: #75b7c8; color: #19505e; }
+#studentContentTabs button:nth-child(1).active { background: #175a98; border-color: #124879; color: #fff; }
+#studentContentTabs button:nth-child(2).active { background: #287451; border-color: #1b5b3e; color: #fff; }
+#studentContentTabs button:nth-child(3).active { background: #69499b; border-color: #54377f; color: #fff; }
+#studentContentTabs button:nth-child(4).active { background: #995718; border-color: #75410f; color: #fff; }
+#studentContentTabs button:nth-child(5).active { background: #a13d60; border-color: #7e2d49; color: #fff; }
+#studentContentTabs button:nth-child(6).active { background: #246d7e; border-color: #195461; color: #fff; }
+#studentContentTabs button:hover:not(.active) { filter: brightness(.96); }
+#studentContentTabs button:focus-visible { outline: 3px solid #112f50; outline-offset: 2px; }
+
+#studentDashboard .portal-list details:nth-child(4n + 1) { background: #d2e9ff !important; border-color: #7aafe0 !important; }
+#studentDashboard .portal-list details:nth-child(4n + 2) { background: #d5f0e5 !important; border-color: #7bbb9c !important; }
+#studentDashboard .portal-list details:nth-child(4n + 3) { background: #ece1fa !important; border-color: #b397db !important; }
+#studentDashboard .portal-list details:nth-child(4n) { background: #ffedcf !important; border-color: #dfa85a !important; }
+#studentDashboard .portal-list details,
+#studentDashboard .portal-list summary { color: #102f4f !important; overflow-wrap: anywhere; }
+#studentDashboard .student-tp-card:nth-child(4n + 1) { background: #d4efe7 !important; border-color: #75b99e !important; }
+#studentDashboard .student-tp-card:nth-child(4n + 2) { background: #e7def8 !important; border-color: #ad95d5 !important; }
+#studentDashboard .student-tp-card:nth-child(4n + 3) { background: #ffebd1 !important; border-color: #dba765 !important; }
+#studentDashboard .student-tp-card:nth-child(4n) { background: #d3e8fc !important; border-color: #83b2df !important; }
+#studentDashboard .student-tp-card :is(h2,h3,strong,summary,p) { color: #102f4f; overflow-wrap: anywhere; }
+
+@media (max-width: 600px) {
+  #studentContentTabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  #studentContentTabs button { width: 100%; padding: 9px 6px; font-size: clamp(12px, 3.4vw, 15px); }
+}
+@media (max-width: 360px) {
+  #studentContentTabs { grid-template-columns: 1fr; }
+}
