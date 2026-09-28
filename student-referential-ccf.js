@@ -128,23 +128,50 @@
     content.append(domains);
   }
 
+  const levelFactors = { N1: 0, N2: 1 / 3, N3: 2 / 3, N4: 1 };
+  function levelFactor(value) {
+    if (Object.prototype.hasOwnProperty.call(levelFactors, value)) return levelFactors[value];
+    const legacy = { 0: 0, 1: 0, 2: 1 / 3, 3: 2 / 3, 4: 1 };
+    return Object.prototype.hasOwnProperty.call(legacy, value) ? legacy[value] : null;
+  }
   function score(activity) {
-    let sum = 0, maximum = 0;
-    const perCompetence = new Map();
-    (Array.isArray(activity.criteria) ? activity.criteria : []).forEach(key => {
-      const value = Number(activity.scores?.[key]);
-      if (!Object.prototype.hasOwnProperty.call(activity.scores || {}, key) ||
-          !Number.isFinite(value) || value < 0 || value > 4) return;
-      const id = String(key).split(':')[0];
-      const weight = Number(activity.weights?.[id]) || 1;
-      sum += value * weight;
-      maximum += 4 * weight;
-      const item = perCompetence.get(id) || { sum: 0, maximum: 0 };
-      item.sum += value * weight;
-      item.maximum += 4 * weight;
-      perCompetence.set(id, item);
+    const scores = activity.scores || {};
+    const competencies = (Array.isArray(activity.competencies) ? activity.competencies : []).map(id => {
+      const masteryKey = `mastery:${id}`;
+      if (scores[masteryKey] === 'NE') return { id, factor: null };
+      const tasks = Array.isArray(activity.taskSelections?.[id])
+        ? activity.taskSelections[id] : (Array.isArray(activity.tasks) ? activity.tasks : []);
+      const criteria = (Array.isArray(activity.criteria) ? activity.criteria : [])
+        .filter(key => String(key).split(':')[0] === id);
+      const keys = [masteryKey, ...tasks.map(task => `task:${id}:${task}`), ...criteria];
+      const factors = keys.map(key => levelFactor(scores[key])).filter(value => value !== null);
+      return { id, factor: factors.length
+        ? factors.reduce((sum, value) => sum + value, 0) / factors.length : null };
     });
-    return { note: maximum ? 20 * sum / maximum : null, perCompetence };
+    let sum = 0, weightSum = 0;
+    competencies.forEach(item => {
+      if (item.factor === null) return;
+      const weight = Number(activity.weights?.[item.id]) || 1;
+      sum += item.factor * weight;
+      weightSum += weight;
+    });
+    return { note: weightSum ? 20 * sum / weightSum : null, competencies };
+  }
+  function tone(activity) {
+    const key = String(activity.id || activity.title || '');
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) | 0;
+    return 'student-ccf-tone-' + (Math.abs(hash) % 6);
+  }
+  function competenceBadge(item) {
+    const value = item.factor;
+    const level = value === null ? 'none' : value < .25 ? 'red' :
+      value < .5 ? 'orange' : value < .75 ? 'green' : 'darkgreen';
+    const badge = element('span', 'student-ccf-pill ' + level);
+    badge.append(element('strong', '', item.id));
+    badge.append(element('small', '', value === null ? '—' : (value * 20).toFixed(1)));
+    badge.title = item.id + ' : ' + (value === null ? 'non évaluée' : (value * 20).toFixed(2) + ' / 20');
+    return badge;
   }
   async function loadResults(key) {
     const current = ++requestId;
@@ -165,23 +192,24 @@
   }
   function renderResults(key) {
     content.replaceChildren();
-    const list = results.filter(activity => key === 'all' ||
-      String(activity.situation || '').toLocaleLowerCase('fr') === key);
+    const list = results.filter(activity => {
+      const evaluated = score(activity).note !== null;
+      return evaluated && (key === 'all' ||
+        String(activity.situation || '').trim().toLocaleLowerCase('fr') === key);
+    });
     message.textContent = list.length ? list.length + ' activité(s) évaluée(s).' :
       'Aucune évaluation personnelle dans cette rubrique.';
     list.forEach(activity => {
-      const fold = element('details', 'student-ccf-card');
+      const fold = element('details', 'student-ccf-card ' + tone(activity));
       const result = score(activity);
       const summary = element('summary');
       summary.append(element('strong', '', activity.title || 'Activité sans titre'));
-      summary.append(element('span', '', result.note === null ? '—' : result.note.toFixed(2) + ' / 20'));
+      summary.append(element('span', 'student-ccf-note', result.note.toFixed(2) + ' / 20'));
       fold.append(summary);
       const body = element('div', 'student-ccf-body');
       body.append(element('p', '', [activity.date, activity.situation].filter(Boolean).join(' · ')));
       const chips = element('div', 'student-ccf-competencies');
-      result.perCompetence.forEach((value, id) => {
-        chips.append(element('span', '', id + ' · ' + (20 * value.sum / value.maximum).toFixed(1) + ' / 20'));
-      });
+      result.competencies.forEach(item => chips.append(competenceBadge(item)));
       body.append(chips);
       ['comment', 'remark', 'appreciation'].forEach((field, index) => {
         const value = activity.feedback?.[field];
