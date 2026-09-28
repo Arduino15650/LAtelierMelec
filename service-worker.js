@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v129-ccf-students-visible';
+const CACHE_NAME = 'bac-pro-melec-v130-results-follow-scroll';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
 const CORE_FILES = ['./logo-bac-pro-melec-v3.webp'];
 
