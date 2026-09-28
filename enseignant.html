@@ -117,7 +117,7 @@
   <link rel="stylesheet" href="activity-overview-filter.css?v=20260928-1">
   <link rel="stylesheet" href="teacher-mobile-menu-layout.css?v=20260928-1">
   <link rel="stylesheet" href="teacher-teaching-tabs-colors.css?v=20260928-1">
-  <link rel="stylesheet" href="teacher-page-card-colors.css?v=20260928-1">
+  <link rel="stylesheet" href="teacher-page-card-colors.css?v=20260928-2">
 </head>
 <body class="cloud-locked">
   <div id="cloudGate" role="dialog" aria-modal="true" aria-label="Connexion à LAtelierMelec">
@@ -194,7 +194,7 @@
   <script src="app.js?v=20260911-1"></script>
   <script src="performance.js?v=20260911-1"></script>
   <script src="workshop-activities-v2.js?v=20260924-1"></script>
-  <script src="evaluation-atelier-v2.js?v=20260927-3"></script>
+  <script src="evaluation-atelier-v2.js?v=20260928-2"></script>
   <script src="student-groups.js?v=20260928-1"></script>
   <script src="ccf-dashboard.js?v=20260924-5"></script>
   <script src="ccf-submenus.js?v=20260927-2"></script>
@@ -206,11 +206,12 @@
   <script src="teaching-space.js?v=20260927-7"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script src="cloud-sync.js?v=20260926-optimisation1"></script>
-  <script src="activity-reuse.js?v=20260927-1"></script>
-  <script src="activity-overview-filter.js?v=20260928-2"></script>
+  <script src="activity-reuse.js?v=20260928-2"></script>
+  <script src="activity-overview-filter.js?v=20260928-3"></script>
+  <script src="evaluation-student-filter.js?v=20260928-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='119';
+      const swVersion='120';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>

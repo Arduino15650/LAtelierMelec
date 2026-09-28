@@ -109,6 +109,10 @@
   border-top: 1px solid #8da9c5;
   border-radius: 0 0 12px 12px;
 }
+.grade-picker .grade-completed-picker { grid-column: 3; }
+@media (max-width: 900px) {
+  .grade-picker .grade-completed-picker { grid-column: auto; }
+}
 @media (max-width: 600px) {
   #teachingView #teachBody > .teach-card { padding: 14px; }
   #activitiesView .activity-class-group,

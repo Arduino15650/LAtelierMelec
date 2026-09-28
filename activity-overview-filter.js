@@ -57,7 +57,7 @@
       const shown = Boolean(activity) && (selection === 'all' ||
         (selection === 'evaluated' && pupils.some(function (student) { return evaluated(activity, student); })) ||
         (selection === 'pending' && pupils.some(function (student) {
-          return !(activity.evaluationLocks && activity.evaluationLocks[student.id]);
+          return !evaluated(activity, student);
         })));
       card.hidden = !shown;
       if (shown) visible++;

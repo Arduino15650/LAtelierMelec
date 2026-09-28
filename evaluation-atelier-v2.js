@@ -57,9 +57,9 @@
       activity.evaluationLocks[student.id]=!locked;
       if(!locked){
         const queue=window.melecEvaluationQueue?.activityId===id?window.melecEvaluationQueue.studentIds:activity.studentIds||[];
-        const next=queue.map(sid=>state.students.find(entry=>entry.id===sid)).find(entry=>entry&&entry.className===activity.className&&!activity.evaluationLocks[entry.id]);
+        const next=queue.map(sid=>state.students.find(entry=>entry.id===sid)).find(entry=>entry&&entry.className===activity.className&&!activity.evaluationLocks[entry.id]&&scoreResult(activity,entry).count===0);
         if(next)gradeStudent=next.id;
-        else toast('Tous les élèves de cette sélection sont verrouillés.');
+        else toast('Tous les élèves de cette sélection sont déjà évalués.');
       }
       save();
       window.grade(id);
