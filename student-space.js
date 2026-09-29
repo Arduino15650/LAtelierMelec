@@ -21,7 +21,7 @@
   let profile = null;
   let cleanupViewer = null;
   let assignments = [], tpItems = [], activeTp = null, selectedContentTab = 'manual';
-  let tpItemsLoadedAt = 0;
+  let tpItemsLoadedAt = 0, tpItemsKey = '';
   function tpEnd(assignment) {
     if (assignment.validated_at) return 0;
     return assignment.reactivated_at
@@ -112,6 +112,7 @@
     if (teacher.length) { location.href = './enseignant.html'; return; }
     if (!profiles.length) throw new Error('Profil élève introuvable. Contactez votre enseignant.');
     profile = profiles[0];
+    const dashboardWasVisible = !dashboard.hidden;
     authPane.hidden = true; dashboard.hidden = false;
     showContact(false);
     const intro = $('studentProfileStatus');
@@ -126,9 +127,11 @@
         classLabel.textContent = assigned.length ? 'Classe attribuée : ' + assigned[0].name : 'Classe attribuée : nom indisponible';
       }).catch(() => { classLabel.textContent = 'Classe attribuée : nom indisponible'; });
     }
-    $('studentManualPane').hidden = true;
-    $('studentTdPane').hidden = true;
-    $('studentTpPane').hidden = true;
+    if (!dashboardWasVisible) {
+      $('studentManualPane').hidden = true;
+      $('studentTdPane').hidden = true;
+      $('studentTpPane').hidden = true;
+    }
     $('studentContentTabs').hidden = !approved;
     if (!approved) {
       intro.textContent += ' Votre inscription est en attente de validation par l’enseignant.';
@@ -144,13 +147,17 @@
   }
   async function loadTpAssignments(preserveViewer = false) {
     const previousActiveId = activeTp?.id;
-    const refreshItems = !preserveViewer || !tpItemsLoadedAt || Date.now() - tpItemsLoadedAt > 120000;
-    [assignments,tpItems] = await Promise.all([
-      api.rest('tp_assignments?student_id=eq.' + encodeURIComponent(profile.user_id) + '&select=*'),
-      refreshItems ? api.rest('learning_items?kind=eq.tp&published=is.true&select=id,title')
-        : Promise.resolve(tpItems)
-    ]);
-    if (refreshItems) tpItemsLoadedAt = Date.now();
+    assignments = await api.rest('tp_assignments?student_id=eq.' + encodeURIComponent(profile.user_id) + '&select=*');
+    const assignedIds = [...new Set(assignments.map(row => row.tp_id).filter(Boolean))].sort();
+    const nextItemsKey = assignedIds.join(',');
+    const refreshItems = !preserveViewer || !tpItemsLoadedAt || Date.now() - tpItemsLoadedAt > 120000 || nextItemsKey !== tpItemsKey;
+    if (refreshItems) {
+      tpItems = assignedIds.length
+        ? await api.rest('learning_items?id=in.(' + assignedIds.join(',') + ')&kind=eq.tp&published=is.true&select=id,title')
+        : [];
+      tpItemsKey = nextItemsKey;
+      tpItemsLoadedAt = Date.now();
+    }
     activeTp = assignments.find(row => tpEnd(row) > Date.now()) || null;
     if (preserveViewer && previousActiveId && activeTp?.id === previousActiveId) return;
     clearTpViewer();
@@ -279,7 +286,7 @@
   };
   $('studentLogout').onclick = async () => {
     if (cleanupViewer) cleanupViewer();
-    clearTpViewer(); window.MelecManualStudent.clear(); activeTp=null; assignments=[]; tpItems=[]; tpItemsLoadedAt=0;
+    clearTpViewer(); window.MelecManualStudent.clear(); activeTp=null; assignments=[]; tpItems=[]; tpItemsLoadedAt=0; tpItemsKey='';
     await api.signOut();
     dashboard.hidden = true; authPane.hidden = false; profile = null;
     switchTab('login');
@@ -336,3 +343,4 @@
   });
   openDashboard().catch(() => { authPane.hidden = false; dashboard.hidden = true; });
 })();
+
