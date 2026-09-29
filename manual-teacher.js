@@ -9,10 +9,12 @@
     xls:'application/vnd.ms-excel',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation'
   };
-  let body, classId, notify, themes=[], chapters=[], lessons=[], sections=[], assets=[];
+  let body, classId, notify, themes=[], chapters=[], lessons=[], sections=[], assets=[], mode='manual',tdEditorView='td';
   let themeId='', chapterId='', lessonId='', request=0, busy=false, dirty=false;
   const selections=new WeakMap();
+  let teacherUrls=[];
   function label(kind) { return kinds.find(entry => entry[0] === kind)?.[1] || kind; }
+  function visibleKinds() { return kinds.filter(([kind])=>mode==='manual'?kind==='course':kind==='td'||kind==='corrections'); }
   function safe(html) { return window.MelecContent.sanitize(html); }
   function toolbar(kind) {
     const commands=[['bold','Gras','G'],['italic','Italique','I'],['underline','Souligné','S'],['strikeThrough','Barré','S̶'],['subscript','Indice','x₂'],['superscript','Exposant','x²'],['insertUnorderedList','Puces','• Liste'],['insertOrderedList','Numérotation','1. Liste'],['outdent','Réduire le retrait','⇤'],['indent','Augmenter le retrait','⇥'],['justifyLeft','Aligner à gauche','☷'],['justifyCenter','Centrer','☰'],['justifyRight','Aligner à droite','☷'],['justifyFull','Justifier','▤']];
@@ -45,10 +47,10 @@
   function sectionCard(kind,lesson) {
     const section=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind);
     const files=section?assets.filter(x=>x.section_id===section.id):[];
-    return `<section class="manual-section" data-kind="${kind}"><div class="manual-section-head"><h4>${label(kind)}</h4><span class="manual-state ${section?.published?'on':''}">${section?.published?'Publié':'Brouillon'}</span></div>
+    return `<section class="manual-section" data-kind="${kind}" ${mode==='manual-td'&&tdEditorView!==kind?'hidden':''}><div class="manual-section-head"><h4>${label(kind)}</h4><span class="manual-state ${section?.published?'on':''}">${section?.published?'Publié':'Brouillon'}</span></div>
       ${toolbar(kind)}
       <div class="manual-editor" data-editor contenteditable="true" role="textbox" aria-multiline="true" aria-label="Contenu ${label(kind)}">${safe(section?.content_html||'')}</div>
-      <div class="manual-files">${files.map(file=>`<span class="manual-file-chip"><button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button>${file.mime_type.startsWith('image/')?`<button type="button" data-insert-image="${file.id}" class="subtle">Insérer l’image</button>`:''}</span>`).join('')}</div>
+      <div class="manual-files">${files.map(file=>`<span class="manual-file-chip">${file.mime_type.startsWith('image/')?`<img data-teacher-image="${file.id}" alt="${esc(file.file_name)}" class="manual-teacher-thumbnail"><button type="button" data-insert-image="${file.id}" class="subtle">Insérer l’image dans le texte</button>`:`<button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button>`}</span>`).join('')}</div>
       <label class="manual-upload">Ajouter des images, PDF ou documents bureautiques<input type="file" data-upload="${kind}" accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple></label>
       ${section?`<button type="button" data-toggle-section="${section.id}" class="subtle">${section.published?'Masquer cette section':'Publier cette section'}</button>`:''}</section>`;
   }
@@ -81,18 +83,44 @@
     const safeUrl=esc(url.trim());
     formatSelection(control,'insertHTML',`<p><a href="${safeUrl}">▶ Vidéo : ${safeUrl}</a></p><p></p>`);
   }
+  async function loadTeacherImage(asset,image){
+    if(!asset)return;
+    try{const blob=await api.download(asset.object_path);if(!image.isConnected)return;const url=URL.createObjectURL(blob);teacherUrls.push(url);image.src=url;}
+    catch{if(image.isConnected)image.alt='Image indisponible';}
+  }
+  function hydrateTeacherImages(editor){
+    const kind=editor.closest('.manual-section').dataset.kind;
+    const section=sections.find(row=>row.lesson_id===lessonId&&row.kind===kind);
+    if(!section)return;
+    const walker=document.createTreeWalker(editor,NodeFilter.SHOW_TEXT),nodes=[];
+    while(walker.nextNode())nodes.push(walker.currentNode);
+    nodes.forEach(node=>{
+      const text=node.textContent,pattern=/\[\[image:([0-9a-f-]{36})\]\]/gi;
+      if(!pattern.test(text))return;pattern.lastIndex=0;
+      const fragment=document.createDocumentFragment();let start=0,match;
+      while((match=pattern.exec(text))){
+        fragment.append(document.createTextNode(text.slice(start,match.index)));
+        const asset=assets.find(row=>row.id===match[1]&&row.section_id===section.id&&row.mime_type.startsWith('image/'));
+        if(asset){const frame=document.createElement('span');frame.contentEditable='false';frame.dataset.manualImage=asset.id;frame.className='manual-editor-image';const image=document.createElement('img');image.alt=asset.file_name;frame.append(image);fragment.append(frame);loadTeacherImage(asset,image);}
+        else fragment.append(document.createTextNode(match[0]));
+        start=pattern.lastIndex;
+      }
+      fragment.append(document.createTextNode(text.slice(start)));node.replaceWith(fragment);
+    });
+  }
   function draw() {
+    teacherUrls.forEach(URL.revokeObjectURL);teacherUrls=[];
     dirty=false;
     const {theme,chapter,lesson}=selected();
     const chapterChoices=theme?chapters.filter(x=>x.theme_id===theme.id):[];
     const lessonChoices=chapter?lessons.filter(x=>x.chapter_id===chapter.id):[];
-    body.innerHTML=`<div class="teach-card manual-manager"><h2>Constructeur de manuel numérique</h2><p class="teach-help">Structure indépendante des cours déjà publiés. Créez un thème, ses chapitres, puis plusieurs leçons. Les élèves ne voient que les éléments publiés.</p>
+    body.innerHTML=`<div class="teach-card manual-manager"><h2>${mode==='manual'?'Manuel numérique · Cours':'Travaux dirigés et corrections'}</h2><p class="teach-help">Créez un thème, ses chapitres, puis plusieurs leçons. Les élèves ne voient que les sections publiées.</p>
       <div class="manual-pickers"><label>Thème<select id="manualTheme"><option value="">Choisir un thème…</option>${themes.map(x=>`<option value="${x.id}" ${x.id===themeId?'selected':''}>${esc(x.title)}${x.published?' ✓':''}</option>`).join('')}</select></label><label>Nouveau thème<input id="manualNewTheme" maxlength="180" placeholder="Ex. Installations électriques"></label><button type="button" id="manualAddTheme">Créer le thème</button></div>
       ${theme?`<div class="manual-level-actions"><label>Nom du thème<input id="manualThemeTitle" maxlength="180" value="${esc(theme.title)}"></label><button type="button" id="manualRenameTheme" class="subtle">Renommer</button><button type="button" id="manualToggleTheme" class="subtle">${theme.published?'Masquer le thème':'Publier le thème'}</button></div>`:''}
       ${theme?`<div class="manual-pickers"><label>Chapitre<select id="manualChapter"><option value="">Choisir un chapitre…</option>${chapterChoices.map(x=>`<option value="${x.id}" ${x.id===chapterId?'selected':''}>${esc(x.title)}${x.published?' ✓':''}</option>`).join('')}</select></label><label>Nouveau chapitre<input id="manualNewChapter" maxlength="180" placeholder="Ex. Les protections"></label><button type="button" id="manualAddChapter">Créer le chapitre</button></div>`:''}
       ${chapter?`<div class="manual-level-actions"><label>Nom du chapitre<input id="manualChapterTitle" maxlength="180" value="${esc(chapter.title)}"></label><button type="button" id="manualRenameChapter" class="subtle">Renommer</button><button type="button" id="manualToggleChapter" class="subtle">${chapter.published?'Masquer le chapitre':'Publier le chapitre'}</button></div>`:''}
       ${chapter?`<div class="manual-pickers"><label>Leçon<select id="manualLesson"><option value="">Choisir une leçon…</option>${lessonChoices.map(x=>`<option value="${x.id}" ${x.id===lessonId?'selected':''}>${esc(x.title)}${x.published?' ✓':''}</option>`).join('')}</select></label><label>Nouvelle leçon<input id="manualNewLesson" maxlength="180" placeholder="Ex. Le disjoncteur différentiel"></label><button type="button" id="manualAddLesson">Créer la leçon</button></div>`:''}
-      ${lesson?`<div class="manual-lesson"><label>Titre de la leçon<input id="manualLessonTitle" maxlength="180" value="${esc(lesson.title)}"></label><div class="manual-sections">${kinds.map(([kind])=>sectionCard(kind,lesson)).join('')}</div><div class="manual-actions"><button type="button" id="manualPreview" class="subtle">Prévisualiser la leçon</button><button type="button" id="manualSave">Enregistrer la leçon</button><button type="button" id="manualPublishLesson">Publier la leçon et les sections déjà choisies</button><button type="button" id="manualPublish" class="subtle">Publier aussi les corrections</button><button type="button" id="manualHide" class="warn" ${lesson.published?'':'hidden'}>Masquer la leçon</button></div><p class="teach-help">Le thème et le chapitre seront publiés automatiquement. Les corrections restent privées tant que vous ne les publiez pas explicitement.</p></div>`:''}</div>`;
+      ${lesson?`<div class="manual-lesson"><label>Titre de la leçon<input id="manualLessonTitle" maxlength="180" value="${esc(lesson.title)}"></label>${mode==='manual-td'?`<nav class="manual-td-submenu" aria-label="Édition des travaux dirigés"><button type="button" data-teacher-part="td" class="${tdEditorView==='td'?'active':''}">Travaux dirigés</button><button type="button" data-teacher-part="corrections" class="${tdEditorView==='corrections'?'active':''}">Correction des TD</button></nav>`:''}<div class="manual-sections">${visibleKinds().map(([kind])=>sectionCard(kind,lesson)).join('')}</div><div class="manual-actions"><button type="button" id="manualPreview" class="subtle">Prévisualiser</button><button type="button" id="manualSave">Enregistrer</button><button type="button" id="manualPublishLesson">Publier le thème, chapitre et la leçon</button><button type="button" id="manualPublish" class="subtle">${mode==='manual'?'Publier le cours':'Publier les TD et leurs corrections'}</button><button type="button" id="manualHide" class="warn" ${lesson.published?'':'hidden'}>Masquer la leçon</button></div><p class="teach-help">La publication est distincte : cours dans le Manuel numérique, TD et corrections dans Travaux dirigés.</p></div>`:''}</div>`;
     body.querySelector('#manualTheme').onchange=e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=themeId;return;}themeId=e.target.value;chapterId='';lessonId='';draw();};
     body.querySelector('#manualAddTheme').onclick=()=>create('theme');
     body.querySelector('#manualRenameTheme')?.addEventListener('click',()=>rename('manual_themes',theme.id,body.querySelector('#manualThemeTitle').value));
@@ -104,10 +132,17 @@
     body.querySelector('#manualLesson')?.addEventListener('change',e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=lessonId;return;}lessonId=e.target.value;draw();});
     body.querySelector('#manualAddLesson')?.addEventListener('click',()=>create('lesson'));
     if(!lesson)return;
+    body.querySelectorAll('[data-teacher-part]').forEach(button=>button.onclick=()=>{
+      tdEditorView=button.dataset.teacherPart;
+      body.querySelectorAll('[data-teacher-part]').forEach(item=>item.classList.toggle('active',item===button));
+      body.querySelectorAll('.manual-section').forEach(section=>section.hidden=section.dataset.kind!==tdEditorView);
+    });
     body.querySelectorAll('[data-editor],#manualLessonTitle').forEach(node=>node.addEventListener('input',()=>{dirty=true;}));
     body.querySelectorAll('[data-editor]').forEach(editor=>{
       ['keyup','pointerup','touchend','focusout'].forEach(name=>editor.addEventListener(name,()=>rememberSelection(editor)));
+      hydrateTeacherImages(editor);
     });
+    body.querySelectorAll('[data-teacher-image]').forEach(image=>loadTeacherImage(assets.find(asset=>asset.id===image.dataset.teacherImage),image));
     body.querySelectorAll('[data-format],[data-swatch],[data-table],[data-video],[data-insert-image]').forEach(button=>button.onmousedown=event=>event.preventDefault());
     body.querySelectorAll('[data-format]').forEach(button=>button.onclick=()=>formatSelection(button,button.dataset.format));
     body.querySelectorAll('[data-format-select]').forEach(select=>select.onchange=()=>{if(select.value)formatSelection(select,select.dataset.formatSelect,select.value);select.value='';});
@@ -115,7 +150,7 @@
     body.querySelectorAll('[data-swatch]').forEach(button=>button.onclick=()=>formatSelection(button,button.dataset.swatch,button.dataset.value));
     body.querySelectorAll('[data-table]').forEach(button=>button.onclick=()=>insertTable(button));
     body.querySelectorAll('[data-video]').forEach(button=>button.onclick=()=>insertVideo(button));
-    body.querySelectorAll('[data-insert-image]').forEach(button=>button.onclick=()=>formatSelection(button,'insertText','[[image:'+button.dataset.insertImage+']]'));
+    body.querySelectorAll('[data-insert-image]').forEach(button=>button.onclick=()=>{formatSelection(button,'insertText','[[image:'+button.dataset.insertImage+']]');hydrateTeacherImages(button.closest('.manual-section').querySelector('[data-editor]'));});
     body.querySelector('#manualPreview').onclick=preview;
     body.querySelector('#manualSave').onclick=saveAll;
     body.querySelector('#manualPublishLesson').onclick=publishLessonOnly;
@@ -162,12 +197,18 @@
     },success);
   }
   async function rename(table,id,value){const title=value.trim();if(!title)return notify('Saisissez un titre.',true);await update(table,id,{title},'Titre modifié.');}
-  function editorHtml(kind){return safe(body.querySelector(`.manual-section[data-kind="${kind}"] [data-editor]`)?.innerHTML||'');}
+  function editorHtml(kind){
+    const editor=body.querySelector(`.manual-section[data-kind="${kind}"] [data-editor]`);
+    if(!editor)return '';
+    const copy=editor.cloneNode(true);
+    copy.querySelectorAll('[data-manual-image]').forEach(node=>node.replaceWith(document.createTextNode('[[image:'+node.dataset.manualImage+']]')));
+    return safe(copy.innerHTML);
+  }
   async function persistEditor(){
     const title=body.querySelector('#manualLessonTitle').value.trim();if(!title)throw new Error('Donnez un titre à la leçon.');
     const current=selected().lesson;
     await api.rest('manual_lessons?id=eq.'+current.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,updated_at:new Date().toISOString()})});
-    for(const [kind] of kinds){
+    for(const [kind] of visibleKinds()){
       let section=sections.find(x=>x.lesson_id===current.id&&x.kind===kind);
       const payload={content_html:editorHtml(kind),updated_at:new Date().toISOString()};
       if(section)await api.rest('manual_sections?id=eq.'+section.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -179,10 +220,15 @@
     return run(persistEditor,'Leçon enregistrée. Les élèves ne voient que les parties publiées.');
   }
   async function publishAll(){
-    if(!confirm('Publier cette leçon, ses cours, TD et corrections, ainsi que son chapitre et son thème ?'))return;
+    if(!confirm(mode==='manual'?'Publier le cours de cette leçon pour les élèves ?':'Publier les TD et leurs corrections pour les élèves ?'))return;
     const title=body.querySelector('#manualLessonTitle').value.trim();if(!title)return notify('Donnez un titre à la leçon.',true);
     if(!await saveAll())return;
-    await run(()=>publishHierarchy(true),'Cours, TD et corrections publiés pour la classe.');
+    await run(async()=>{
+      await publishHierarchy(false);
+      const ids=sections.filter(section=>section.lesson_id===lessonId&&visibleKinds().some(([kind])=>kind===section.kind)).map(section=>section.id);
+      if(!ids.length)throw new Error('Enregistrez les sections avant de publier.');
+      await api.rest('manual_sections?id=in.('+ids.join(',')+')',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:true})});
+    },mode==='manual'?'Cours publié pour la classe.':'TD et corrections publiés pour la classe.');
   }
   async function publishHierarchy(includeCorrections=false){
     await api.rest('rpc/manual_publish_lesson_parts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_lesson_id:lessonId,p_include_corrections:includeCorrections})});
@@ -214,7 +260,7 @@
   function preview(){
     const lesson=selected().lesson, title=body.querySelector('#manualLessonTitle').value.trim()||lesson.title;
     const dialog=document.createElement('dialog');dialog.className='manual-preview';
-    dialog.innerHTML=`<div class="manual-preview-head"><h2>${esc(title)}</h2><button type="button" data-close>Fermer</button></div>${kinds.map(([kind,name])=>{const sec=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind);return `<section data-preview-section="${sec?.id||''}"><h3>${name}</h3><div class="manual-preview-content">${editorHtml(kind)||'<p>Section vide.</p>'}</div>${assets.filter(x=>x.section_id===sec?.id).map(x=>`<button type="button" data-preview-file="${x.id}" class="subtle">📎 ${esc(x.file_name)}</button>`).join('')}</section>`}).join('')}`;
+    dialog.innerHTML=`<div class="manual-preview-head"><h2>${esc(title)}</h2><button type="button" data-close>Fermer</button></div>${visibleKinds().map(([kind,name])=>{const sec=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind);return `<section data-preview-section="${sec?.id||''}"><h3>${name}</h3><div class="manual-preview-content">${editorHtml(kind)||'<p>Section vide.</p>'}</div>${assets.filter(x=>x.section_id===sec?.id).map(x=>`<button type="button" data-preview-file="${x.id}" class="subtle">📎 ${esc(x.file_name)}</button>`).join('')}</section>`}).join('')}`;
     const urls=[];
     document.body.append(dialog);dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.onclose=()=>{urls.forEach(URL.revokeObjectURL);dialog.remove();};dialog.showModal();
     dialog.querySelectorAll('[data-preview-file]').forEach(button=>button.onclick=()=>download(assets.find(x=>x.id===button.dataset.previewFile)));
@@ -240,8 +286,8 @@
       });
     });
   }
-  window.MelecManualTeacher={canLeave(){return !dirty||confirm('Quitter la leçon sans enregistrer vos modifications ?');},render(nextBody,nextClassId,nextNotify){
-    body=nextBody;notify=nextNotify;
+  window.MelecManualTeacher={canLeave(){return !dirty||confirm('Quitter la leçon sans enregistrer vos modifications ?');},render(nextBody,nextClassId,nextNotify,nextMode='manual'){
+    body=nextBody;notify=nextNotify;mode=nextMode;
     if(classId!==nextClassId){classId=nextClassId;themeId='';chapterId='';lessonId='';}
     if(!classId){body.innerHTML='<div class="teach-card">Choisissez une classe pour créer son manuel.</div>';return;}
     load();

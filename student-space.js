@@ -34,20 +34,26 @@
     $('studentTpViewer')?.remove();
   }
   let tpPdfCleanup = null;
+  function updateLearningLock() {
+    const locked=Boolean(activeTp);
+    $('studentContentTabs').dataset.tpActive=String(locked);
+    ['studentManualTab','studentTdTab'].forEach(id=>{$(id).disabled=locked;});
+    if(locked)window.MelecManualStudent.clear();
+  }
   function switchContentTab(next) {
     if (activeTp && next !== 'tp') return;
-    if (selectedContentTab === 'manual' && next !== 'manual') window.MelecManualStudent.clear();
+    if (['manual','td'].includes(selectedContentTab) && next !== selectedContentTab) window.MelecManualStudent.clear();
     selectedContentTab = next;
-    $('studentCoursesTab').classList.toggle('active', next === 'courses');
     $('studentManualTab').classList.toggle('active', next === 'manual');
+    $('studentTdTab').classList.toggle('active', next === 'td');
     $('studentTpTab').classList.toggle('active', next === 'tp');
-    $('studentLessonsPane').hidden = next !== 'courses';
     $('studentManualPane').hidden = next !== 'manual';
+    $('studentTdPane').hidden = next !== 'td';
     $('studentTpPane').hidden = next !== 'tp';
-    if (next === 'manual' && profile?.class_id) window.MelecManualStudent.load(profile.class_id);
+    if (['manual','td'].includes(next) && profile?.class_id) window.MelecManualStudent.load(profile.class_id,next);
   }
-  $('studentCoursesTab').onclick = () => switchContentTab('courses');
   $('studentManualTab').onclick = () => switchContentTab('manual');
+  $('studentTdTab').onclick = () => switchContentTab('td');
   $('studentTpTab').onclick = () => switchContentTab('tp');
   const authPane = $('studentAuth');
   const dashboard = $('studentDashboard');
@@ -120,8 +126,8 @@
         classLabel.textContent = assigned.length ? 'Classe attribuée : ' + assigned[0].name : 'Classe attribuée : nom indisponible';
       }).catch(() => { classLabel.textContent = 'Classe attribuée : nom indisponible'; });
     }
-    $('studentLessonsPane').hidden = !approved;
     $('studentManualPane').hidden = true;
+    $('studentTdPane').hidden = true;
     $('studentTpPane').hidden = true;
     $('studentContentTabs').hidden = !approved;
     if (!approved) {
@@ -131,11 +137,10 @@
     await Promise.all([classNamePromise, loadTpAssignments()]);
     if (activeTp) {
       if (cleanupViewer) { cleanupViewer(); cleanupViewer=null; }
-      $('studentLessons').replaceChildren();
       window.MelecManualStudent.clear();
-      switchContentTab('tp'); $('studentCoursesTab').disabled = true; $('studentManualTab').disabled = true;
+      updateLearningLock();switchContentTab('tp');
     }
-    else { $('studentCoursesTab').disabled = false; $('studentManualTab').disabled = false; switchContentTab(selectedContentTab === 'courses' ? 'manual' : selectedContentTab); }
+    else {updateLearningLock();switchContentTab(selectedContentTab);}
   }
   async function loadTpAssignments(preserveViewer = false) {
     const previousActiveId = activeTp?.id;
@@ -150,7 +155,7 @@
     if (preserveViewer && previousActiveId && activeTp?.id === previousActiveId) return;
     clearTpViewer();
     const list = $('studentTpList'); list.replaceChildren();
-    $('studentTpNotice').textContent = activeTp ? 'Un TP est en cours. Le manuel numérique reste verrouillé jusqu’à la fin du chronomètre.' : 'Ouvrir un TP démarre immédiatement un chronomètre de 3 h 30. Après son expiration, demandez une prolongation à l’enseignant.';
+    $('studentTpNotice').textContent = activeTp ? 'Un TP est en cours. Les autres rubriques restent verrouillées jusqu’à la fin du chronomètre.' : 'Ouvrir un TP démarre immédiatement un chronomètre de 3 h 30. Après son expiration, demandez une prolongation à l’enseignant.';
     const visible = activeTp ? assignments.filter(row => row.id === activeTp.id) : assignments;
     for (const row of visible) {
       const item = tpItems.find(candidate => candidate.id === row.tp_id) || {id:row.tp_id,title:row.tp_title};
@@ -256,45 +261,6 @@
     }
     card.append(viewer);
   }
-  async function loadLessons() {
-    const target = $('studentLessons');
-    target.textContent = 'Chargement des contenus…';
-    if (cleanupViewer) { cleanupViewer(); cleanupViewer = null; }
-    const chapters = await api.rest('learning_chapters?class_id=eq.' + encodeURIComponent(profile.class_id) + '&published=is.true&select=id,title,position&order=position.asc,title.asc');
-    if (!chapters.length) { target.textContent = 'Aucun chapitre publié pour votre classe.'; return; }
-    const ids = chapters.map(c => c.id);
-    const items = await api.rest('learning_items?chapter_id=in.(' + ids.join(',') + ')&kind=in.(course,td)&published=is.true&select=id,chapter_id,kind,title,blocks,linked_course_id,position&order=position.asc,title.asc');
-    target.replaceChildren();
-    if (!items.length) { target.textContent = 'Aucun cours ou TD publié n’est visible pour cette classe. Demandez à l’enseignant de vérifier la publication de la leçon.'; return; }
-    const labels = { course: 'Cours', td: 'Travaux dirigés', tp: 'Travaux pratiques' };
-    for (const chapter of chapters) {
-      const chapterNode = document.createElement('details');
-      const title = document.createElement('summary'); title.textContent = chapter.title; chapterNode.append(title);
-      const chapterItems = items.filter(item => item.chapter_id === chapter.id);
-      if (!chapterItems.length) continue;
-      for (const kind of ['course','td']) {
-        const subset = chapterItems.filter(item => item.kind === kind);
-        if (!subset.length) continue;
-        const heading = document.createElement('h3'); heading.textContent = labels[kind]; chapterNode.append(heading);
-        for (const item of subset) {
-          const row = document.createElement('details');
-          const summary = document.createElement('summary'); summary.textContent = item.title; row.append(summary);
-          const content = document.createElement('div'); content.className = 'student-readonly'; row.append(content);
-          row.addEventListener('toggle', async () => {
-            if (!row.open) { if (cleanupViewer) cleanupViewer(); content.replaceChildren(); return; }
-            if (activeTp) { row.open = false; await openDashboard(); return; }
-            try {
-              const assets = await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(item.id) + '&select=id,object_path,file_name,mime_type');
-              if (cleanupViewer) cleanupViewer();
-              cleanupViewer = await MelecContent.render(item.blocks, content, assets);
-            } catch (error) { content.textContent = error.message; }
-          });
-          chapterNode.append(row);
-        }
-      }
-      target.append(chapterNode);
-    }
-  }
   $('studentRefresh').onclick = async () => {
     const button = $('studentRefresh');
     const status = $('studentRefreshStatus');
@@ -336,10 +302,9 @@
     } catch { /* Les requêtes de contenu restent protégées par RLS même hors réseau. */ }
     if ((!profile.approved_at || !profile.class_id || profile.blocked_at) && !$('studentContentTabs').hidden) {
       if (cleanupViewer) cleanupViewer();
-      $('studentLessons').replaceChildren();
-      $('studentLessonsPane').hidden = true;
       window.MelecManualStudent.clear();
       $('studentManualPane').hidden = true;
+      $('studentTdPane').hidden = true;
       $('studentTpPane').hidden = true;
       $('studentContentTabs').hidden = true;
       clearTpViewer(); activeTp=null;
@@ -354,10 +319,10 @@
       try {
         await loadTpAssignments(true);
         if (activeTp) {
-          if (!wasActive) { if (cleanupViewer) { cleanupViewer(); cleanupViewer=null; } $('studentLessons').replaceChildren(); }
-          window.MelecManualStudent.clear(); $('studentCoursesTab').disabled=true; $('studentManualTab').disabled=true; switchContentTab('tp');
+          if (!wasActive && cleanupViewer) { cleanupViewer(); cleanupViewer=null; }
+          updateLearningLock();switchContentTab('tp');
         }
-        else { $('studentCoursesTab').disabled=false; $('studentManualTab').disabled=false; if (wasActive) switchContentTab('manual'); }
+        else { updateLearningLock();if (wasActive) switchContentTab('manual'); }
       } catch { /* Les règles RLS continuent à protéger chaque accès aux documents. */ }
     }
     } finally { accessRefreshInProgress = false; }

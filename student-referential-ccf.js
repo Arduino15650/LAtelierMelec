@@ -2,8 +2,8 @@
   'use strict';
   const tabs = document.getElementById('studentContentTabs');
   const dashboard = document.getElementById('studentDashboard');
-  const lessons = document.getElementById('studentLessonsPane');
   const manual = document.getElementById('studentManualPane');
+  const td = document.getElementById('studentTdPane');
   const tp = document.getElementById('studentTpPane');
   if (!tabs || !dashboard || !window.MelecPortal || !window.MELEC) return;
 
@@ -37,14 +37,15 @@
     buttons.forEach(button => button.classList.remove('active'));
   }
   function view(key) {
+    if(tabs.dataset.tpActive==='true'||!tp.hidden)return;
     window.MelecManualStudent?.clear();
-    lessons.hidden = true;
     manual.hidden = true;
+    td.hidden = true;
     tp.hidden = true;
     pane.hidden = false;
     buttons.forEach((button, name) => button.classList.toggle('active', name === key));
-    tabs.querySelector('#studentCoursesTab')?.classList.remove('active');
     tabs.querySelector('#studentManualTab')?.classList.remove('active');
+    tabs.querySelector('#studentTdTab')?.classList.remove('active');
     tabs.querySelector('#studentTpTab')?.classList.remove('active');
     title.textContent = labels[key];
     message.textContent = '';
@@ -60,15 +61,22 @@
     tabs.append(button);
     buttons.set(key, button);
   });
-  tabs.querySelectorAll('#studentCoursesTab, #studentManualTab, #studentTpTab').forEach(button => {
+  tabs.querySelectorAll('#studentManualTab, #studentTdTab, #studentTpTab').forEach(button => {
     button.addEventListener('click', closeOwnPane, true);
   });
   const watchMainPanes = new MutationObserver(() => {
-    if (!lessons.hidden || !manual.hidden || !tp.hidden) closeOwnPane();
+    const locked=tabs.dataset.tpActive==='true'||!tp.hidden;
+    buttons.forEach(button=>{button.disabled=locked;});
+    if (locked || !manual.hidden || !td.hidden) { requestId++;closeOwnPane();content.replaceChildren(); }
   });
-  watchMainPanes.observe(lessons, { attributes: true, attributeFilter: ['hidden'] });
   watchMainPanes.observe(manual, { attributes: true, attributeFilter: ['hidden'] });
+  watchMainPanes.observe(td, { attributes: true, attributeFilter: ['hidden'] });
   watchMainPanes.observe(tp, { attributes: true, attributeFilter: ['hidden'] });
+  new MutationObserver(()=>{
+    const locked=tabs.dataset.tpActive==='true';
+    buttons.forEach(button=>{button.disabled=locked;});
+    if(locked){requestId++;closeOwnPane();content.replaceChildren();}
+  }).observe(tabs,{attributes:true,attributeFilter:['data-tp-active']});
   document.getElementById('studentRefresh')?.addEventListener('click', () => {
     results = null;
     closeOwnPane();

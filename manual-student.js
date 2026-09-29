@@ -1,18 +1,19 @@
 (function () {
   'use strict';
   const api=window.MelecPortal, esc=api.escapeHtml;
-  const kinds=[['course','Cours'],['td','Travaux dirigés'],['corrections','Corrections des TD']];
-  let themes=[],chapters=[],lessons=[],sections=[],assets=[],selectedId='',classId='',epoch=0,objectUrls=[];
-  const target=()=>document.getElementById('studentManualContent');
-  const readingPane=document.getElementById('studentManualPane');
-  ['copy','cut','contextmenu','dragstart','selectstart'].forEach(name=>readingPane?.addEventListener(name,event=>{
-    if(event.target.closest('.manual-lesson-page, .manual-toc'))event.preventDefault();
-  }));
-  function cleanup(){objectUrls.forEach(URL.revokeObjectURL);objectUrls=[];}
-  async function load(nextClassId){
+  let themes=[],chapters=[],lessons=[],sections=[],assets=[],selectedId='',classId='',epoch=0,objectUrls=[],pdfCleanups=[],mode='manual',tdView='td';
+  const target=()=>document.getElementById(mode==='manual'?'studentManualContent':'studentTdContent');
+  ['studentManualPane','studentTdPane'].forEach(id=>{
+    const pane=document.getElementById(id);
+    ['copy','cut','contextmenu','dragstart','selectstart'].forEach(name=>pane?.addEventListener(name,event=>{
+      if(event.target.closest('.manual-lesson-page, .manual-toc'))event.preventDefault();
+    }));
+  });
+  function cleanup(){pdfCleanups.forEach(close=>close());pdfCleanups=[];objectUrls.forEach(URL.revokeObjectURL);objectUrls=[];}
+  async function load(nextClassId,nextMode='manual'){
     if(!nextClassId)return;
-    const ticket=++epoch;classId=nextClassId;cleanup();
-    target().innerHTML='<p>Chargement du manuel…</p>';
+    const ticket=++epoch;classId=nextClassId;mode=nextMode;tdView='td';selectedId='';cleanup();
+    target().innerHTML='<p>Chargement des contenus…</p>';
     try{
       [themes,chapters,lessons,sections,assets]=await Promise.all([
         api.rest('manual_themes?class_id=eq.'+encodeURIComponent(classId)+'&published=is.true&select=id,title,position&order=position.asc,created_at.asc'),
@@ -28,21 +29,26 @@
       chapters.sort((a,b)=>(themeOrder.get(a.theme_id)??Infinity)-(themeOrder.get(b.theme_id)??Infinity)||a.position-b.position);
       const chapterOrder=new Map(chapters.map((chapter,index)=>[chapter.id,index]));
       lessons.sort((a,b)=>(chapterOrder.get(a.chapter_id)??Infinity)-(chapterOrder.get(b.chapter_id)??Infinity)||a.position-b.position);
-      if(!lessons.some(x=>x.id===selectedId))selectedId=lessons[0]?.id||'';
+      const available=availableLessons();
+      if(!available.some(x=>x.id===selectedId))selectedId=available[0]?.id||'';
       draw();
-    }catch(error){if(ticket===epoch)target().textContent='Manuel indisponible : '+error.message;}
+    }catch(error){if(ticket===epoch)target().textContent='Contenu indisponible : '+error.message;}
   }
+  function availableLessons(){return lessons.filter(lesson=>sections.some(section=>section.lesson_id===lesson.id&&(mode==='manual'?section.kind==='course':['td','corrections'].includes(section.kind))));}
   function draw(){
     cleanup();const host=target();
-    if(!lessons.length){host.innerHTML='<p>Aucune leçon publiée pour votre classe pour le moment.</p>';return;}
-    const index=lessons.findIndex(x=>x.id===selectedId),lesson=lessons[index];
-    host.innerHTML=`<div class="manual-reader"><details class="manual-toc" ${matchMedia('(min-width: 801px)').matches?'open':''}><summary>Sommaire du manuel</summary><nav aria-label="Sommaire du manuel">${themes.map(theme=>`<div class="manual-toc-theme"><strong>${esc(theme.title)}</strong>${chapters.filter(c=>c.theme_id===theme.id).map(ch=>`<div class="manual-toc-chapter"><span>${esc(ch.title)}</span>${lessons.filter(l=>l.chapter_id===ch.id).map(l=>`<button type="button" data-lesson="${l.id}" ${l.id===selectedId?'aria-current="page"':''}>${esc(l.title)}</button>`).join('')}</div>`).join('')}</div>`).join('')}</nav></details>
+    const available=availableLessons();
+    if(!available.length){host.innerHTML='<p>Aucun contenu publié pour votre classe dans cette rubrique.</p>';return;}
+    if(!available.some(lesson=>lesson.id===selectedId))selectedId=available[0].id;
+    const index=available.findIndex(x=>x.id===selectedId),lesson=available[index];
+    host.innerHTML=`<div class="manual-reader"><details class="manual-toc" ${matchMedia('(min-width: 801px)').matches?'open':''}><summary>${mode==='manual'?'Sommaire du manuel':'Sommaire des TD'}</summary><nav aria-label="Sommaire des leçons">${themes.map(theme=>`<div class="manual-toc-theme"><strong>${esc(theme.title)}</strong>${chapters.filter(c=>c.theme_id===theme.id).map(ch=>`<div class="manual-toc-chapter"><span>${esc(ch.title)}</span>${available.filter(l=>l.chapter_id===ch.id).map(l=>`<button type="button" data-lesson="${l.id}" ${l.id===selectedId?'aria-current="page"':''}>${esc(l.title)}</button>`).join('')}</div>`).join('')}</div>`).join('')}</nav></details>
       <article class="manual-lesson-page"><p class="manual-breadcrumb">${esc(themes.find(t=>t.id===chapters.find(c=>c.id===lesson.chapter_id)?.theme_id)?.title||'')} · ${esc(chapters.find(c=>c.id===lesson.chapter_id)?.title||'')}</p><h2>${esc(lesson.title)}</h2>
-        ${kinds.map(([kind,name])=>{const sec=sections.find(s=>s.lesson_id===lesson.id&&s.kind===kind);if(!sec)return'';return `<section class="manual-reading-section" data-section="${sec.id}"><h3>${name}</h3><div class="manual-reading-html">${window.MelecContent.sanitize(sec.content_html||'')||'<p>Aucun texte pour cette section.</p>'}</div><div class="manual-reading-files">${assets.filter(a=>a.section_id===sec.id).map(a=>`<div class="manual-reading-file"><span>📎 ${esc(a.file_name)}</span><div><button type="button" data-open="${a.id}">Consulter</button><button type="button" data-download="${a.id}">Télécharger</button></div><div class="manual-file-preview" data-preview="${a.id}"></div></div>`).join('')}</div></section>`}).join('')||'<p>Cette leçon ne comporte pas encore de section publiée.</p>'}
-        <nav class="manual-next-prev" aria-label="Navigation entre les leçons"><button type="button" data-adjacent="${index-1}" ${index===0?'disabled':''}>← Leçon précédente</button><span>${index+1} / ${lessons.length}</span><button type="button" data-adjacent="${index+1}" ${index===lessons.length-1?'disabled':''}>Leçon suivante →</button></nav></article></div>`;
+        ${mode==='td'?`<nav class="manual-td-submenu" aria-label="Travaux dirigés"><button type="button" data-td-view="td" class="${tdView==='td'?'active':''}">Travaux dirigés</button><button type="button" data-td-view="corrections" class="${tdView==='corrections'?'active':''}">Correction des TD</button></nav>`:''}
+        ${[[mode==='manual'?'course':tdView,mode==='manual'?'Cours':tdView==='td'?'Travaux dirigés':'Correction des TD']].map(([kind,name])=>{const sec=sections.find(s=>s.lesson_id===lesson.id&&s.kind===kind);if(!sec)return'<p>Cette partie n’est pas encore publiée.</p>';return `<section class="manual-reading-section" data-section="${sec.id}"><h3>${name}</h3><div class="manual-reading-html">${window.MelecContent.sanitize(sec.content_html||'')||'<p>Aucun texte pour cette section.</p>'}</div><div class="manual-reading-files">${assets.filter(a=>a.section_id===sec.id).map(a=>a.mime_type.startsWith('image/')?`<div class="manual-reading-file manual-image-file" data-image-file="${a.id}"><div class="manual-file-preview"></div></div>`:a.mime_type==='application/pdf'?`<div class="manual-reading-file"><span>📄 ${esc(a.file_name)}</span><button type="button" data-open="${a.id}">Lire le PDF</button><div class="manual-file-preview" data-preview="${a.id}"></div></div>`:`<p class="manual-file-unavailable">${esc(a.file_name)} : consultez l’enseignant pour une version lisible en ligne.</p>`).join('')}</div></section>`}).join('')}
+        <nav class="manual-next-prev" aria-label="Navigation entre les leçons"><button type="button" data-adjacent="${index-1}" ${index===0?'disabled':''}>← Leçon précédente</button><span>${index+1} / ${available.length}</span><button type="button" data-adjacent="${index+1}" ${index===available.length-1?'disabled':''}>Leçon suivante →</button></nav></article></div>`;
     host.querySelectorAll('[data-lesson]').forEach(button=>button.onclick=()=>openLesson(button.dataset.lesson));
-    host.querySelectorAll('[data-adjacent]').forEach(button=>button.onclick=()=>openLesson(lessons[Number(button.dataset.adjacent)]?.id));
-    host.querySelectorAll('[data-download]').forEach(button=>button.onclick=()=>download(assets.find(x=>x.id===button.dataset.download)));
+    host.querySelectorAll('[data-adjacent]').forEach(button=>button.onclick=()=>openLesson(available[Number(button.dataset.adjacent)]?.id));
+    host.querySelectorAll('[data-td-view]').forEach(button=>button.onclick=()=>{tdView=button.dataset.tdView;draw();});
     host.querySelectorAll('[data-open]').forEach(button=>button.onclick=()=>openFile(assets.find(x=>x.id===button.dataset.open)));
     host.querySelectorAll('[data-section]').forEach(section=>hydrateSection(section));
   }
@@ -70,8 +76,8 @@
       }
       replacement.append(document.createTextNode(text.slice(start)));node.replaceWith(replacement);
     });
-    section.querySelectorAll('.manual-reading-file').forEach(card=>{
-      const imageAsset=assets.find(a=>a.id===card.querySelector('[data-open]')?.dataset.open&&a.mime_type.startsWith('image/'));
+    section.querySelectorAll('[data-image-file]').forEach(card=>{
+      const imageAsset=assets.find(a=>a.id===card.dataset.imageFile&&a.mime_type.startsWith('image/'));
       if(imageAsset&&!html.querySelector(`img[data-asset="${imageAsset.id}"]`)){
         const image=document.createElement('img');image.alt=imageAsset.file_name;image.className='manual-inline-image';
         card.querySelector('.manual-file-preview').append(image);loadImage(imageAsset,image);
@@ -84,22 +90,15 @@
     catch{if(image.isConnected)image.replaceWith(document.createTextNode('Image indisponible.'));}
   }
   function openLesson(id){if(!id||id===selectedId)return;selectedId=id;draw();target().scrollIntoView({block:'start',behavior:'smooth'});}
-  async function download(asset){
-    if(!asset)return;
-    try{const blob=await api.download(asset.object_path),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=asset.file_name;link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}
-    catch(error){alert(error.message);}
-  }
   async function openFile(asset){
-    if(!asset)return;const mount=target().querySelector(`[data-preview="${asset.id}"]`);if(!mount)return;
+    if(!asset||asset.mime_type!=='application/pdf')return;const mount=target().querySelector(`[data-preview="${asset.id}"]`);if(!mount)return;
     if(mount.childElementCount){mount.replaceChildren();return;}
     mount.textContent='Chargement…';
     try{
       const blob=await api.download(asset.object_path);if(!mount.isConnected)return;
-      const url=URL.createObjectURL(blob);objectUrls.push(url);mount.replaceChildren();
-      if(asset.mime_type.startsWith('image/')){const image=document.createElement('img');image.src=url;image.alt=asset.file_name;mount.append(image);}
-      else if(asset.mime_type==='application/pdf'){const frame=document.createElement('iframe');frame.src=url+'#toolbar=0';frame.title=asset.file_name;frame.loading='lazy';mount.append(frame);}
-      else{mount.textContent='Ce document bureautique peut être téléchargé et ouvert sur votre appareil.';}
+      const close=await window.MelecStudentPdf.render(blob,mount,()=>mount.isConnected&&document.getElementById('studentTpPane').hidden);
+      pdfCleanups.push(close);
     }catch(error){mount.textContent=error.message;}
   }
-  window.MelecManualStudent={load,clear(){epoch++;cleanup();if(target())target().replaceChildren();}};
+  window.MelecManualStudent={load,clear(){epoch++;cleanup();['studentManualContent','studentTdContent'].forEach(id=>document.getElementById(id)?.replaceChildren());}};
 })();
