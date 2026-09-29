@@ -37,7 +37,7 @@
     buttons.forEach(button => button.classList.remove('active'));
   }
   function view(key) {
-    if(tabs.dataset.tpActive==='true'||!tp.hidden)return;
+    if(tabs.dataset.tpActive==='true')return;
     window.MelecManualStudent?.clear();
     manual.hidden = true;
     td.hidden = true;
@@ -65,7 +65,7 @@
     button.addEventListener('click', closeOwnPane, true);
   });
   const watchMainPanes = new MutationObserver(() => {
-    const locked=tabs.dataset.tpActive==='true'||!tp.hidden;
+    const locked=tabs.dataset.tpActive==='true';
     buttons.forEach(button=>{button.disabled=locked;});
     if (locked || !manual.hidden || !td.hidden) { requestId++;closeOwnPane();content.replaceChildren(); }
   });
@@ -232,3 +232,4 @@
     });
   }
 })();
+
