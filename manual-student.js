@@ -18,6 +18,12 @@
         api.rest('manual_assets?select=id,section_id,object_path,file_name,mime_type')
       ]);
       if(ticket!==epoch)return;
+      // L'ordre précédent/suivant suit le sommaire (thème > chapitre > leçon),
+      // et non la seule position de la leçon dans toute la base.
+      const themeOrder=new Map(themes.map((theme,index)=>[theme.id,index]));
+      chapters.sort((a,b)=>(themeOrder.get(a.theme_id)??Infinity)-(themeOrder.get(b.theme_id)??Infinity)||a.position-b.position);
+      const chapterOrder=new Map(chapters.map((chapter,index)=>[chapter.id,index]));
+      lessons.sort((a,b)=>(chapterOrder.get(a.chapter_id)??Infinity)-(chapterOrder.get(b.chapter_id)??Infinity)||a.position-b.position);
       if(!lessons.some(x=>x.id===selectedId))selectedId=lessons[0]?.id||'';
       draw();
     }catch(error){if(ticket===epoch)target().textContent='Manuel indisponible : '+error.message;}
