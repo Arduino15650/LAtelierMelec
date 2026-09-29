@@ -30,17 +30,21 @@
   }
   async function load() {
     const ticket=++request;
-    body.innerHTML='<div class="teach-card">Chargement du manuel numérique…</div>';
+    body.innerHTML='<div class="teach-card">Chargement du thème sélectionné…</div>';
     try {
-      themes=await list('manual_themes','class_id=eq.'+encodeURIComponent(classId));
-      chapters=themes.length ? await list('manual_chapters','theme_id=in.('+themes.map(x=>x.id).join(',')+')') : [];
-      lessons=chapters.length ? await list('manual_lessons','chapter_id=in.('+chapters.map(x=>x.id).join(',')+')') : [];
-      sections=lessons.length ? await api.rest('manual_sections?lesson_id=in.('+lessons.map(x=>x.id).join(',')+')&select=*&order=kind.asc') : [];
-      assets=sections.length ? await api.rest('manual_assets?section_id=in.('+sections.map(x=>x.id).join(',')+')&select=*&order=created_at.asc') : [];
+      themes=await list('manual_themes','class_id=eq.'+encodeURIComponent(classId),'id,title,position,published,created_at');
       if(ticket!==request)return;
       if(!themes.some(x=>x.id===themeId)){themeId='';chapterId='';lessonId='';}
+      chapters=themeId ? await list('manual_chapters','theme_id=eq.'+themeId,'id,theme_id,title,position,published,created_at') : [];
+      if(ticket!==request)return;
       if(!chapters.some(x=>x.id===chapterId&&x.theme_id===themeId)){chapterId='';lessonId='';}
+      lessons=chapterId ? await list('manual_lessons','chapter_id=eq.'+chapterId,'id,chapter_id,title,position,published,created_at') : [];
+      if(ticket!==request)return;
       if(!lessons.some(x=>x.id===lessonId&&x.chapter_id===chapterId))lessonId='';
+      sections=lessonId ? await api.rest('manual_sections?lesson_id=eq.'+lessonId+'&select=id,lesson_id,kind,content_html,published,updated_at') : [];
+      if(ticket!==request)return;
+      assets=sections.length ? await api.rest('manual_assets?section_id=in.('+sections.map(x=>x.id).join(',')+')&select=id,section_id,object_path,file_name,mime_type,created_at&order=created_at.asc') : [];
+      if(ticket!==request)return;
       draw();
     } catch(error) { if(ticket===request){body.innerHTML='<div class="teach-card manual-error">Le manuel est indisponible. Vérifiez que son script SQL est installé.</div>';notify(error.message,true);} }
   }
@@ -121,15 +125,15 @@
       ${chapter?`<div class="manual-level-actions"><label>Nom du chapitre<input id="manualChapterTitle" maxlength="180" value="${esc(chapter.title)}"></label><button type="button" id="manualRenameChapter" class="subtle">Renommer</button><button type="button" id="manualToggleChapter" class="subtle">${chapter.published?'Masquer le chapitre':'Publier le chapitre'}</button></div>`:''}
       ${chapter?`<div class="manual-pickers"><label>Leçon<select id="manualLesson"><option value="">Choisir une leçon…</option>${lessonChoices.map(x=>`<option value="${x.id}" ${x.id===lessonId?'selected':''}>${esc(x.title)}${x.published?' ✓':''}</option>`).join('')}</select></label><label>Nouvelle leçon<input id="manualNewLesson" maxlength="180" placeholder="Ex. Le disjoncteur différentiel"></label><button type="button" id="manualAddLesson">Créer la leçon</button></div>`:''}
       ${lesson?`<div class="manual-lesson"><label>Titre de la leçon<input id="manualLessonTitle" maxlength="180" value="${esc(lesson.title)}"></label>${mode==='manual-td'?`<nav class="manual-td-submenu" aria-label="Édition des travaux dirigés"><button type="button" data-teacher-part="td" class="${tdEditorView==='td'?'active':''}">Travaux dirigés</button><button type="button" data-teacher-part="corrections" class="${tdEditorView==='corrections'?'active':''}">Correction des TD</button></nav>`:''}<div class="manual-sections">${visibleKinds().map(([kind])=>sectionCard(kind,lesson)).join('')}</div><div class="manual-actions"><button type="button" id="manualPreview" class="subtle">Prévisualiser</button><button type="button" id="manualSave">Enregistrer</button><button type="button" id="manualPublishLesson">Publier le thème, chapitre et la leçon</button><button type="button" id="manualPublish" class="subtle">${mode==='manual'?'Publier le cours':'Publier les TD et leurs corrections'}</button><button type="button" id="manualHide" class="warn" ${lesson.published?'':'hidden'}>Masquer la leçon</button></div><p class="teach-help">La publication est distincte : cours dans le Manuel numérique, TD et corrections dans Travaux dirigés.</p></div>`:''}</div>`;
-    body.querySelector('#manualTheme').onchange=e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=themeId;return;}themeId=e.target.value;chapterId='';lessonId='';draw();};
+    body.querySelector('#manualTheme').onchange=e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=themeId;return;}themeId=e.target.value;chapterId='';lessonId='';load();};
     body.querySelector('#manualAddTheme').onclick=()=>create('theme');
     body.querySelector('#manualRenameTheme')?.addEventListener('click',()=>rename('manual_themes',theme.id,body.querySelector('#manualThemeTitle').value));
     body.querySelector('#manualToggleTheme')?.addEventListener('click',()=>update('manual_themes',theme.id,{published:!theme.published},theme.published?'Thème masqué.':'Thème publié.'));
-    body.querySelector('#manualChapter')?.addEventListener('change',e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=chapterId;return;}chapterId=e.target.value;lessonId='';draw();});
+    body.querySelector('#manualChapter')?.addEventListener('change',e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=chapterId;return;}chapterId=e.target.value;lessonId='';load();});
     body.querySelector('#manualAddChapter')?.addEventListener('click',()=>create('chapter'));
     body.querySelector('#manualRenameChapter')?.addEventListener('click',()=>rename('manual_chapters',chapter.id,body.querySelector('#manualChapterTitle').value));
     body.querySelector('#manualToggleChapter')?.addEventListener('click',()=>update('manual_chapters',chapter.id,{published:!chapter.published},chapter.published?'Chapitre masqué.':'Chapitre publié.'));
-    body.querySelector('#manualLesson')?.addEventListener('change',e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=lessonId;return;}lessonId=e.target.value;draw();});
+    body.querySelector('#manualLesson')?.addEventListener('change',e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=lessonId;return;}lessonId=e.target.value;load();});
     body.querySelector('#manualAddLesson')?.addEventListener('click',()=>create('lesson'));
     if(!lesson)return;
     body.querySelectorAll('[data-teacher-part]').forEach(button=>button.onclick=()=>{
@@ -260,10 +264,15 @@
   function preview(){
     const lesson=selected().lesson, title=body.querySelector('#manualLessonTitle').value.trim()||lesson.title;
     const dialog=document.createElement('dialog');dialog.className='manual-preview';
-    dialog.innerHTML=`<div class="manual-preview-head"><h2>${esc(title)}</h2><button type="button" data-close>Fermer</button></div>${visibleKinds().map(([kind,name])=>{const sec=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind);return `<section data-preview-section="${sec?.id||''}"><h3>${name}</h3><div class="manual-preview-content">${editorHtml(kind)||'<p>Section vide.</p>'}</div>${assets.filter(x=>x.section_id===sec?.id).map(x=>`<button type="button" data-preview-file="${x.id}" class="subtle">📎 ${esc(x.file_name)}</button>`).join('')}</section>`}).join('')}`;
+    dialog.innerHTML=`<div class="manual-preview-head"><h2>${esc(title)}</h2><button type="button" data-close>Fermer</button></div>${visibleKinds().map(([kind,name])=>{const sec=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind),html=editorHtml(kind),attached=assets.filter(x=>x.section_id===sec?.id);return `<section data-preview-section="${sec?.id||''}"><h3>${name}</h3><div class="manual-preview-content">${html||'<p>Section vide.</p>'}</div>${attached.filter(x=>x.mime_type.startsWith('image/')&&!html.includes('[[image:'+x.id+']]')).map(x=>`<img class="manual-inline-image" data-preview-image="${x.id}" alt="${esc(x.file_name)}">`).join('')}${attached.filter(x=>!x.mime_type.startsWith('image/')).map(x=>`<button type="button" data-preview-file="${x.id}" class="subtle">📎 ${esc(x.file_name)}</button>`).join('')}</section>`}).join('')}`;
     const urls=[];
     document.body.append(dialog);dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.onclose=()=>{urls.forEach(URL.revokeObjectURL);dialog.remove();};dialog.showModal();
     dialog.querySelectorAll('[data-preview-file]').forEach(button=>button.onclick=()=>download(assets.find(x=>x.id===button.dataset.previewFile)));
+    dialog.querySelectorAll('[data-preview-image]').forEach(image=>{
+      const asset=assets.find(x=>x.id===image.dataset.previewImage);
+      if(!asset)return;
+      api.download(asset.object_path).then(blob=>{if(!image.isConnected)return;const url=URL.createObjectURL(blob);urls.push(url);image.src=url;}).catch(()=>{if(image.isConnected)image.alt='Image indisponible';});
+    });
     dialog.querySelectorAll('[data-preview-section]').forEach(section=>{
       const mount=section.querySelector('.manual-preview-content');
       mount.querySelectorAll('a[href]').forEach(link=>{
@@ -286,7 +295,7 @@
       });
     });
   }
-  window.MelecManualTeacher={canLeave(){return !dirty||confirm('Quitter la leçon sans enregistrer vos modifications ?');},render(nextBody,nextClassId,nextNotify,nextMode='manual'){
+  window.MelecManualTeacher={canLeave(){return !dirty||confirm('Quitter la leçon sans enregistrer vos modifications ?');},resetSelection(){themeId='';chapterId='';lessonId='';dirty=false;},render(nextBody,nextClassId,nextNotify,nextMode='manual'){
     body=nextBody;notify=nextNotify;mode=nextMode;
     if(classId!==nextClassId){classId=nextClassId;themeId='';chapterId='';lessonId='';}
     if(!classId){body.innerHTML='<div class="teach-card">Choisissez une classe pour créer son manuel.</div>';return;}

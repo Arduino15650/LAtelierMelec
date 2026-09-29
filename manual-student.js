@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const api=window.MelecPortal, esc=api.escapeHtml;
-  let themes=[],chapters=[],lessons=[],sections=[],assets=[],selectedId='',classId='',epoch=0,objectUrls=[],pdfCleanups=[],mode='manual',tdView='td';
+  let themes=[],chapters=[],lessons=[],sections=[],assets=[],selectedId='',selectedThemeId='',classId='',epoch=0,objectUrls=[],pdfCleanups=[],mode='manual',tdView='td';
   const target=()=>document.getElementById(mode==='manual'?'studentManualContent':'studentTdContent');
   ['studentManualPane','studentTdPane'].forEach(id=>{
     const pane=document.getElementById(id);
@@ -12,41 +12,57 @@
   function cleanup(){pdfCleanups.forEach(close=>close());pdfCleanups=[];objectUrls.forEach(URL.revokeObjectURL);objectUrls=[];}
   async function load(nextClassId,nextMode='manual'){
     if(!nextClassId)return;
-    const ticket=++epoch;classId=nextClassId;mode=nextMode;tdView='td';selectedId='';cleanup();
+    const ticket=++epoch;classId=nextClassId;mode=nextMode;tdView='td';selectedId='';selectedThemeId='';themes=[];chapters=[];lessons=[];sections=[];assets=[];cleanup();
     target().innerHTML='<p>Chargement des contenus…</p>';
     try{
-      [themes,chapters,lessons,sections,assets]=await Promise.all([
-        api.rest('manual_themes?class_id=eq.'+encodeURIComponent(classId)+'&published=is.true&select=id,title,position&order=position.asc,created_at.asc'),
-        api.rest('manual_chapters?published=is.true&select=id,theme_id,title,position&order=position.asc,created_at.asc'),
-        api.rest('manual_lessons?published=is.true&select=id,chapter_id,title,position&order=position.asc,created_at.asc'),
-        api.rest('manual_sections?published=is.true&select=id,lesson_id,kind,content_html'),
-        api.rest('manual_assets?select=id,section_id,object_path,file_name,mime_type')
-      ]);
+      const result=await api.rest('manual_themes?class_id=eq.'+encodeURIComponent(classId)+'&published=is.true&select=id,title,position&order=position.asc,created_at.asc');
       if(ticket!==epoch)return;
-      // L'ordre précédent/suivant suit le sommaire (thème > chapitre > leçon),
-      // et non la seule position de la leçon dans toute la base.
-      const themeOrder=new Map(themes.map((theme,index)=>[theme.id,index]));
-      chapters.sort((a,b)=>(themeOrder.get(a.theme_id)??Infinity)-(themeOrder.get(b.theme_id)??Infinity)||a.position-b.position);
+      themes=result;draw();
+    }catch(error){if(ticket===epoch)target().textContent='Contenu indisponible : '+error.message;}
+  }
+  async function selectTheme(id){
+    if(!themes.some(theme=>theme.id===id))return;
+    const ticket=++epoch;selectedThemeId=id;selectedId='';chapters=[];lessons=[];sections=[];assets=[];cleanup();
+    target().innerHTML='<p>Chargement du thème…</p>';
+    try{
+      const nextChapters=await api.rest('manual_chapters?theme_id=eq.'+encodeURIComponent(id)+'&published=is.true&select=id,theme_id,title,position&order=position.asc,created_at.asc');
+      if(ticket!==epoch)return;
+      chapters=nextChapters;
+      if(!chapters.length){draw();return;}
+      const nextLessons=await api.rest('manual_lessons?chapter_id=in.('+chapters.map(x=>x.id).join(',')+')&published=is.true&select=id,chapter_id,title,position&order=position.asc,created_at.asc');
+      if(ticket!==epoch)return;
+      lessons=nextLessons;
+      if(!lessons.length){draw();return;}
       const chapterOrder=new Map(chapters.map((chapter,index)=>[chapter.id,index]));
       lessons.sort((a,b)=>(chapterOrder.get(a.chapter_id)??Infinity)-(chapterOrder.get(b.chapter_id)??Infinity)||a.position-b.position);
-      const available=availableLessons();
-      if(!available.some(x=>x.id===selectedId))selectedId=available[0]?.id||'';
+      const kind=mode==='manual'?'kind=eq.course':'kind=in.(td,corrections)';
+      const nextSections=await api.rest('manual_sections?lesson_id=in.('+lessons.map(x=>x.id).join(',')+')&'+kind+'&published=is.true&select=id,lesson_id,kind,content_html');
+      if(ticket!==epoch)return;
+      sections=nextSections;
+      const nextAssets=sections.length?await api.rest('manual_assets?section_id=in.('+sections.map(x=>x.id).join(',')+')&select=id,section_id,object_path,file_name,mime_type'):[];
+      if(ticket!==epoch)return;
+      assets=nextAssets;
       draw();
     }catch(error){if(ticket===epoch)target().textContent='Contenu indisponible : '+error.message;}
   }
   function availableLessons(){return lessons.filter(lesson=>sections.some(section=>section.lesson_id===lesson.id&&(mode==='manual'?section.kind==='course':['td','corrections'].includes(section.kind))));}
   function draw(){
     cleanup();const host=target();
+    if(!selectedThemeId){
+      host.innerHTML=themes.length?`<div class="manual-theme-choice"><label for="studentThemeChoice">Choisir un thème</label><select id="studentThemeChoice"><option value="">Choisir un thème…</option>${themes.map(theme=>`<option value="${theme.id}">${esc(theme.title)}</option>`).join('')}</select></div>`:'<p>Aucun thème publié pour votre classe dans cette rubrique.</p>';
+      host.querySelector('#studentThemeChoice')?.addEventListener('change',event=>selectTheme(event.target.value));return;
+    }
     const available=availableLessons();
-    if(!available.length){host.innerHTML='<p>Aucun contenu publié pour votre classe dans cette rubrique.</p>';return;}
+    if(!available.length){host.innerHTML=`<div class="manual-theme-choice"><button type="button" id="changeTheme">← Choisir un autre thème</button><p>Aucun contenu publié dans ce thème pour cette rubrique.</p></div>`;host.querySelector('#changeTheme').onclick=()=>{selectedThemeId='';draw();};return;}
     if(!available.some(lesson=>lesson.id===selectedId))selectedId=available[0].id;
     const index=available.findIndex(x=>x.id===selectedId),lesson=available[index];
-    host.innerHTML=`<div class="manual-reader"><details class="manual-toc" ${matchMedia('(min-width: 801px)').matches?'open':''}><summary>${mode==='manual'?'Sommaire du manuel':'Sommaire des TD'}</summary><nav aria-label="Sommaire des leçons">${themes.map(theme=>`<div class="manual-toc-theme"><strong>${esc(theme.title)}</strong>${chapters.filter(c=>c.theme_id===theme.id).map(ch=>`<div class="manual-toc-chapter"><span>${esc(ch.title)}</span>${available.filter(l=>l.chapter_id===ch.id).map(l=>`<button type="button" data-lesson="${l.id}" ${l.id===selectedId?'aria-current="page"':''}>${esc(l.title)}</button>`).join('')}</div>`).join('')}</div>`).join('')}</nav></details>
+    host.innerHTML=`<div class="manual-reader"><details class="manual-toc" ${matchMedia('(min-width: 801px)').matches?'open':''}><summary>${mode==='manual'?'Sommaire du manuel':'Sommaire des TD'}</summary><button type="button" id="changeTheme">← Changer de thème</button><nav aria-label="Sommaire des leçons">${themes.filter(theme=>theme.id===selectedThemeId).map(theme=>`<div class="manual-toc-theme"><strong>${esc(theme.title)}</strong>${chapters.filter(c=>c.theme_id===theme.id).map(ch=>`<div class="manual-toc-chapter"><span>${esc(ch.title)}</span>${available.filter(l=>l.chapter_id===ch.id).map(l=>`<button type="button" data-lesson="${l.id}" ${l.id===selectedId?'aria-current="page"':''}>${esc(l.title)}</button>`).join('')}</div>`).join('')}</div>`).join('')}</nav></details>
       <article class="manual-lesson-page"><p class="manual-breadcrumb">${esc(themes.find(t=>t.id===chapters.find(c=>c.id===lesson.chapter_id)?.theme_id)?.title||'')} · ${esc(chapters.find(c=>c.id===lesson.chapter_id)?.title||'')}</p><h2>${esc(lesson.title)}</h2>
         ${mode==='td'?`<nav class="manual-td-submenu" aria-label="Travaux dirigés"><button type="button" data-td-view="td" class="${tdView==='td'?'active':''}">Travaux dirigés</button><button type="button" data-td-view="corrections" class="${tdView==='corrections'?'active':''}">Correction des TD</button></nav>`:''}
         ${[[mode==='manual'?'course':tdView,mode==='manual'?'Cours':tdView==='td'?'Travaux dirigés':'Correction des TD']].map(([kind,name])=>{const sec=sections.find(s=>s.lesson_id===lesson.id&&s.kind===kind);if(!sec)return'<p>Cette partie n’est pas encore publiée.</p>';return `<section class="manual-reading-section" data-section="${sec.id}"><h3>${name}</h3><div class="manual-reading-html">${window.MelecContent.sanitize(sec.content_html||'')||'<p>Aucun texte pour cette section.</p>'}</div><div class="manual-reading-files">${assets.filter(a=>a.section_id===sec.id).map(a=>a.mime_type.startsWith('image/')?`<div class="manual-reading-file manual-image-file" data-image-file="${a.id}"><div class="manual-file-preview"></div></div>`:a.mime_type==='application/pdf'?`<div class="manual-reading-file"><span>📄 ${esc(a.file_name)}</span><button type="button" data-open="${a.id}">Lire le PDF</button><div class="manual-file-preview" data-preview="${a.id}"></div></div>`:`<p class="manual-file-unavailable">${esc(a.file_name)} : consultez l’enseignant pour une version lisible en ligne.</p>`).join('')}</div></section>`}).join('')}
         <nav class="manual-next-prev" aria-label="Navigation entre les leçons"><button type="button" data-adjacent="${index-1}" ${index===0?'disabled':''}>← Leçon précédente</button><span>${index+1} / ${available.length}</span><button type="button" data-adjacent="${index+1}" ${index===available.length-1?'disabled':''}>Leçon suivante →</button></nav></article></div>`;
     host.querySelectorAll('[data-lesson]').forEach(button=>button.onclick=()=>openLesson(button.dataset.lesson));
+    host.querySelector('#changeTheme').onclick=()=>{selectedThemeId='';selectedId='';draw();};
     host.querySelectorAll('[data-adjacent]').forEach(button=>button.onclick=()=>openLesson(available[Number(button.dataset.adjacent)]?.id));
     host.querySelectorAll('[data-td-view]').forEach(button=>button.onclick=()=>{tdView=button.dataset.tdView;draw();});
     host.querySelectorAll('[data-open]').forEach(button=>button.onclick=()=>openFile(assets.find(x=>x.id===button.dataset.open)));

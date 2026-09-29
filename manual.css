@@ -20,8 +20,13 @@
 .manual-level-actions label{display:grid;gap:5px;flex:1 1 220px;min-width:0;font-weight:750}
 .manual-level-actions input{box-sizing:border-box;width:100%;min-width:0;min-height:43px;font:inherit}
 .manual-lesson{margin-top:18px;padding-top:18px;border-top:2px solid #a9c5e3}
-.manual-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
+.manual-sections{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:18px;width:100%}
 .manual-section{padding:16px;border:1px solid #8dbbe4;border-radius:16px;background:#eaf5ff;color:#173450}
+.manual-manager,.manual-lesson,.manual-section,.manual-toolbar,.manual-editor,.manual-preview-content,.manual-lesson-page{width:100%;max-width:100%;min-width:0}
+.manual-manager{overflow-x:hidden}
+.manual-editor,.manual-preview-content,.manual-reading-html{overflow-wrap:anywhere;word-break:normal;white-space:normal}
+.manual-editor img,.manual-preview-content img,.manual-reading-html img{max-width:100%;height:auto}
+.manual-editor p,.manual-preview-content p,.manual-reading-html p{max-width:100%}
 .manual-section[hidden]{display:none!important}
 .manual-section:nth-child(2){border-color:#8fceae;background:#e7f6ed}
 .manual-section[data-kind="corrections"]{border-color:#c2a3d9;background:#f2eafb}
@@ -55,6 +60,13 @@
 .manual-preview-content iframe{display:block;width:min(100%,760px);aspect-ratio:16/9;margin:12px 0;border:0;border-radius:10px}
 .manual-preview-content table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse}
 .manual-preview-content td,.manual-preview-content th{min-width:60px;padding:8px;border:1px solid #9ab8d5}
+.manual-theme-choice{width:100%;max-width:780px;margin:clamp(12px,3vw,28px) auto;padding:clamp(16px,3vw,28px);border:1px solid #8ab8db;border-radius:16px;background:#f4faff;color:#123a60;text-align:center}
+.manual-theme-choice label{display:block;margin-bottom:10px;font-weight:700}
+.manual-theme-choice select{display:block;width:100%;min-height:46px;font:inherit}
+.manual-preview img[data-preview-image]{display:block;width:auto;max-width:100%;height:auto;margin:14px auto;border-radius:8px}
+.teach-approved-details{margin-top:22px;border:1px solid #bba5df;border-radius:12px;padding:12px;background:#f4eefe}
+.teach-approved-details>summary{cursor:pointer;font-weight:700;color:#4d2b79}
+.teach-approved-details>.teach-students{margin-top:14px}
 .manual-reader{display:grid;grid-template-columns:minmax(210px,270px) minmax(0,1fr);gap:20px;align-items:start}
 .manual-toc{position:sticky;top:14px;max-height:calc(100svh - 28px);overflow:auto;padding:14px;border:1px solid #8caedd;border-radius:16px;background:#dcecff;color:#12375d}
 .manual-toc summary{font-weight:800;cursor:pointer}

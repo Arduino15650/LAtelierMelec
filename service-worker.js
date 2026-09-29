@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v134-manuel-et-travaux-diriges';
+const CACHE_NAME = 'bac-pro-melec-v135-affichage-manuel';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
 const CORE_FILES = ['./logo-bac-pro-melec-v3.webp'];
 
