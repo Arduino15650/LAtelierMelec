@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#071b34"><title>BAC PRO MELEC — Élève</title>
   <link rel="stylesheet" href="portal.css?v=20260926-apercu-pdf2">
-  <link rel="stylesheet" href="manual.css?v=20260929-3">
+  <link rel="stylesheet" href="manual.css?v=20260929-4">
   <style>
     .student-refresh-actions{align-items:center;margin-bottom:16px}
     .student-refresh-actions #studentRefresh{min-height:48px;padding:11px 20px;background:#f6ad25;border:2px solid #9d5900;color:#172f49;font-size:1rem;font-weight:800;box-shadow:0 3px 0 #9d5900}
@@ -74,13 +74,13 @@
         <p id="studentAuthStatus" class="form-status" role="status" aria-live="polite"></p>
       </section>
       <section id="studentDashboard" class="portal-panel portal-dashboard" hidden>
-        <div class="portal-actions student-refresh-actions"><button id="studentRefresh" type="button" aria-label="Actualiser les cours, TD et TP">↻ Actualiser</button><button id="studentContactButton" class="subtle" type="button">Contacter l’enseignant</button><button id="studentLogout" class="subtle" type="button">Déconnexion</button></div>
+        <div class="portal-actions student-refresh-actions"><button id="studentRefresh" type="button" aria-label="Actualiser le manuel numérique et les TP">↻ Actualiser</button><button id="studentContactButton" class="subtle" type="button">Contacter l’enseignant</button><button id="studentLogout" class="subtle" type="button">Déconnexion</button></div>
         <p id="studentRefreshStatus" class="portal-small" role="status" aria-live="polite"></p>
         <div id="studentProfileStatus" class="portal-message" role="status" aria-live="polite"></div>
         <p id="studentClassName" class="student-class-name" hidden></p>
-        <div id="studentContentTabs" class="portal-tabs" hidden><button id="studentCoursesTab" type="button" class="active">Cours et TD</button><button id="studentManualTab" type="button">Manuel numérique</button><button id="studentTpTab" type="button">TP en atelier</button></div>
+        <div id="studentContentTabs" class="portal-tabs" hidden><button id="studentCoursesTab" type="button" hidden>Ancien cours et TD</button><button id="studentManualTab" type="button" class="active">Manuel numérique</button><button id="studentTpTab" type="button">TP en atelier</button></div>
         <section id="studentLessonsPane" class="student-pane" hidden>
-          <h2>Mes cours et TD</h2>
+          <h2>Anciens cours et TD</h2>
           <div id="studentLessons" class="portal-list"></div>
         </section>
         <section id="studentManualPane" class="student-pane" hidden>
@@ -107,13 +107,13 @@
   <script src="portal-contact.js?v=20260925-1"></script>
   <script src="student-pdf-forms.js?v=20260927-4"></script>
   <script src="student-pdf-viewer.js?v=20260927-2"></script>
-  <script src="manual-student.js?v=20260929-2"></script>
-  <script src="student-space.js?v=20260929-manuel1"></script>
+  <script src="manual-student.js?v=20260929-4"></script>
+  <script src="student-space.js?v=20260929-manuel4"></script>
   <script src="referential.js?v=20260928-1"></script>
   <script src="student-referential-ccf.js?v=20260929-manuel1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=132',{updateViaCache:'none'}).catch(console.error));
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=133',{updateViaCache:'none'}).catch(console.error));
     }
   </script>
 </body>

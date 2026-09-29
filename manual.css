@@ -1,6 +1,7 @@
 /* Manuel numérique : toutes les dimensions restent fluides du téléphone au PC. */
 #studentManualTab{background:#eadcf8;color:#422364;border-color:#b68bd8}
 #studentManualTab.active{background:#7546a2;color:#fff;border-color:#7546a2}
+#studentCoursesTab,#studentLessonsPane{display:none!important}
 .teaching-space .teach-tabs [data-teach-tab=manual]{background:#7546a2!important;color:#fff!important;border-color:#c6a7e5!important}
 .teaching-space .teach-tabs [data-teach-tab=manual].active{background:#5b298e!important;color:#fff!important;border-color:#ddc3f3!important}
 #teachingView:has(.teach-tabs [data-teach-tab="manual"].active){--teach-page:#e9ddf8;--teach-page-light:#f6f0fc;--teach-page-deep:#d9c4f1;--teach-page-border:#aa85cf;--teach-page-ink:#4b2873}
@@ -17,14 +18,23 @@
 .manual-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}
 .manual-section{padding:16px;border:1px solid #8dbbe4;border-radius:16px;background:#eaf5ff;color:#173450}
 .manual-section:nth-child(2){border-color:#8fceae;background:#e7f6ed}
-.manual-section:nth-child(3){border-color:#d9bc77;background:#fff5d8}
-.manual-section:nth-child(4){border-color:#c2a3d9;background:#f2eafb}
+.manual-section[data-kind="corrections"]{border-color:#c2a3d9;background:#f2eafb}
 .manual-section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .manual-section-head h4{margin:0;font-size:clamp(1.05rem,2vw,1.3rem)}
 .manual-state{border-radius:999px;padding:5px 10px;background:#fff;color:#85420a;font-size:.85rem;font-weight:750}
 .manual-state.on{color:#17603a;background:#d7f4e4}
 .manual-toolbar,.manual-actions,.manual-files{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.manual-toolbar{align-items:center;max-width:100%;padding:9px;border:1px solid #a8bfd9;border-radius:12px;background:#f8fbff}
+.manual-toolbar label{display:flex;align-items:center;gap:5px;font-weight:700}
+.manual-toolbar select{max-width:145px;min-height:36px;font:inherit}
 .manual-toolbar button{min-height:36px!important;padding:6px 11px!important}
+.manual-color-group{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.manual-color-group>span{font-weight:700;font-size:.85rem}
+.manual-swatch{width:32px;min-width:32px;height:32px;min-height:32px!important;padding:0!important;border:2px solid #fff!important;border-radius:50%!important;background:var(--swatch)!important;box-shadow:0 0 0 1px #55708b}
+.manual-color-group input[type=color]{width:38px;height:36px;padding:2px;border:1px solid #8eacd0;border-radius:8px}
+.manual-file-chip{display:flex;flex-wrap:wrap;gap:5px;max-width:100%}
+.manual-editor table{border-collapse:collapse;max-width:100%;width:100%}
+.manual-editor td,.manual-editor th{min-width:60px;padding:8px;border:1px solid #809bb8}
 .manual-editor{box-sizing:border-box;width:100%;min-height:175px;max-height:55svh;overflow:auto;padding:14px;border:1px solid #9ab8d5;border-radius:10px;background:#fff;color:#173450;font:inherit;line-height:1.55}
 .manual-editor:focus-visible{outline:3px solid #457fbb;outline-offset:2px}
 .manual-upload{display:grid;gap:6px;margin:12px 0;font-weight:700}
@@ -33,6 +43,9 @@
 .manual-preview::backdrop{background:#061a30c9}
 .manual-preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .manual-preview section{padding:14px 0;border-top:1px solid #bfd3ea}
+.manual-preview-content iframe{display:block;width:min(100%,760px);aspect-ratio:16/9;margin:12px 0;border:0;border-radius:10px}
+.manual-preview-content table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse}
+.manual-preview-content td,.manual-preview-content th{min-width:60px;padding:8px;border:1px solid #9ab8d5}
 .manual-reader{display:grid;grid-template-columns:minmax(210px,270px) minmax(0,1fr);gap:20px;align-items:start}
 .manual-toc{position:sticky;top:14px;max-height:calc(100svh - 28px);overflow:auto;padding:14px;border:1px solid #8caedd;border-radius:16px;background:#dcecff;color:#12375d}
 .manual-toc summary{font-weight:800;cursor:pointer}
@@ -44,6 +57,7 @@
 .manual-toc-chapter button{width:100%;min-height:40px;padding:7px 10px;border:1px solid #a6c2e0;border-radius:9px;background:#fff;color:#153a60;text-align:left;font:inherit;cursor:pointer;overflow-wrap:anywhere}
 .manual-toc-chapter button[aria-current=page]{background:#1d5d9a;color:#fff}
 .manual-lesson-page{padding:clamp(16px,3vw,32px);border:1px solid #9abce1;border-radius:18px;background:#f7fbff;color:#173450;line-height:1.55}
+.manual-reader .manual-lesson-page,.manual-reader .manual-toc{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .manual-lesson-page h2{margin:.2em 0 1em;font-size:clamp(1.45rem,3vw,2.2rem)}
 .manual-breadcrumb{margin:0;color:#436584;font-weight:700}
 .manual-reading-section{min-width:0;margin:18px 0;padding:clamp(14px,2vw,22px);border-left:5px solid #5c9bda;border-radius:12px;background:#e9f4ff}
@@ -54,6 +68,8 @@
 .manual-reading-html{overflow-wrap:anywhere}
 .manual-reading-html table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse}
 .manual-reading-html td,.manual-reading-html th{border:1px solid #9ab8d5;padding:7px}
+.manual-reading-html iframe{display:block;width:min(100%,760px);aspect-ratio:16/9;margin:14px 0;border:0;border-radius:12px}
+.manual-inline-image{display:block;max-width:100%;height:auto;margin:12px 0;border-radius:10px}
 .manual-reading-file{display:grid;gap:8px;margin:10px 0;padding:10px;border:1px solid #b0c9e4;border-radius:10px;background:#fff}
 .manual-reading-file>div:nth-child(2){display:flex;flex-wrap:wrap;gap:7px}
 .manual-reading-file button,.manual-next-prev button{min-height:40px;padding:7px 12px;border:1px solid #80a8ce;border-radius:9px;background:#1d5d9a;color:#fff;font:inherit;font-weight:700;cursor:pointer}

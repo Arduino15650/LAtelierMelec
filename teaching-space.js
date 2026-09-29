@@ -2,7 +2,7 @@
   'use strict';
   const api = MelecPortal, esc = api.escapeHtml, root = document.getElementById('teachingView');
   let classes = [], chapters = [], items = [], students = [], messages = [];
-  let classId = '', tab = 'course', editing = null, blocks = [], draftAssets = [], activeItem = null, originalAssets = [];
+  let classId = '', tab = 'manual', editing = null, blocks = [], draftAssets = [], activeItem = null, originalAssets = [];
   let selectedChapterId = '', selectedItemId = '';
   let tpAssignments = [], classStudents = [], pendingStudents = [], selectedTpId = 'all', draftRoles = [];
   let requestClassId = '';
@@ -69,7 +69,7 @@
   }
   async function load(background = false) {
     if (loadInFlight) return loadInFlight;
-    if (!background) root.innerHTML = '<div class="teach-head"><div><h1>Cours · TD · TP</h1><p>Contenus de classe et accès élèves</p></div></div><div class="teach-card">Chargement… <span id="teachStatus"></span></div>';
+    if (!background) root.innerHTML = '<div class="teach-head"><div><h1>Manuel numérique · TP</h1><p>Contenus de classe et accès élèves</p></div></div><div class="teach-card">Chargement… <span id="teachStatus"></span></div>';
     const key = sessionKey();
     loadInFlight = (async () => {
       // La base applique les règles d'accès : aucune donnée n'est affichée avant contrôle du compte.
@@ -130,9 +130,9 @@
     render();
   }
   function render() {
-    root.innerHTML = `<div class="teach-head"><div><h1>Cours · TD · TP</h1><p>Créer et publier des ressources par classe.</p></div></div>
-      <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><button type="button" id="teachSyncClasses" class="subtle">Ajouter les classes de l’application</button></div><p class="teach-help">Les cours et TD publiés restent accessibles aux élèves validés, sauf pendant leur TP actif.</p></div>
-      <div class="teach-tabs" role="tablist">${[['course','Cours'],['td','Travaux dirigés'],['manual','Manuel numérique'],['tp','Travaux pratiques'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
+    root.innerHTML = `<div class="teach-head"><div><h1>Manuel numérique · TP</h1><p>Créer et publier des ressources par classe.</p></div></div>
+      <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><button type="button" id="teachSyncClasses" class="subtle">Ajouter les classes de l’application</button></div><p class="teach-help">Le manuel publié est accessible aux élèves validés, sauf pendant leur TP actif.</p></div>
+      <div class="teach-tabs" role="tablist">${[['manual','Manuel numérique'],['tp','Travaux pratiques'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
       <div id="teachBody"></div><p id="teachStatus" class="teach-status" role="status"></p>`;
     root.querySelector('#teachClass').onchange = e => { if(tab==='manual'&&!window.MelecManualTeacher.canLeave()){e.target.value=classId;return;} classId = e.target.value; selectedChapterId = ''; selectedItemId = ''; editing = null; loadClass().catch(err => status(err.message, true)); };
     root.querySelector('#teachSyncClasses').onclick = syncClasses;
@@ -697,7 +697,7 @@
       button.closest('.teach-student').classList.add('teach-approved-student');
       button.parentElement.classList.add('teach-student-actions');
     });
-    body.querySelectorAll('[data-approve]').forEach(btn => btn.onclick = async () => { const rosterId = body.querySelector(`[data-roster-student="${btn.dataset.approve}"]`).value; if (!rosterId) return status('Confirmez l’élève dans le registre.', true); try { await api.invoke('melec-access', {action:'approve', studentId:btn.dataset.approve, rosterId}); await loadClass(); status('Élève validé. Ses cours et TD sont accessibles sans code supplémentaire.'); } catch (error) { status(error.message, true); } });
+    body.querySelectorAll('[data-approve]').forEach(btn => btn.onclick = async () => { const rosterId = body.querySelector(`[data-roster-student="${btn.dataset.approve}"]`).value; if (!rosterId) return status('Confirmez l’élève dans le registre.', true); try { await api.invoke('melec-access', {action:'approve', studentId:btn.dataset.approve, rosterId}); await loadClass(); status('Élève validé. Son manuel numérique est accessible sans code supplémentaire.'); } catch (error) { status(error.message, true); } });
     body.querySelectorAll('[data-code]').forEach(btn => btn.onclick = async () => { try { const result = await api.invoke('melec-access',{action:'issue',studentId:btn.dataset.code}); body.querySelector('#issuedCode').innerHTML = `<div class="teach-code">Code à remettre à l’élève : ${esc(result.code)}<br><small>Valide jusqu’au ${esc(new Date(result.expiresAt).toLocaleString('fr-FR'))}. Cette valeur ne sera plus affichée.</small></div>`; } catch (err) { status(err.message,true); } });
     body.querySelectorAll('[data-unlock]').forEach(btn => btn.onclick = async () => { if (!confirm('Débloquer cet élève ?')) return; try { await api.invoke('melec-access',{action:'unlock',studentId:btn.dataset.unlock}); await loadClass(); status('Compte débloqué.'); } catch (error) { status(error.message,true); } });
     body.querySelectorAll('[data-revoke]').forEach(btn => btn.onclick = async () => { if (!confirm('Révoquer immédiatement l’accès de cet élève ?')) return; try { await api.invoke('melec-access',{action:'revoke',studentId:btn.dataset.revoke}); await loadClass(); status('Accès révoqué.'); } catch (error) { status(error.message,true); } });

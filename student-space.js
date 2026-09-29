@@ -20,7 +20,7 @@
   }
   let profile = null;
   let cleanupViewer = null;
-  let assignments = [], tpItems = [], activeTp = null, selectedContentTab = 'courses';
+  let assignments = [], tpItems = [], activeTp = null, selectedContentTab = 'manual';
   let tpItemsLoadedAt = 0;
   function tpEnd(assignment) {
     if (assignment.validated_at) return 0;
@@ -135,7 +135,7 @@
       window.MelecManualStudent.clear();
       switchContentTab('tp'); $('studentCoursesTab').disabled = true; $('studentManualTab').disabled = true;
     }
-    else { $('studentCoursesTab').disabled = false; $('studentManualTab').disabled = false; switchContentTab(selectedContentTab); await loadLessons(); }
+    else { $('studentCoursesTab').disabled = false; $('studentManualTab').disabled = false; switchContentTab(selectedContentTab === 'courses' ? 'manual' : selectedContentTab); }
   }
   async function loadTpAssignments(preserveViewer = false) {
     const previousActiveId = activeTp?.id;
@@ -150,7 +150,7 @@
     if (preserveViewer && previousActiveId && activeTp?.id === previousActiveId) return;
     clearTpViewer();
     const list = $('studentTpList'); list.replaceChildren();
-    $('studentTpNotice').textContent = activeTp ? 'Un TP est en cours. Les cours et TD restent verrouillés jusqu’à la fin du chronomètre.' : 'Ouvrir un TP démarre immédiatement un chronomètre de 3 h 30. Après son expiration, demandez une prolongation à l’enseignant.';
+    $('studentTpNotice').textContent = activeTp ? 'Un TP est en cours. Le manuel numérique reste verrouillé jusqu’à la fin du chronomètre.' : 'Ouvrir un TP démarre immédiatement un chronomètre de 3 h 30. Après son expiration, demandez une prolongation à l’enseignant.';
     const visible = activeTp ? assignments.filter(row => row.id === activeTp.id) : assignments;
     for (const row of visible) {
       const item = tpItems.find(candidate => candidate.id === row.tp_id) || {id:row.tp_id,title:row.tp_title};
@@ -300,7 +300,7 @@
     const status = $('studentRefreshStatus');
     button.disabled = true;
     button.textContent = 'Actualisation…';
-    message(status, 'Mise à jour des cours, TD et TP en cours…');
+    message(status, 'Mise à jour du manuel numérique et des TP en cours…');
     try {
       await openDashboard();
       message(status, 'Contenus actualisés.');
@@ -323,7 +323,7 @@
     const remaining = tpEnd(activeTp) - Date.now();
     const info = $('studentTpList').querySelector('.student-tp-card .portal-small');
     if (info) info.textContent = remaining > 0 ? 'Temps restant : ' + formatDuration(remaining) : 'Temps écoulé · TP verrouillé.';
-    if (remaining <= 0) { clearTpViewer(); activeTp=null; selectedContentTab='courses'; openDashboard().catch(error => message($('studentTpNotice'),error.message,true)); }
+    if (remaining <= 0) { clearTpViewer(); activeTp=null; selectedContentTab='manual'; openDashboard().catch(error => message($('studentTpNotice'),error.message,true)); }
   },1000);
   let accessRefreshInProgress = false;
   async function refreshStudentAccess() {
@@ -357,7 +357,7 @@
           if (!wasActive) { if (cleanupViewer) { cleanupViewer(); cleanupViewer=null; } $('studentLessons').replaceChildren(); }
           window.MelecManualStudent.clear(); $('studentCoursesTab').disabled=true; $('studentManualTab').disabled=true; switchContentTab('tp');
         }
-        else { $('studentCoursesTab').disabled=false; $('studentManualTab').disabled=false; if (wasActive) { switchContentTab('courses'); await loadLessons(); } }
+        else { $('studentCoursesTab').disabled=false; $('studentManualTab').disabled=false; if (wasActive) switchContentTab('manual'); }
       } catch { /* Les règles RLS continuent à protéger chaque accès aux documents. */ }
     }
     } finally { accessRefreshInProgress = false; }
