@@ -132,11 +132,12 @@
   function render() {
     root.innerHTML = `<div class="teach-head"><div><h1>Cours · TD · TP</h1><p>Créer et publier des ressources par classe.</p></div></div>
       <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><button type="button" id="teachSyncClasses" class="subtle">Ajouter les classes de l’application</button></div><p class="teach-help">Les cours et TD publiés restent accessibles aux élèves validés, sauf pendant leur TP actif.</p></div>
-      <div class="teach-tabs" role="tablist">${[['course','Cours'],['td','Travaux dirigés'],['tp','Travaux pratiques'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
+      <div class="teach-tabs" role="tablist">${[['course','Cours'],['td','Travaux dirigés'],['manual','Manuel numérique'],['tp','Travaux pratiques'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
       <div id="teachBody"></div><p id="teachStatus" class="teach-status" role="status"></p>`;
-    root.querySelector('#teachClass').onchange = e => { classId = e.target.value; selectedChapterId = ''; selectedItemId = ''; editing = null; loadClass().catch(err => status(err.message, true)); };
+    root.querySelector('#teachClass').onchange = e => { if(tab==='manual'&&!window.MelecManualTeacher.canLeave()){e.target.value=classId;return;} classId = e.target.value; selectedChapterId = ''; selectedItemId = ''; editing = null; loadClass().catch(err => status(err.message, true)); };
     root.querySelector('#teachSyncClasses').onclick = syncClasses;
     root.querySelectorAll('[data-teach-tab]').forEach(button => button.onclick = () => {
+      if(tab==='manual'&&button.dataset.teachTab!=='manual'&&!window.MelecManualTeacher.canLeave())return;
       tab = button.dataset.teachTab; selectedItemId = ''; editing = null; render();
       if (tab === 'students' || tab === 'alerts' || tab === 'messages') refreshAuxiliary(tab).catch(err => status(err.message, true));
       if (tab === 'tp') loadClass().catch(err => status(err.message, true));
@@ -145,6 +146,7 @@
     else if (tab === 'alerts') renderAlerts();
     else if (tab === 'messages') renderMessages();
     else if (tab === 'tp') renderTp();
+    else if (tab === 'manual') window.MelecManualTeacher.render(root.querySelector('#teachBody'),classId,status);
     else renderContent();
   }
   async function syncClasses() {
@@ -678,8 +680,20 @@
     const selected = classes.find(c => c.id === requestClassId);
     const visible = selected ? pending.filter(s => rosterMatches(s).some(r => normalized(r.className) === normalized(selected.name))) : pending;
     body.innerHTML = `<div class="teach-card"><h2>Demandes d’accès élèves (${pending.length})</h2><p class="teach-help">Seuls les élèves retrouvés dans la liste de l’application peuvent être proposés à la validation. Vérifiez leur identité et leur adresse e-mail avant de remettre le code.</p><div class="teach-row"><label for="requestClassFilter">Afficher la classe</label><select id="requestClassFilter"><option value="">Toutes les classes</option>${classes.map(c => `<option value="${c.id}" ${requestClassId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div><div class="teach-students">${visible.map(s => { const matches = rosterMatches(s); return `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)} · classe demandée : ${esc(s.requested_class)}</small><small>En attente</small></div><select data-roster-student="${s.user_id}"><option value="">Confirmer l’élève du registre</option>${matches.map(r => `<option value="${esc(r.id)}">${esc(r.name)} · ${esc(r.className)}</option>`).join('')}</select><button type="button" data-approve="${s.user_id}">Valider</button></div>`; }).join('') || '<p>Aucune demande concordante pour cette classe.</p>'}</div><h3>Élèves approuvés (${approved.length})</h3><div class="teach-students">${approved.filter(s => !selected || s.class_id === selected.id).map(s => `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)}${s.access_until ? ' · accès jusqu’au ' + esc(new Date(s.access_until).toLocaleString('fr-FR')) : ''}</small></div><div class="teach-row"><button type="button" data-code="${s.user_id}" class="subtle">Nouveau code</button><button type="button" data-unlock="${s.user_id}" class="subtle">Débloquer et renouveler</button><button type="button" data-revoke="${s.user_id}" class="warn">Révoquer</button></div></div>`).join('') || '<p>Aucun élève approuvé dans cette classe.</p>'}</div><div id="issuedCode"></div></div>`;
-    body.querySelector('.teach-help').textContent = 'Validez uniquement les élèves présents dans le registre et dans la bonne classe. Les cours et TD restent accessibles après validation, sauf pendant un TP actif.';
+    body.querySelector('.teach-help').textContent = 'Validez uniquement les élèves présents dans le registre et dans la bonne classe. Si le courriel de confirmation manque, utilisez « Renvoyer le courriel ». « Supprimer le compte » conserve l’élève et ses évaluations du registre, mais est refusé si des travaux TP dépendent du compte.';
     body.querySelectorAll('[data-code]').forEach(button => button.remove());
+    body.querySelectorAll('[data-approve], [data-unlock]').forEach(button => {
+      const studentId = button.dataset.approve || button.dataset.unlock;
+      let actions = button.parentElement;
+      if (button.dataset.approve) {
+        actions = document.createElement('div');
+        actions.className = 'teach-student-actions';
+        button.replaceWith(actions);
+        actions.append(button);
+      }
+      if (!studentId || !actions) return;
+      actions.insertAdjacentHTML('beforeend', `<button type="button" data-resend-confirmation="${esc(studentId)}" class="subtle">Renvoyer le courriel</button><button type="button" data-delete-account="${esc(studentId)}" class="warn">Supprimer le compte</button>`);
+    });
     body.querySelectorAll('[data-unlock]').forEach(button => { button.textContent = 'Débloquer le compte'; button.closest('.teach-student').querySelector('small').textContent = students.find(s => s.user_id === button.dataset.unlock)?.email || ''; });
     body.querySelector('#requestClassFilter').onchange = e => { requestClassId = e.target.value; renderStudents(); };
     body.querySelectorAll('[data-unlock]').forEach(button => {
@@ -690,6 +704,19 @@
     body.querySelectorAll('[data-code]').forEach(btn => btn.onclick = async () => { try { const result = await api.invoke('melec-access',{action:'issue',studentId:btn.dataset.code}); body.querySelector('#issuedCode').innerHTML = `<div class="teach-code">Code à remettre à l’élève : ${esc(result.code)}<br><small>Valide jusqu’au ${esc(new Date(result.expiresAt).toLocaleString('fr-FR'))}. Cette valeur ne sera plus affichée.</small></div>`; } catch (err) { status(err.message,true); } });
     body.querySelectorAll('[data-unlock]').forEach(btn => btn.onclick = async () => { if (!confirm('Débloquer cet élève ?')) return; try { await api.invoke('melec-access',{action:'unlock',studentId:btn.dataset.unlock}); await loadClass(); status('Compte débloqué.'); } catch (error) { status(error.message,true); } });
     body.querySelectorAll('[data-revoke]').forEach(btn => btn.onclick = async () => { if (!confirm('Révoquer immédiatement l’accès de cet élève ?')) return; try { await api.invoke('melec-access',{action:'revoke',studentId:btn.dataset.revoke}); await loadClass(); status('Accès révoqué.'); } catch (error) { status(error.message,true); } });
+    body.querySelectorAll('[data-resend-confirmation]').forEach(btn => btn.onclick = async () => {
+      if (!confirm('Renvoyer le courriel de confirmation à l’adresse affichée ?')) return;
+      btn.disabled = true;
+      try { const result = await api.invoke('melec-access', {action:'resend_confirmation',studentId:btn.dataset.resendConfirmation}); status(result.message || 'Demande de renvoi effectuée.'); }
+      catch (error) { status(error.message,true); }
+      finally { btn.disabled = false; }
+    });
+    body.querySelectorAll('[data-delete-account]').forEach(btn => btn.onclick = async () => {
+      if (!confirm('Supprimer uniquement le compte de connexion ? L’élève du registre et ses évaluations restent conservés. La suppression sera refusée si des travaux TP liés au compte existent.')) return;
+      btn.disabled = true;
+      try { await api.invoke('melec-access', {action:'delete_account',studentId:btn.dataset.deleteAccount}); await loadClass(); status('Compte de connexion supprimé ; élève et évaluations conservés.'); }
+      catch (error) { status(error.message,true); btn.disabled = false; }
+    });
   }
   function renderAlerts() {
     const body = root.querySelector('#teachBody');
