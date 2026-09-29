@@ -1,8 +1,9 @@
 /* Manuel numérique : toutes les dimensions restent fluides du téléphone au PC. */
 #studentManualTab{background:#eadcf8;color:#422364;border-color:#b68bd8}
 #studentManualTab.active{background:#7546a2;color:#fff;border-color:#7546a2}
-.teaching-space [data-teach-tab=manual]{background:#7546a2;color:#fff;border-color:#c6a7e5}
-.teaching-space [data-teach-tab=manual].active{background:#5b298e;color:#fff;border-color:#ddc3f3}
+.teaching-space .teach-tabs [data-teach-tab=manual]{background:#7546a2!important;color:#fff!important;border-color:#c6a7e5!important}
+.teaching-space .teach-tabs [data-teach-tab=manual].active{background:#5b298e!important;color:#fff!important;border-color:#ddc3f3!important}
+.teaching-space .teach-card.manual-manager{background:#f3ebfb!important;border-color:#b991d7!important;color:#2f2144!important}
 .manual-manager,.manual-reader,.manual-lesson-page,.manual-section{box-sizing:border-box;min-width:0;overflow-wrap:anywhere}
 .manual-manager h2{margin:0 0 .5rem}
 .manual-pickers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:12px;padding:14px 0;border-top:1px solid #bdd3eb}
