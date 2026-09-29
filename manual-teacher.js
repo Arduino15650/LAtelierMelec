@@ -56,7 +56,7 @@
       <div class="manual-editor" data-editor contenteditable="true" role="textbox" aria-multiline="true" aria-label="Contenu ${label(kind)}">${safe(section?.content_html||'')}</div>
       <div class="manual-files">${files.map(file=>`<span class="manual-file-chip">${file.mime_type.startsWith('image/')?`<img data-teacher-image="${file.id}" alt="${esc(file.file_name)}" class="manual-teacher-thumbnail"><button type="button" data-insert-image="${file.id}" class="subtle">Insérer l’image dans le texte</button>`:`<button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button>`}</span>`).join('')}</div>
       <label class="manual-upload">Ajouter des images, PDF ou documents bureautiques<input type="file" data-upload="${kind}" accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple></label>
-      ${section?`<button type="button" data-toggle-section="${section.id}" class="subtle">${section.published?'Masquer cette section':'Publier cette section'}</button>`:''}</section>`;
+      ${section?`<div class="manual-section-actions"><button type="button" data-toggle-section="${section.id}" class="subtle">${section.published?'Masquer cette section':'Publier cette section'}</button><button type="button" data-delete-section="${kind}" class="warn">Supprimer ${label(kind).toLowerCase()}</button></div>`:''}</section>`;
   }
   function rememberSelection(editor) {
     const selection=window.getSelection();
@@ -120,22 +120,26 @@
     const lessonChoices=chapter?lessons.filter(x=>x.chapter_id===chapter.id):[];
     body.innerHTML=`<div class="teach-card manual-manager"><h2>${mode==='manual'?'Manuel numérique · Cours':'Travaux dirigés et corrections'}</h2><p class="teach-help">Créez un thème, ses chapitres, puis plusieurs leçons. Les élèves ne voient que les sections publiées.</p>
       <div class="manual-pickers"><label>Thème<select id="manualTheme"><option value="">Choisir un thème…</option>${themes.map(x=>`<option value="${x.id}" ${x.id===themeId?'selected':''}>${esc(x.title)}${x.published?' ✓':''}</option>`).join('')}</select></label><label>Nouveau thème<input id="manualNewTheme" maxlength="180" placeholder="Ex. Installations électriques"></label><button type="button" id="manualAddTheme">Créer le thème</button></div>
-      ${theme?`<div class="manual-level-actions"><label>Nom du thème<input id="manualThemeTitle" maxlength="180" value="${esc(theme.title)}"></label><button type="button" id="manualRenameTheme" class="subtle">Renommer</button><button type="button" id="manualToggleTheme" class="subtle">${theme.published?'Masquer le thème':'Publier le thème'}</button></div>`:''}
+      ${theme?`<div class="manual-level-actions"><label>Nom du thème<input id="manualThemeTitle" maxlength="180" value="${esc(theme.title)}"></label><button type="button" id="manualRenameTheme" class="subtle">Renommer</button><button type="button" id="manualToggleTheme" class="subtle">${theme.published?'Masquer le thème':'Publier le thème'}</button><button type="button" id="manualDeleteTheme" class="warn">Supprimer le thème</button></div>`:''}
       ${theme?`<div class="manual-pickers"><label>Chapitre<select id="manualChapter"><option value="">Choisir un chapitre…</option>${chapterChoices.map(x=>`<option value="${x.id}" ${x.id===chapterId?'selected':''}>${esc(x.title)}${x.published?' ✓':''}</option>`).join('')}</select></label><label>Nouveau chapitre<input id="manualNewChapter" maxlength="180" placeholder="Ex. Les protections"></label><button type="button" id="manualAddChapter">Créer le chapitre</button></div>`:''}
-      ${chapter?`<div class="manual-level-actions"><label>Nom du chapitre<input id="manualChapterTitle" maxlength="180" value="${esc(chapter.title)}"></label><button type="button" id="manualRenameChapter" class="subtle">Renommer</button><button type="button" id="manualToggleChapter" class="subtle">${chapter.published?'Masquer le chapitre':'Publier le chapitre'}</button></div>`:''}
+      ${chapter?`<div class="manual-level-actions"><label>Nom du chapitre<input id="manualChapterTitle" maxlength="180" value="${esc(chapter.title)}"></label><button type="button" id="manualRenameChapter" class="subtle">Renommer</button><button type="button" id="manualToggleChapter" class="subtle">${chapter.published?'Masquer le chapitre':'Publier le chapitre'}</button><button type="button" id="manualDeleteChapter" class="warn">Supprimer le chapitre</button></div>`:''}
       ${chapter?`<div class="manual-pickers"><label>Leçon<select id="manualLesson"><option value="">Choisir une leçon…</option>${lessonChoices.map(x=>`<option value="${x.id}" ${x.id===lessonId?'selected':''}>${esc(x.title)}${x.published?' ✓':''}</option>`).join('')}</select></label><label>Nouvelle leçon<input id="manualNewLesson" maxlength="180" placeholder="Ex. Le disjoncteur différentiel"></label><button type="button" id="manualAddLesson">Créer la leçon</button></div>`:''}
-      ${lesson?`<div class="manual-lesson"><label>Titre de la leçon<input id="manualLessonTitle" maxlength="180" value="${esc(lesson.title)}"></label>${mode==='manual-td'?`<nav class="manual-td-submenu" aria-label="Édition des travaux dirigés"><button type="button" data-teacher-part="td" class="${tdEditorView==='td'?'active':''}">Travaux dirigés</button><button type="button" data-teacher-part="corrections" class="${tdEditorView==='corrections'?'active':''}">Correction des TD</button></nav>`:''}<div class="manual-sections">${visibleKinds().map(([kind])=>sectionCard(kind,lesson)).join('')}</div><div class="manual-actions"><button type="button" id="manualPreview" class="subtle">Prévisualiser</button><button type="button" id="manualSave">Enregistrer</button><button type="button" id="manualPublishLesson">Publier le thème, chapitre et la leçon</button><button type="button" id="manualPublish" class="subtle">${mode==='manual'?'Publier le cours':'Publier les TD et leurs corrections'}</button><button type="button" id="manualHide" class="warn" ${lesson.published?'':'hidden'}>Masquer la leçon</button></div><p class="teach-help">La publication est distincte : cours dans le Manuel numérique, TD et corrections dans Travaux dirigés.</p></div>`:''}</div>`;
+      ${lesson?`<div class="manual-lesson"><label>Titre de la leçon<input id="manualLessonTitle" maxlength="180" value="${esc(lesson.title)}"></label>${mode==='manual-td'?`<nav class="manual-td-submenu" aria-label="Édition des travaux dirigés"><button type="button" data-teacher-part="td" class="${tdEditorView==='td'?'active':''}">Travaux dirigés</button><button type="button" data-teacher-part="corrections" class="${tdEditorView==='corrections'?'active':''}">Correction des TD</button></nav>`:''}<div class="manual-sections">${visibleKinds().map(([kind])=>sectionCard(kind,lesson)).join('')}</div><div class="manual-actions"><button type="button" id="manualPreview" class="subtle">Prévisualiser</button><button type="button" id="manualSave">Enregistrer</button><button type="button" id="manualPublishLesson">Publier le thème, chapitre et la leçon</button><button type="button" id="manualPublish" class="subtle">${mode==='manual'?'Publier le cours':'Publier les TD et leurs corrections'}</button><button type="button" id="manualHide" class="warn" ${lesson.published?'':'hidden'}>Masquer la leçon</button><button type="button" id="manualDeleteLesson" class="warn">Supprimer la leçon entière</button></div><p class="teach-help">La suppression d’une leçon entière efface aussi son cours, ses TD, ses corrections et leurs fichiers. Pour ne retirer qu’une partie, utilisez le bouton de suppression dans sa section.</p></div>`:''}</div>`;
     body.querySelector('#manualTheme').onchange=e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=themeId;return;}themeId=e.target.value;chapterId='';lessonId='';load();};
     body.querySelector('#manualAddTheme').onclick=()=>create('theme');
     body.querySelector('#manualRenameTheme')?.addEventListener('click',()=>rename('manual_themes',theme.id,body.querySelector('#manualThemeTitle').value));
     body.querySelector('#manualToggleTheme')?.addEventListener('click',()=>update('manual_themes',theme.id,{published:!theme.published},theme.published?'Thème masqué.':'Thème publié.'));
+    body.querySelector('#manualDeleteTheme')?.addEventListener('click',()=>removeContent('theme'));
     body.querySelector('#manualChapter')?.addEventListener('change',e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=chapterId;return;}chapterId=e.target.value;lessonId='';load();});
     body.querySelector('#manualAddChapter')?.addEventListener('click',()=>create('chapter'));
     body.querySelector('#manualRenameChapter')?.addEventListener('click',()=>rename('manual_chapters',chapter.id,body.querySelector('#manualChapterTitle').value));
     body.querySelector('#manualToggleChapter')?.addEventListener('click',()=>update('manual_chapters',chapter.id,{published:!chapter.published},chapter.published?'Chapitre masqué.':'Chapitre publié.'));
+    body.querySelector('#manualDeleteChapter')?.addEventListener('click',()=>removeContent('chapter'));
     body.querySelector('#manualLesson')?.addEventListener('change',e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=lessonId;return;}lessonId=e.target.value;load();});
     body.querySelector('#manualAddLesson')?.addEventListener('click',()=>create('lesson'));
     if(!lesson)return;
+    body.querySelector('#manualDeleteLesson').onclick=()=>removeContent('lesson');
+    body.querySelectorAll('[data-delete-section]').forEach(button=>button.onclick=()=>removeContent('section',button.dataset.deleteSection));
     body.querySelectorAll('[data-teacher-part]').forEach(button=>button.onclick=()=>{
       tdEditorView=button.dataset.teacherPart;
       body.querySelectorAll('[data-teacher-part]').forEach(item=>item.classList.toggle('active',item===button));
@@ -169,6 +173,66 @@
     });
     body.querySelectorAll('[data-upload]').forEach(input=>input.onchange=()=>upload(input));
     body.querySelectorAll('[data-download]').forEach(button=>button.onclick=()=>download(assets.find(x=>x.id===button.dataset.download)));
+  }
+  async function children(table,column,ids,fields='id') {
+    const rows=[];
+    for(let index=0;index<ids.length;index+=30){
+      const batch=ids.slice(index,index+30);
+      rows.push(...await api.rest(table+'?'+column+'=in.('+batch.map(encodeURIComponent).join(',')+')&select='+fields));
+    }
+    return rows;
+  }
+  async function removalScope(type,kind){
+    const {theme,chapter,lesson}=selected();
+    if(type==='theme'&&!theme||type==='chapter'&&!chapter||type==='lesson'&&!lesson||type==='section'&&(!lesson||!kinds.some(([key])=>key===kind)))
+      throw new Error('La sélection à supprimer est introuvable. Actualisez la page.');
+    let branchChapters=[],branchLessons=[],branchSections=[];
+    if(type==='theme')branchChapters=await api.rest('manual_chapters?theme_id=eq.'+encodeURIComponent(theme.id)+'&select=id');
+    if(type==='chapter')branchChapters=[chapter];
+    if(type==='theme'||type==='chapter')branchLessons=await children('manual_lessons','chapter_id',branchChapters.map(row=>row.id));
+    if(type==='lesson')branchLessons=[lesson];
+    if(type==='section')branchSections=await api.rest('manual_sections?lesson_id=eq.'+encodeURIComponent(lesson.id)+'&kind=eq.'+encodeURIComponent(kind)+'&select=id');
+    else branchSections=await children('manual_sections','lesson_id',branchLessons.map(row=>row.id));
+    const branchAssets=await children('manual_assets','section_id',branchSections.map(row=>row.id),'id,object_path');
+    const node=type==='theme'?theme:type==='chapter'?chapter:type==='lesson'?lesson:sections.find(row=>row.id===branchSections[0]?.id);
+    if(!node)throw new Error('Le contenu a déjà été supprimé. Actualisez la page.');
+    return {node,branchChapters,branchLessons,branchSections,branchAssets};
+  }
+  async function removeContent(type,kind=''){
+    if(busy)return;
+    busy=true;
+    let deleted=false;
+    try{
+      const scope=await removalScope(type,kind);
+      const {node,branchChapters,branchLessons,branchSections,branchAssets}=scope;
+      const title=type==='section'?label(kind):node.title;
+      const summary=type==='section'
+        ? `Cette section et ses ${branchAssets.length} fichier(s) joint(s) seront supprimés. Les autres parties de la leçon seront conservées.`
+        : `Cette suppression effacera ${branchChapters.length} chapitre(s), ${branchLessons.length} leçon(s), ${branchSections.length} section(s) et ${branchAssets.length} fichier(s) joint(s). Un cours, des TD ou une correction présents dans ces leçons seront également effacés.`;
+      const warning=dirty?'\n\nVos modifications non enregistrées seront perdues.':'';
+      if(prompt(`SUPPRESSION DÉFINITIVE : ${title}\n\n${summary}${warning}\n\nAucune restauration ne sera possible. Pour confirmer, saisissez SUPPRIMER :`,'')!=='SUPPRIMER')return;
+      let table,filter;
+      if(type==='theme'){table='manual_themes';filter='id=eq.'+node.id+'&class_id=eq.'+classId;}
+      if(type==='chapter'){table='manual_chapters';filter='id=eq.'+node.id+'&theme_id=eq.'+themeId;}
+      if(type==='lesson'){table='manual_lessons';filter='id=eq.'+node.id+'&chapter_id=eq.'+chapterId;}
+      if(type==='section'){table='manual_sections';filter='id=eq.'+node.id+'&lesson_id=eq.'+lessonId+'&kind=eq.'+encodeURIComponent(kind);}
+      const removed=await api.rest(table+'?'+filter+'&select=id',{method:'DELETE',headers:{Prefer:'return=representation'}});
+      if(!Array.isArray(removed)||removed.length!==1)throw new Error('La suppression n’a pas été confirmée par la base. Aucun fichier joint n’a été effacé.');
+      deleted=true;
+      if(type==='theme'){themeId='';chapterId='';lessonId='';}
+      else if(type==='chapter'){chapterId='';lessonId='';}
+      else if(type==='lesson')lessonId='';
+      const paths=[...new Set(branchAssets.map(asset=>asset.object_path).filter(path=>typeof path==='string'&&path.startsWith('manual/')))];
+      if(paths.length){
+        try{await api.removeFiles(paths);}
+        catch(firstError){
+          try{await api.removeFiles(paths);}
+          catch(error){throw new Error(`Le contenu est supprimé de la base, mais ${paths.length} fichier(s) peuvent rester dans le stockage. Signalez cette erreur pour nettoyage : ${error.message}`);}
+        }
+      }
+      notify(`${title} supprimé définitivement${paths.length?' avec ses fichiers':''}.`);
+    }catch(error){notify(error.message,true);}
+    finally{if(deleted){dirty=false;await load();}busy=false;}
   }
   async function run(work,success) {
     if(busy)return false;busy=true;

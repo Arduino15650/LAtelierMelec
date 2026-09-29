@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v136-tp-lock';
+const CACHE_NAME = 'bac-pro-melec-v137-manual-delete';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
 const CORE_FILES = ['./logo-bac-pro-melec-v3.webp'];
 
@@ -33,4 +33,3 @@ self.addEventListener('fetch', event => {
     ? refresh().catch(async () => (await cached()) || (event.request.mode === 'navigate' && await caches.match('./index.html')) || Response.error())
     : cached().then(hit => hit || refresh().catch(() => Response.error())));
 });
-
