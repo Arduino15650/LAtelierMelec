@@ -110,5 +110,11 @@
     return previousShow.apply(this, arguments);
   };
   window.show = show;
+  window.showEvaluatedActivities = function () {
+    selection = 'evaluated';
+    window.melecActivityEvaluationFilter = 'evaluated';
+    // Appeler la navigation sous-jacente : le bouton ordinaire remet le filtre à zéro.
+    previousShow('activities');
+  };
   renderActivities();
 })();

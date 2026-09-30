@@ -55,13 +55,24 @@
       if(locked&&!window.confirm('Déverrouiller l’évaluation de cet élève pour pouvoir la modifier ?'))return;
       activity.evaluationLocks??={};
       activity.evaluationLocks[student.id]=!locked;
-      if(!locked){
-        const queue=window.melecEvaluationQueue?.activityId===id?window.melecEvaluationQueue.studentIds:activity.studentIds||[];
-        const next=queue.map(sid=>state.students.find(entry=>entry.id===sid)).find(entry=>entry&&entry.className===activity.className&&!activity.evaluationLocks[entry.id]&&scoreResult(activity,entry).count===0);
-        if(next)gradeStudent=next.id;
-        else toast('Tous les élèves de cette sélection sont déjà évalués.');
-      }
       save();
+      if(!locked){
+        const assigned=Array.isArray(activity.studentIds)&&activity.studentIds.length
+          ? activity.studentIds
+          : activity.audience==='selected'||activity.audience==='students'
+            ? []
+            : state.students.filter(entry=>entry.className===activity.className).map(entry=>entry.id);
+        const queue=window.melecEvaluationQueue?.activityId===id?window.melecEvaluationQueue.studentIds:assigned;
+        const next=queue.map(sid=>state.students.find(entry=>entry.id===sid)).find(entry=>entry&&entry.className===activity.className&&!activity.evaluationLocks[entry.id]&&scoreResult(activity,entry).count===0);
+        if(next){gradeStudent=next.id;window.grade(id);return;}
+        gradeStudent='';
+        gradeActivityId=null;
+        window.melecEvaluationQueue=null;
+        if(window.showEvaluatedActivities)window.showEvaluatedActivities();
+        else show('activities');
+        toast('Tous les élèves de cette sélection sont évalués.');
+        return;
+      }
       window.grade(id);
     });
     action.append(status,button);
