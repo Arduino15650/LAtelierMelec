@@ -10,6 +10,7 @@
   const byId = id => document.getElementById(id);
   const gate = byId('cloudGate');
   const gateStatus = byId('cloudGateStatus');
+  const retryButton = byId('cloudRetrySession');
   const toolbar = document.querySelector('.cloud-toolbar');
   const syncStatus = byId('cloudSyncStatus');
   let session = null;
@@ -43,6 +44,7 @@
     toolbar.hidden = false;
     document.body.classList.remove('cloud-locked');
     document.documentElement.classList.remove('cloud-resuming');
+    retryButton.hidden = true;
     status('Synchronisé');
   }
   function pendingKey() { return PENDING_PREFIX + userId; }
@@ -91,17 +93,10 @@
     return data;
   }
   async function validAccessToken() {
-    try {
-      const stored = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
-      if (stored?.access_token && stored.access_token !== session?.access_token) session = stored;
-    } catch { /* session invalide */ }
-    if (!session) throw new Error('Session absente.');
-    if (Date.now() < Number(session.expires_at) * 1000 - 60000) return session.access_token;
-    const refreshed = await authRequest('/auth/v1/token?grant_type=refresh_token', {
-      refresh_token: session.refresh_token
-    });
-    saveSession(refreshed);
-    return refreshed.access_token;
+    // Le portail et le manuel partagent un unique renouvellement de jeton.
+    const token = await window.MelecPortal.token();
+    session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+    return token;
   }
   async function api(path, options = {}) {
     const token = await validAccessToken();
@@ -115,7 +110,9 @@
     });
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
-      throw new Error(payload.message || payload.hint || 'Erreur de synchronisation (' + response.status + ').');
+      const error = new Error(payload.message || payload.hint || 'Erreur de synchronisation (' + response.status + ').');
+      error.status = response.status;
+      throw error;
     }
     return response.status === 204 ? null : response.json();
   }
@@ -124,7 +121,11 @@
     const response = await fetch(PROJECT + '/auth/v1/user', {
       headers: { apikey: PUBLIC_KEY, Authorization: 'Bearer ' + token }
     });
-    if (!response.ok) throw new Error('Session expirée. Connectez-vous à nouveau.');
+    if (!response.ok) {
+      const error = new Error(response.status === 401 ? 'Session expirée. Connectez-vous à nouveau.' : 'Vérification momentanément indisponible (HTTP ' + response.status + ').');
+      error.status = response.status;
+      throw error;
+    }
     const user = await response.json();
     if (!user.id) throw new Error('Compte non reconnu.');
     userId = user.id;
@@ -332,6 +333,21 @@
   }
   byId('cloudSignOut').addEventListener('click', () => signOut(false));
   byId('cloudSignOutGate').addEventListener('click', () => signOut(true));
+  retryButton.addEventListener('click', () => {retryButton.hidden = true;begin().catch(handleResumeError);});
+  function handleResumeError(error) {
+    document.documentElement.classList.remove('cloud-resuming');
+    const invalid = [400, 401].includes(error.status) && /refresh|token|session|grant|jwt|expir/i.test(error.code || error.message);
+    if (invalid) {
+      clearSession();
+      byId('cloudLoginPane').hidden = false;
+      retryButton.hidden = true;
+      gateMessage('La session a réellement expiré. Reconnectez-vous ; vos brouillons locaux sont conservés.', 'error');
+      return;
+    }
+    byId('cloudLoginPane').hidden = true;
+    retryButton.hidden = false;
+    gateMessage('Connexion momentanément indisponible : ' + error.message + ' Réessayez sans effacer votre session.', 'error');
+  }
   window.addEventListener('online', () => { if (ready) upload(); });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && ready) refreshFromCloud();
@@ -343,13 +359,7 @@
     const raw = sessionStorage.getItem(SESSION_KEY);
     if (raw) {
       session = JSON.parse(raw);
-      begin().catch(error => {
-        document.documentElement.classList.remove('cloud-resuming');
-        clearSession();
-        byId('cloudLoginPane').hidden = false;
-        byId('cloudImportPane').hidden = true;
-        gateMessage(error.message, 'error');
-      });
+      begin().catch(handleResumeError);
     }
   } catch { clearSession(); document.documentElement.classList.remove('cloud-resuming'); }
 })();

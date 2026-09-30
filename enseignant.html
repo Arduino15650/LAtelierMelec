@@ -35,7 +35,8 @@
     body.cloud-locked > :not(#cloudGate):not(script){visibility:hidden!important}
     #cloudGate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;overflow:auto;padding:20px;background:#06182d;color:#172b45;font-family:Arial,sans-serif}
     #cloudGate[hidden]{display:none}
-    html.cloud-resuming #cloudGate .cloud-card{visibility:hidden}
+    html.cloud-resuming #cloudLoginPane{display:none}
+    html.cloud-resuming #cloudGateStatus:empty::before{content:'Reconnexion en cours…'}
     .cloud-card{width:min(100%,500px);box-sizing:border-box;padding:clamp(20px,5vw,34px);border:2px solid #ef9e31;border-radius:24px;background:#eff6ff;box-shadow:0 20px 60px #0008}
     .cloud-home-link{display:inline-flex;align-items:center;min-height:36px;margin-bottom:18px;color:#165a9d;font-size:16px;font-weight:700;text-decoration:none}
     .cloud-home-link:hover{text-decoration:underline}
@@ -152,6 +153,7 @@
         </div>
       </section>
       <p id="cloudGateStatus" class="cloud-status" role="status" aria-live="polite"></p>
+      <button id="cloudRetrySession" class="secondary" type="button" hidden>Réessayer la connexion</button>
       <button id="cloudSignOutGate" class="secondary" type="button" hidden>Changer de compte</button>
     </div>
   </div>
@@ -206,15 +208,15 @@
   <script src="ccf-dashboard.js?v=20260930-activites1"></script>
   <script src="ccf-submenus.js?v=20260928-4"></script>
   <script src="home.js?v=20260927-sans-doublon"></script>
-  <script src="portal-api.js?v=20260930-images11"></script>
+  <script src="portal-api.js?v=20260930-session1"></script>
   <script src="content-render.js?v=20260930-continuation1"></script>
   <script src="manual-blocks.js?v=20260930-blocks1"></script>
   <script src="tp-response-export.js?v=20260927-4"></script>
   <script src="student-pdf-viewer.js?v=20260927-2"></script>
-  <script src="manual-teacher.js?v=20260930-images2"></script>
+  <script src="manual-teacher.js?v=20260930-session1"></script>
   <script src="teaching-space.js?v=20260930-navigation1"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
-  <script src="cloud-sync.js?v=20260930-sans-eclair2"></script>
+  <script src="cloud-sync.js?v=20260930-session1"></script>
   <script src="activity-reuse.js?v=20260930-competences1"></script>
   <script src="activity-overview-filter.js?v=20260930-fin-evaluation1"></script>
   <script src="evaluation-student-filter.js?v=20260928-2"></script>

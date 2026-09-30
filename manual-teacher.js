@@ -11,12 +11,52 @@
   };
   let body, classId, notify, themes=[], chapters=[], lessons=[], sections=[], assets=[], mode='manual',tdEditorView='td';
   let themeId='', chapterId='', lessonId='', request=0, busy=false, dirty=false;
+  const DRAFT_PREFIX='melec-manual-draft-v1-';
+  const skippedDrafts=new Set();
   let loadedClassId='', loadedAt=0;
   const blockUploads=new Set(),removedBlockAssets=new Set();
   let blockUploadError='';
   const selections=new WeakMap();
   let activeBlockText=null;
   const editorHistories=new WeakMap();
+  function draftKey(){
+    if(!lessonId||!classId)return'';
+    try{
+      const session=JSON.parse(sessionStorage.getItem('melec-cloud-session-v1')||'null');
+      let userId=session?.user?.id;
+      if(!userId&&session?.access_token)userId=JSON.parse(atob(session.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub;
+      return userId?DRAFT_PREFIX+userId+'-'+classId+'-'+lessonId+'-'+mode:'';
+    }catch{return'';}
+  }
+  function saveDraft(){
+    const key=draftKey(),title=body?.querySelector('#manualLessonTitle');if(!key||!title||!dirty)return;
+    try{
+      const content={};for(const [kind] of visibleKinds())content[kind]=editorHtml(kind);
+      localStorage.setItem(key,JSON.stringify({lessonId,classId,mode,title:title.value,content,savedAt:Date.now()}));
+    }catch(error){console.warn('Brouillon local non sauvegardé :',error?.message||error);}
+  }
+  function clearDraft(){const key=draftKey();if(key)localStorage.removeItem(key);}
+  function restoreDraft(){
+    const key=draftKey();if(!key||skippedDrafts.has(key))return;
+    let draft;try{draft=JSON.parse(localStorage.getItem(key)||'null');}catch{return;}
+    if(!draft||draft.lessonId!==lessonId||draft.classId!==classId||draft.mode!==mode||!draft.content)return;
+    const title=body.querySelector('#manualLessonTitle');
+    const same=title.value===draft.title&&visibleKinds().every(([kind])=>editorHtml(kind)===(draft.content[kind]||''));
+    if(same){clearDraft();return;}
+    if(!confirm('Un brouillon local non enregistré de cette leçon a été retrouvé. Voulez-vous restaurer le texte et les blocs ?')){skippedDrafts.add(key);return;}
+    title.value=draft.title||title.value;
+    for(const [kind] of visibleKinds()){
+      const section=body.querySelector(`.manual-section[data-kind="${kind}"]`),editor=section?.querySelector('[data-block-editor]');
+      if(!editor||typeof draft.content[kind]!=='string')continue;
+      const record=sections.find(row=>row.lesson_id===lessonId&&row.kind===kind);
+      const files=assets.filter(file=>file.section_id===record?.id&&(!file.mime_type.startsWith('image/')&&file.mime_type!=='application/pdf'||draft.content[kind].includes(file.id)));
+      editor.innerHTML=window.MelecManualBlocks.parse(draft.content[kind],files).map(block=>blockCard(block,files)).join('');
+    }
+    dirty=true;notify('Brouillon local restauré. Cliquez sur Enregistrer après vérification.');
+  }
+  setInterval(()=>{if(dirty)saveDraft();},1500);
+  window.addEventListener('pagehide',saveDraft);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)saveDraft();});
   function history(editor){return editorHistories.get(editor);}
   function recordEdit(editor,typing=false){
     const state=history(editor);if(!state)return;
@@ -515,6 +555,7 @@
     dirty=true;recordEdit(editor);
   }
   function draw() {
+    if(dirty)saveDraft();
     teacherUrls.forEach(URL.revokeObjectURL);teacherUrls=[];
     dirty=false;removedBlockAssets.clear();blockUploadError='';activeBlockText=null;
     const {theme,chapter,lesson}=selected();
@@ -549,6 +590,7 @@
       body.querySelectorAll('.manual-section').forEach(section=>section.hidden=section.dataset.kind!==tdEditorView);
     });
     body.querySelector('#manualLessonTitle').addEventListener('input',()=>{dirty=true;});
+    restoreDraft();
     setupBlockEditors();
     setupFloatingToolbar();
     body.querySelectorAll('[data-editor],#manualLessonTitle').forEach(node=>node.addEventListener('input',()=>{dirty=true;node.querySelectorAll?.('.manual-write-below').forEach(p=>{if(p.textContent.trim())p.classList.remove('manual-write-below');});if(node.matches('[data-editor]')){reserveEditorImageSpace(node);recordEdit(node,true);}}));
@@ -759,6 +801,7 @@
       assets=assets.filter(row=>row.id!==id);
     }
     removedBlockAssets.clear();
+    clearDraft();dirty=false;
   }
   async function saveAll(){
     if(!body.querySelector('#manualLessonTitle').value.trim())return notify('Donnez un titre à la leçon.',true);
@@ -865,7 +908,7 @@
       anchorFreeImages(mount);
     });
   }
-  window.MelecManualTeacher={canLeave(){return !dirty||confirm('Quitter la leçon sans enregistrer vos modifications ?');},resetSelection(){themeId='';chapterId='';lessonId='';dirty=false;},render(nextBody,nextClassId,nextNotify,nextMode='manual'){
+  window.MelecManualTeacher={canLeave(){if(dirty)saveDraft();return !dirty||confirm('Quitter la leçon sans enregistrer vos modifications ?');},resetSelection(){if(dirty)saveDraft();themeId='';chapterId='';lessonId='';dirty=false;},render(nextBody,nextClassId,nextNotify,nextMode='manual'){
     body=nextBody;notify=nextNotify;mode=nextMode;
     if(classId!==nextClassId){classId=nextClassId;themeId='';chapterId='';lessonId='';loadedAt=0;imageBlobs.clear();imageUrls.forEach(URL.revokeObjectURL);imageUrls.clear();imageCacheBytes=0;}
     if(!classId){body.innerHTML='<div class="teach-card">Choisissez une classe pour créer son manuel.</div>';return;}

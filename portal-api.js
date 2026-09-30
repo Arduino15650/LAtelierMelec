@@ -9,7 +9,12 @@
 
   async function decode(response) {
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.msg || data.error_description || data.message || data.error || `Erreur ${response.status}`);
+    if (!response.ok) {
+      const error = new Error(data.msg || data.error_description || data.message || data.error || `Erreur ${response.status}`);
+      error.status = response.status;
+      error.code = data.error_code || data.code || data.error || '';
+      throw error;
+    }
     return data;
   }
   function remember(session) {
@@ -43,6 +48,7 @@
     try {
       const stored = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
       if (stored?.access_token && stored.access_token !== current?.access_token) current = stored;
+      if (!stored) current = null;
     } catch { /* session invalide */ }
     if (!current) throw new Error('Veuillez vous connecter.');
     if (Number(current.expires_at) * 1000 > Date.now() + 60000) return current.access_token;
