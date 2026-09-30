@@ -1608,8 +1608,20 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 .activity-group-empty{margin:0;padding:12px;color:#34546b}
 @media(max-width:700px){.activity-group-fold>summary{min-height:52px;padding:10px 12px}.activity-group-content{padding:8px}}
 
-/* Titres d'activités lisibles dans les colonnes et élèves centrés dans leur ligne. */
+/* Titres lisibles et identité alignée au milieu du bloc note/compétences. */
 .dashboard-table thead th:not(:first-child){width:225px;min-width:190px;max-width:225px;overflow-wrap:normal;word-break:normal;hyphens:auto}
 .dashboard-table thead th:not(:first-child)>span{display:block;max-width:100%;white-space:normal;overflow-wrap:break-word;line-height:1.35}
-.dashboard-table tbody th[scope="row"]{vertical-align:middle;text-align:center;white-space:normal;overflow-wrap:break-word}
+.dashboard-table tbody th[scope="row"]{vertical-align:middle!important;text-align:left!important;white-space:normal;overflow-wrap:break-word;line-height:1.35}
+.dashboard-table tbody td{vertical-align:middle!important}
+.dashboard-table tbody .result-evaluated-count{text-align:left!important}
+.dashboard-table td .ccf-pills{display:flex;flex-wrap:wrap!important;align-items:center;max-width:100%;min-width:0;gap:5px}
 .activity-card h3,.activity-entry-summary strong{white-space:normal;overflow-wrap:break-word}
+@media(max-width:900px){
+  .dashboard-table thead th:not(:first-child),.dashboard-table tbody td{width:160px!important;min-width:160px!important;max-width:160px!important}
+  .dashboard-table th:first-child{width:170px!important;min-width:170px!important;max-width:170px!important}
+}
+@media(max-width:600px){
+  .dashboard-table thead th:not(:first-child),.dashboard-table tbody td{width:142px!important;min-width:142px!important;max-width:142px!important;padding:8px!important}
+  .dashboard-table th:first-child{width:155px!important;min-width:155px!important;max-width:155px!important;padding:8px!important}
+  .dashboard-table td .ccf-pills{gap:4px}
+}
