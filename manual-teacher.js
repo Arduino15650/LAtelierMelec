@@ -15,14 +15,35 @@
   const selections=new WeakMap();
   let teacherUrls=[];
   let inlineCaptureInFlight=null;
-  const imagePattern=()=>/\[\[image:([0-9a-f-]{36})(?:\|(left|center|right)\|(\d{1,3}))?\]\]/gi;
+  const imagePattern=()=>/\[\[image:([0-9a-f-]{36})(?:\|(left|center|right|free)\|(\d{1,3})(?:\|(\d{1,3})\|(\d{1,5}))?)?\]\]/gi;
   const imageWidth=value=>Math.max(1,Math.min(100,Number(value)||100));
-  const imageAlign=value=>['left','center','right'].includes(value)?value:'center';
-  function setImageLayout(node,align,width){
+  const imageAlign=value=>['left','center','right','free'].includes(value)?value:'center';
+  function setImageLayout(node,align,width,x,y){
     node.dataset.imageAlign=imageAlign(align);node.dataset.imageWidth=String(imageWidth(width));
-    node.classList.remove('manual-align-left','manual-align-center','manual-align-right');
+    node.classList.remove('manual-align-left','manual-align-center','manual-align-right','manual-align-free');
     node.classList.add('manual-align-'+node.dataset.imageAlign);
     node.style.width=node.dataset.imageWidth+'%';node.style.setProperty('--image-width',node.dataset.imageWidth+'%');
+    if(node.dataset.imageAlign==='free'){
+      const maxX=100-Number(node.dataset.imageWidth);
+      node.dataset.imageX=String(Math.max(0,Math.min(maxX,Number(x)||0)));
+      node.dataset.imageY=String(Math.max(0,Math.min(10000,Number(y)||0)));
+      node.style.left=node.dataset.imageX+'%';node.style.top=node.dataset.imageY+'px';
+    }else{delete node.dataset.imageX;delete node.dataset.imageY;node.style.removeProperty('left');node.style.removeProperty('top');}
+  }
+  function anchorFreeImages(root){
+    root.querySelectorAll('.manual-align-free').forEach(image=>{
+      const anchor=image.parentElement?.closest('p,div,li,h2,h3,h4,blockquote');
+      (anchor&&root.contains(anchor)?anchor:root).classList.add('manual-image-anchor');
+    });
+  }
+  function reserveImageSpace(root){
+    requestAnimationFrame(()=>{
+      if(!root.isConnected)return;
+      root.style.minHeight='';
+      const start=root.getBoundingClientRect().top;
+      const bottom=Math.max(root.offsetHeight,...[...root.querySelectorAll('.manual-align-free')].filter(image=>image.complete&&image.naturalWidth).map(image=>image.getBoundingClientRect().bottom-start+12));
+      root.style.minHeight=Math.ceil(bottom)+'px';
+    });
   }
   function label(kind) { return kinds.find(entry => entry[0] === kind)?.[1] || kind; }
   function visibleKinds() { return kinds.filter(([kind])=>mode==='manual'?kind==='course':kind==='td'||kind==='corrections'); }
@@ -67,9 +88,9 @@
     return `<section class="manual-section" data-kind="${kind}" ${mode==='manual-td'&&tdEditorView!==kind?'hidden':''}><div class="manual-section-head"><h4>${label(kind)}</h4><span class="manual-state ${section?.published?'on':''}">${section?.published?'Publié':'Brouillon'}</span></div>
       ${toolbar(kind)}
       <div class="manual-editor" data-editor contenteditable="true" role="textbox" aria-multiline="true" aria-label="Contenu ${label(kind)}">${safe(section?.content_html||'')}</div>
-      <div class="manual-image-tools" data-image-tools hidden><strong>Image sélectionnée</strong><button type="button" data-image-align="left">À gauche</button><button type="button" data-image-align="center">Centrer</button><button type="button" data-image-align="right">À droite</button><label>Taille <input type="range" data-image-width min="1" max="100" step="1" value="100"><output data-image-size>100 %</output></label><button type="button" data-image-move="up">↑ Monter</button><button type="button" data-image-move="down">↓ Descendre</button><button type="button" data-image-remove>Retirer du texte</button></div>
-      <div class="manual-files">${files.map(file=>`<span class="manual-file-chip">${file.mime_type.startsWith('image/')?`<button type="button" data-insert-image="${file.id}" class="subtle">Insérer « ${esc(file.file_name)} » dans le texte</button>`:`<button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button>`}</span>`).join('')}</div>
-      <label class="manual-upload">Ajouter des images, PDF ou documents bureautiques<input type="file" data-upload="${kind}" accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple></label>
+      <div class="manual-image-tools" data-image-tools hidden><strong>Image sélectionnée</strong><span>Glissez-la avec la souris ou le doigt.</span><button type="button" data-image-align="left">À gauche</button><button type="button" data-image-align="center">Centrer</button><button type="button" data-image-align="right">À droite</button><label>Taille <input type="range" data-image-width min="1" max="100" step="1" value="100"><output data-image-size>100 %</output></label><button type="button" data-image-remove>Retirer du texte</button></div>
+      <div class="manual-files">${files.filter(file=>!file.mime_type.startsWith('image/')).map(file=>`<span class="manual-file-chip"><button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button></span>`).join('')}</div>
+      <label class="manual-upload">Ajouter des PDF ou documents bureautiques<input type="file" data-upload="${kind}" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple></label>
       ${section?`<div class="manual-section-actions"><button type="button" data-toggle-section="${section.id}" class="subtle">${section.published?'Masquer cette section':'Publier cette section'}</button><button type="button" data-delete-section="${kind}" class="warn">Supprimer ${label(kind).toLowerCase()}</button></div>`:''}</section>`;
   }
   function rememberSelection(editor) {
@@ -108,20 +129,22 @@
         if(!editor)continue;
         for(const image of [...editor.querySelectorAll('img')]){
           if(image.closest('[data-manual-image]'))continue;
+          let frame=image.closest('.manual-editor-image');
+          if(!frame){frame=document.createElement('span');frame.contentEditable='false';frame.className='manual-editor-image';setImageLayout(frame,'free',25,0,0);image.replaceWith(frame);frame.append(image);anchorFreeImages(editor);}
           const section=sections.find(row=>row.lesson_id===lessonId&&row.kind===kind);
-          if(!section)throw new Error('Enregistrez d’abord la leçon avant d’intégrer un pictogramme collé.');
+          if(!section)throw new Error('Enregistrez d’abord la leçon avant de coller une image.');
           const src=image.getAttribute('src')||'';
           if(!/^(data:image\/(?:png|jpeg|webp|gif);base64,|blob:|https:\/\/)/i.test(src))
-            throw new Error('Ce pictogramme externe ne peut pas être intégré automatiquement. Déposez son fichier PNG, JPG ou WebP dans la section, puis utilisez « Insérer l’image dans le texte ».');
-          if(src.length>15_000_000)throw new Error('Pictogramme trop volumineux : utilisez un fichier de moins de 10 Mo.');
+            throw new Error('Cette image ne peut pas être lue. Collez ou déposez un fichier PNG, JPG, WebP ou GIF directement dans le texte.');
+          if(src.length>15_000_000)throw new Error('Image trop volumineuse : utilisez un fichier de moins de 10 Mo.');
           const response=await fetch(src,{credentials:'omit'}).catch(()=>null);
-          if(!response?.ok)throw new Error('Lecture du pictogramme impossible. Déposez son fichier dans la section, puis insérez-le dans le texte.');
+          if(!response?.ok)throw new Error('Lecture de l’image impossible. Essayez de déposer son fichier directement dans le texte.');
           const blob=await response.blob();
           const mime=blob.type.toLowerCase();
           if(!['image/png','image/jpeg','image/webp','image/gif'].includes(mime)||blob.size>10*1024*1024)
-            throw new Error('Pictogramme non accepté ou supérieur à 10 Mo.');
+            throw new Error('Image non acceptée ou supérieure à 10 Mo.');
           const ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/gif':'gif'}[mime];
-          const name='pictogramme-'+crypto.randomUUID()+'.'+ext;
+          const name='image-'+crypto.randomUUID()+'.'+ext;
           const path='manual/'+lessonId+'/'+name;
           await api.upload(path,new File([blob],name,{type:mime}));
           let asset;
@@ -134,9 +157,7 @@
             if(!asset?.id)throw new Error('Pièce jointe non confirmée.');
           }catch(error){await api.removeFiles([path]).catch(()=>{});throw error;}
           assets.push(asset);
-          const frame=document.createElement('span');
-          frame.contentEditable='false';frame.dataset.manualImage=asset.id;frame.className='manual-editor-image';setImageLayout(frame,'center',100);
-          image.alt=image.alt||name;image.replaceWith(frame);frame.append(image);
+          frame.dataset.manualImage=asset.id;image.alt=image.alt||name;
           dirty=true;
         }
       }
@@ -176,12 +197,13 @@
       while((match=pattern.exec(text))){
         fragment.append(document.createTextNode(text.slice(start,match.index)));
         const asset=assets.find(row=>row.id===match[1]&&row.section_id===section.id&&row.mime_type.startsWith('image/'));
-        if(asset){const frame=document.createElement('span');frame.contentEditable='false';frame.dataset.manualImage=asset.id;frame.className='manual-editor-image';setImageLayout(frame,match[2],match[3]);const image=document.createElement('img');image.alt=asset.file_name;frame.append(image);fragment.append(frame);loadTeacherImage(asset,image);}
+        if(asset){const frame=document.createElement('span');frame.contentEditable='false';frame.dataset.manualImage=asset.id;frame.className='manual-editor-image';setImageLayout(frame,match[2],match[3],match[4],match[5]);const image=document.createElement('img');image.alt=asset.file_name;frame.append(image);fragment.append(frame);loadTeacherImage(asset,image);}
         else fragment.append(document.createTextNode(match[0]));
         start=pattern.lastIndex;
       }
       fragment.append(document.createTextNode(text.slice(start)));node.replaceWith(fragment);
     });
+    anchorFreeImages(editor);
   }
   function selectedImage(section){return section.querySelector('[data-image-tools]')?.selectedFrame||null;}
   function selectImage(frame){
@@ -191,13 +213,20 @@
     tools.querySelector('[data-image-width]').value=frame.dataset.imageWidth||'100';
     tools.querySelector('[data-image-size]').textContent=(frame.dataset.imageWidth||'100')+' %';
   }
-  function insertClipboardImage(editor,file){
+  function insertClipboardImage(editor,file,dropRange){
     const image=document.createElement('img');image.alt=file.name||'Image collée';image.src=URL.createObjectURL(file);teacherUrls.push(image.src);
-    const selection=window.getSelection(),range=selections.get(editor)||selection?.rangeCount&&selection.getRangeAt(0);
+    const frame=document.createElement('span');frame.contentEditable='false';frame.className='manual-editor-image';setImageLayout(frame,'free',25,0,0);frame.append(image);
+    const selection=window.getSelection(),range=dropRange||selections.get(editor)||selection?.rangeCount&&selection.getRangeAt(0);
+    const caretRect=range?.getBoundingClientRect?.();
     if(range&&editor.contains(range.commonAncestorContainer)){
-      const at=range.cloneRange();at.deleteContents();at.insertNode(image);at.setStartAfter(image);at.collapse(true);
+      const at=range.cloneRange();at.deleteContents();at.insertNode(frame);at.setStartAfter(frame);at.collapse(true);
       selection.removeAllRanges();selection.addRange(at);selections.set(editor,at.cloneRange());
-    }else editor.append(image);
+    }else{const paragraph=document.createElement('p');paragraph.append(frame);editor.append(paragraph);}
+    anchorFreeImages(editor);
+    if(caretRect){
+      const anchor=frame.offsetParent,rect=anchor?.getBoundingClientRect();
+      if(rect?.width)setImageLayout(frame,'free',25,(caretRect.left-rect.left)*100/rect.width,(caretRect.top-rect.top)+anchor.scrollTop);
+    }
     dirty=true;
   }
   function draw() {
@@ -237,27 +266,42 @@
     body.querySelectorAll('[data-editor]').forEach(editor=>{
       ['keyup','pointerup','touchend','focusout'].forEach(name=>editor.addEventListener(name,()=>rememberSelection(editor)));
       hydrateTeacherImages(editor);
-      editor.addEventListener('click',event=>{const frame=event.target.closest('[data-manual-image]');if(frame&&editor.contains(frame))selectImage(frame);});
+      editor.addEventListener('click',event=>{const frame=event.target.closest('.manual-editor-image');if(frame&&editor.contains(frame))selectImage(frame);});
+      editor.addEventListener('pointerdown',event=>{
+        const frame=event.target.closest('.manual-editor-image');if(!frame||!editor.contains(frame))return;
+        event.preventDefault();selectImage(frame);
+        const anchor=frame.offsetParent,baseX=Number(frame.dataset.imageX)||0,baseY=Number(frame.dataset.imageY)||0,startX=event.clientX,startY=event.clientY;
+        frame.setPointerCapture(event.pointerId);
+        const move=next=>{
+          const width=anchor?.getBoundingClientRect().width||editor.clientWidth;
+          setImageLayout(frame,'free',frame.dataset.imageWidth,baseX+(next.clientX-startX)*100/width,baseY+next.clientY-startY);
+          dirty=true;
+        };
+        const stop=()=>{frame.removeEventListener('pointermove',move);frame.removeEventListener('pointerup',stop);frame.removeEventListener('pointercancel',stop);};
+        frame.addEventListener('pointermove',move);frame.addEventListener('pointerup',stop);frame.addEventListener('pointercancel',stop);
+      });
       editor.addEventListener('paste',event=>{
         const item=[...(event.clipboardData?.items||[])].find(item=>item.type.startsWith('image/'));
-        if(item&&!event.clipboardData.getData('text/html')){
+        if(item){
           const file=item.getAsFile();if(file){event.preventDefault();insertClipboardImage(editor,file);}
         }
         setTimeout(()=>prepareInlineImages().catch(error=>notify(error.message,true)),0);
       });
+      editor.addEventListener('dragover',event=>{if([...event.dataTransfer?.items||[]].some(item=>item.kind==='file'&&item.type.startsWith('image/')))event.preventDefault();});
+      editor.addEventListener('drop',event=>{
+        const file=[...event.dataTransfer?.files||[]].find(file=>file.type.startsWith('image/'));if(!file)return;
+        event.preventDefault();
+        const range=document.caretRangeFromPoint?.(event.clientX,event.clientY)||null;
+        insertClipboardImage(editor,file,range&&editor.contains(range.commonAncestorContainer)?range:null);
+        prepareInlineImages().catch(error=>notify(error.message,true));
+      });
     });
     body.querySelectorAll('[data-image-tools]').forEach(tools=>{
-      tools.querySelectorAll('[data-image-align]').forEach(button=>button.onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;setImageLayout(frame,button.dataset.imageAlign,frame.dataset.imageWidth);dirty=true;});
-      tools.querySelector('[data-image-width]').oninput=event=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;setImageLayout(frame,frame.dataset.imageAlign,event.target.value);tools.querySelector('[data-image-size]').textContent=frame.dataset.imageWidth+' %';dirty=true;};
-      tools.querySelectorAll('[data-image-move]').forEach(button=>button.onclick=()=>{
-        const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;
-        const editor=frame.closest('[data-editor]'),block=frame.parentElement===editor?frame:frame.closest('p,div,li,blockquote')||frame;
-        const sibling=button.dataset.imageMove==='up'?block.previousElementSibling:block.nextElementSibling;
-        if(sibling){button.dataset.imageMove==='up'?sibling.before(frame):sibling.after(frame);dirty=true;}
-      });
+      tools.querySelectorAll('[data-image-align]').forEach(button=>button.onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;const width=Number(frame.dataset.imageWidth)||25;const x=button.dataset.imageAlign==='left'?0:button.dataset.imageAlign==='right'?100-width:(100-width)/2;setImageLayout(frame,'free',width,x,frame.dataset.imageY);anchorFreeImages(frame.closest('[data-editor]'));dirty=true;});
+      tools.querySelector('[data-image-width]').oninput=event=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;setImageLayout(frame,'free',event.target.value,frame.dataset.imageX,frame.dataset.imageY);anchorFreeImages(frame.closest('[data-editor]'));tools.querySelector('[data-image-size]').textContent=frame.dataset.imageWidth+' %';dirty=true;};
       tools.querySelector('[data-image-remove]').onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(frame?.isConnected){frame.remove();dirty=true;}tools.selectedFrame=null;tools.hidden=true;};
     });
-    body.querySelectorAll('[data-format],[data-swatch],[data-table],[data-video],[data-insert-image]').forEach(button=>button.onmousedown=event=>event.preventDefault());
+    body.querySelectorAll('[data-format],[data-swatch],[data-table],[data-video]').forEach(button=>button.onmousedown=event=>event.preventDefault());
     body.querySelectorAll('[data-format]').forEach(button=>button.onclick=()=>formatSelection(button,button.dataset.format));
     body.querySelectorAll('[data-format-select]').forEach(select=>select.onchange=()=>{if(select.value)formatSelection(select,select.dataset.formatSelect,select.value);select.value='';});
     body.querySelectorAll('[data-spacing]').forEach(select=>select.onchange=()=>formatSpacing(select,select.dataset.spacing,select.value));
@@ -265,7 +309,6 @@
     body.querySelectorAll('[data-swatch]').forEach(button=>button.onclick=()=>formatSelection(button,button.dataset.swatch,button.dataset.value));
     body.querySelectorAll('[data-table]').forEach(button=>button.onclick=()=>insertTable(button));
     body.querySelectorAll('[data-video]').forEach(button=>button.onclick=()=>insertVideo(button));
-    body.querySelectorAll('[data-insert-image]').forEach(button=>button.onclick=()=>{formatSelection(button,'insertText','[[image:'+button.dataset.insertImage+']]');hydrateTeacherImages(button.closest('.manual-section').querySelector('[data-editor]'));});
     body.querySelector('#manualPreview').onclick=preview;
     body.querySelector('#manualSave').onclick=saveAll;
     body.querySelector('#manualPublishLesson').onclick=publishLessonOnly;
@@ -376,7 +419,11 @@
     const editor=body.querySelector(`.manual-section[data-kind="${kind}"] [data-editor]`);
     if(!editor)return '';
     const copy=editor.cloneNode(true);
-    copy.querySelectorAll('[data-manual-image]').forEach(node=>node.replaceWith(document.createTextNode(`[[image:${node.dataset.manualImage}|${imageAlign(node.dataset.imageAlign)}|${imageWidth(node.dataset.imageWidth)}]]`)));
+    copy.querySelectorAll('[data-manual-image]').forEach(node=>{
+      const layout=imageAlign(node.dataset.imageAlign),width=imageWidth(node.dataset.imageWidth);
+      const position=layout==='free'?`|${Math.round(Number(node.dataset.imageX)||0)}|${Math.round(Number(node.dataset.imageY)||0)}`:'';
+      node.replaceWith(document.createTextNode(`[[image:${node.dataset.manualImage}|${layout}|${width}${position}]]`));
+    });
     return safe(copy.innerHTML);
   }
   async function persistEditor(){
@@ -456,12 +503,13 @@
         while((match=pattern.exec(text))){
           replacement.append(document.createTextNode(text.slice(start,match.index)));
           const asset=assets.find(a=>a.id===match[1]&&a.section_id===section.dataset.previewSection&&a.mime_type.startsWith('image/'));
-          if(asset){const image=document.createElement('img');image.alt=asset.file_name;image.className='manual-inline-image';setImageLayout(image,match[2],match[3]);replacement.append(image);
-            api.download(asset.object_path).then(blob=>{if(!image.isConnected)return;const url=URL.createObjectURL(blob);urls.push(url);image.src=url;}).catch(()=>{if(image.isConnected)image.alt='Image indisponible';});}
+          if(asset){const image=document.createElement('img');image.alt=asset.file_name;image.className='manual-inline-image';setImageLayout(image,match[2],match[3],match[4],match[5]);replacement.append(image);
+            api.download(asset.object_path).then(blob=>{if(!image.isConnected)return;const url=URL.createObjectURL(blob);urls.push(url);image.onload=()=>reserveImageSpace(mount);image.src=url;}).catch(()=>{if(image.isConnected)image.alt='Image indisponible';});}
           else replacement.append(document.createTextNode(match[0]));start=pattern.lastIndex;
         }
         replacement.append(document.createTextNode(text.slice(start)));node.replaceWith(replacement);
       });
+      anchorFreeImages(mount);
     });
   }
   window.MelecManualTeacher={canLeave(){return !dirty||confirm('Quitter la leçon sans enregistrer vos modifications ?');},resetSelection(){themeId='';chapterId='';lessonId='';dirty=false;},render(nextBody,nextClassId,nextNotify,nextMode='manual'){

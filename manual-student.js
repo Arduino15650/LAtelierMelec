@@ -80,22 +80,29 @@
     const walker=document.createTreeWalker(html,NodeFilter.SHOW_TEXT);
     const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
     nodes.forEach(node=>{
-      const text=node.textContent,pattern=/\[\[image:([0-9a-f-]{36})(?:\|(left|center|right)\|(\d{1,3}))?\]\]/gi;
+      const text=node.textContent,pattern=/\[\[image:([0-9a-f-]{36})(?:\|(left|center|right|free)\|(\d{1,3})(?:\|(\d{1,3})\|(\d{1,5}))?)?\]\]/gi;
       if(!pattern.test(text))return;pattern.lastIndex=0;
       const replacement=document.createDocumentFragment();let start=0,match;
       while((match=pattern.exec(text))){
         replacement.append(document.createTextNode(text.slice(start,match.index)));
         const asset=assets.find(a=>a.id===match[1]&&a.section_id===section.dataset.section&&a.mime_type.startsWith('image/'));
-        if(asset){const image=document.createElement('img');image.alt=asset.file_name;image.className='manual-inline-image manual-align-'+(match[2]||'center');image.style.width=Math.max(1,Math.min(100,Number(match[3])||100))+'%';image.style.setProperty('--image-width',image.style.width);replacement.append(image);loadImage(asset,image);}
+        if(asset){const image=document.createElement('img');image.alt=asset.file_name;image.className='manual-inline-image manual-align-'+(match[2]||'center');const width=Math.max(1,Math.min(100,Number(match[3])||100));image.style.width=width+'%';image.style.setProperty('--image-width',image.style.width);if(match[2]==='free'){image.style.left=Math.max(0,Math.min(100-width,Number(match[4])||0))+'%';image.style.top=Math.max(0,Math.min(10000,Number(match[5])||0))+'px';}replacement.append(image);loadImage(asset,image);}
         else replacement.append(document.createTextNode(match[0]));
         start=pattern.lastIndex;
       }
       replacement.append(document.createTextNode(text.slice(start)));node.replaceWith(replacement);
     });
+    html.querySelectorAll('.manual-align-free').forEach(image=>{
+      const anchor=image.parentElement?.closest('p,div,li,h2,h3,h4,blockquote');
+      (anchor&&html.contains(anchor)?anchor:html).classList.add('manual-image-anchor');
+    });
   }
   async function loadImage(asset,image){
     image.dataset.asset=asset.id;
-    try{const blob=await api.download(asset.object_path);if(!image.isConnected)return;const url=URL.createObjectURL(blob);objectUrls.push(url);image.src=url;}
+    try{const blob=await api.download(asset.object_path);if(!image.isConnected)return;const url=URL.createObjectURL(blob);objectUrls.push(url);image.onload=()=>{
+      const root=image.closest('.manual-reading-html');if(!root||!image.classList.contains('manual-align-free'))return;
+      requestAnimationFrame(()=>{if(!root.isConnected)return;root.style.minHeight='';const start=root.getBoundingClientRect().top;const bottom=Math.max(root.offsetHeight,...[...root.querySelectorAll('.manual-align-free')].filter(node=>node.complete&&node.naturalWidth).map(node=>node.getBoundingClientRect().bottom-start+12));root.style.minHeight=Math.ceil(bottom)+'px';});
+    };image.src=url;}
     catch{if(image.isConnected)image.replaceWith(document.createTextNode('Image indisponible.'));}
   }
   function openLesson(id){if(!id||id===selectedId)return;selectedId=id;draw();target().scrollIntoView({block:'start',behavior:'smooth'});}
