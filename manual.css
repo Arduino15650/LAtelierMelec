@@ -56,6 +56,7 @@
 .manual-editor-image.is-selected{border-color:#1565aa;box-shadow:0 0 0 2px #b9dcf8}
 .manual-editor-image img{display:block;width:100%;height:auto;border-radius:8px}
 .manual-editor-image.manual-align-free{position:absolute;z-index:2;float:none;clear:none;display:block;max-width:100%;margin:0!important;touch-action:none;user-select:none}
+.manual-inline-image.manual-image-loading{visibility:hidden;aspect-ratio:4/3}
 .manual-image-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:8px 0;padding:9px;border:1px solid #8db9dd;border-radius:10px;background:#e8f4ff}
 .manual-image-tools[hidden]{display:none}
 .manual-image-tools button{min-height:36px;padding:5px 9px}
