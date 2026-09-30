@@ -35,6 +35,11 @@
     body.cloud-locked > :not(#cloudGate):not(script){visibility:hidden!important}
     #cloudGate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;overflow:auto;padding:20px;background:#06182d;color:#172b45;font-family:Arial,sans-serif}
     #cloudGate[hidden]{display:none}
+    /* Pendant une reprise de session, éviter le flash de la carte de connexion.
+       Un message discret apparaît seulement si la vérification prend du temps. */
+    html.cloud-resuming #cloudGate .cloud-card{visibility:hidden;pointer-events:none}
+    html.cloud-resuming #cloudGate::after{content:'Ouverture de votre espace…';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#dcecff;font:600 15px Arial,sans-serif;opacity:0;animation:cloud-progress .15s ease 1s forwards}
+    @keyframes cloud-progress{to{opacity:1}}
     html.cloud-resuming #cloudLoginPane{display:none}
     html.cloud-resuming #cloudGateStatus:empty::before{content:'Reconnexion en cours…'}
     .cloud-card{width:min(100%,500px);box-sizing:border-box;padding:clamp(20px,5vw,34px);border:2px solid #ef9e31;border-radius:24px;background:#eff6ff;box-shadow:0 20px 60px #0008}
