@@ -19,16 +19,15 @@
   const imageWidth=value=>Math.max(1,Math.min(100,Number(value)||100));
   const imageAlign=value=>['left','center','right','free'].includes(value)?value:'center';
   function setImageLayout(node,align,width,x,y){
-    node.dataset.imageAlign=imageAlign(align);node.dataset.imageWidth=String(imageWidth(width));
+    const previous=imageAlign(align),size=imageWidth(width);
+    node.dataset.imageAlign='free';node.dataset.imageWidth=String(size);
     node.classList.remove('manual-align-left','manual-align-center','manual-align-right','manual-align-free');
-    node.classList.add('manual-align-'+node.dataset.imageAlign);
+    node.classList.add('manual-align-free');
     node.style.width=node.dataset.imageWidth+'%';node.style.setProperty('--image-width',node.dataset.imageWidth+'%');
-    if(node.dataset.imageAlign==='free'){
-      const maxX=100-Number(node.dataset.imageWidth);
-      node.dataset.imageX=String(Math.max(0,Math.min(maxX,Number(x)||0)));
-      node.dataset.imageY=String(Math.max(0,Math.min(10000,Number(y)||0)));
-      node.style.left=node.dataset.imageX+'%';node.style.top=node.dataset.imageY+'px';
-    }else{delete node.dataset.imageX;delete node.dataset.imageY;node.style.removeProperty('left');node.style.removeProperty('top');}
+    const maxX=100-size,legacyX=previous==='right'?maxX:previous==='center'?maxX/2:0;
+    node.dataset.imageX=String(Math.max(0,Math.min(maxX,previous==='free'?(Number(x)||0):legacyX)));
+    node.dataset.imageY=String(Math.max(0,Math.min(10000,Number(y)||0)));
+    node.style.left=node.dataset.imageX+'%';node.style.top=node.dataset.imageY+'px';
   }
   function anchorFreeImages(root){
     root.querySelectorAll('.manual-align-free').forEach(image=>{
@@ -62,7 +61,9 @@
   }
   async function load() {
     const ticket=++request;
-    body.innerHTML='<div class="teach-card">Chargement du thème sélectionné…</div>';
+    const keepView=Boolean(body.querySelector('.manual-manager'));
+    if(keepView){body.classList.add('manual-loading');body.setAttribute('aria-busy','true');}
+    else body.innerHTML='<div class="teach-card">Chargement du thème sélectionné…</div>';
     try {
       themes=await list('manual_themes','class_id=eq.'+encodeURIComponent(classId),'id,title,position,published,created_at');
       if(ticket!==request)return;
@@ -80,7 +81,8 @@
       draw();
       loadedClassId=classId;
       loadedAt=Date.now();
-    } catch(error) { if(ticket===request){body.innerHTML='<div class="teach-card manual-error">Le manuel est indisponible. Vérifiez que son script SQL est installé.</div>';notify(error.message,true);} }
+    } catch(error) { if(ticket===request){if(!keepView)body.innerHTML='<div class="teach-card manual-error">Le manuel est indisponible. Vérifiez que son script SQL est installé.</div>';notify(error.message,true);} }
+    finally {if(ticket===request){body.classList.remove('manual-loading');body.removeAttribute('aria-busy');}}
   }
   function sectionCard(kind,lesson) {
     const section=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind);

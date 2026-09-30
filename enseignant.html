@@ -11,6 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="MELEC">
   <title>BAC PRO MELEC</title>
+  <script>try{if(sessionStorage.getItem('melec-cloud-session-v1'))document.documentElement.classList.add('cloud-resuming')}catch{}</script>
   <style>html,body{min-height:100%;background:#06182d;color:#fff}body{margin:0}</style>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
@@ -34,6 +35,7 @@
     body.cloud-locked > :not(#cloudGate):not(script){visibility:hidden!important}
     #cloudGate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;overflow:auto;padding:20px;background:#06182d;color:#172b45;font-family:Arial,sans-serif}
     #cloudGate[hidden]{display:none}
+    html.cloud-resuming #cloudGate .cloud-card{visibility:hidden}
     .cloud-card{width:min(100%,500px);box-sizing:border-box;padding:clamp(20px,5vw,34px);border:2px solid #ef9e31;border-radius:24px;background:#eff6ff;box-shadow:0 20px 60px #0008}
     .cloud-home-link{display:inline-flex;align-items:center;min-height:36px;margin-bottom:18px;color:#165a9d;font-size:16px;font-weight:700;text-decoration:none}
     .cloud-home-link:hover{text-decoration:underline}
@@ -122,7 +124,7 @@
   <link rel="stylesheet" href="teacher-teaching-tabs-colors.css?v=20260928-1">
   <link rel="stylesheet" href="teacher-page-card-colors.css?v=20260928-2">
   <link rel="stylesheet" href="results-follow-scroll.css?v=20260929-1">
-  <link rel="stylesheet" href="manual.css?v=20260930-images4">
+  <link rel="stylesheet" href="manual.css?v=20260930-images5">
 </head>
 <body class="cloud-locked">
   <div id="cloudGate" role="dialog" aria-modal="true" aria-label="Connexion à LAtelierMelec">
@@ -208,17 +210,17 @@
   <script src="content-render.js?v=20260930-pictogrammes1"></script>
   <script src="tp-response-export.js?v=20260927-4"></script>
   <script src="student-pdf-viewer.js?v=20260927-2"></script>
-  <script src="manual-teacher.js?v=20260930-images4"></script>
+  <script src="manual-teacher.js?v=20260930-images5"></script>
   <script src="teaching-space.js?v=20260930-navigation1"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
-  <script src="cloud-sync.js?v=20260929-sans-eclair1"></script>
+  <script src="cloud-sync.js?v=20260930-sans-eclair2"></script>
   <script src="activity-reuse.js?v=20260930-competences1"></script>
   <script src="activity-overview-filter.js?v=20260930-fin-evaluation1"></script>
   <script src="evaluation-student-filter.js?v=20260928-2"></script>
   <script src="results-follow-scroll.js?v=20260929-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='144';
+      const swVersion='145';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>

@@ -42,6 +42,7 @@
     gate.hidden = true;
     toolbar.hidden = false;
     document.body.classList.remove('cloud-locked');
+    document.documentElement.classList.remove('cloud-resuming');
     status('Synchronisé');
   }
   function pendingKey() { return PENDING_PREFIX + userId; }
@@ -143,6 +144,7 @@
     }
   }
   function showImport() {
+    document.documentElement.classList.remove('cloud-resuming');
     byId('cloudLoginPane').hidden = true;
     byId('cloudImportPane').hidden = false;
     byId('cloudSignOutGate').hidden = false;
@@ -162,6 +164,7 @@
     const pending = readPending();
     if (pending) {
       if (pending.revision !== revision) {
+        document.documentElement.classList.remove('cloud-resuming');
         conflicted = true;
         gateMessage('Deux versions différentes existent. Vos changements locaux sont conservés dans ce navigateur. Ne réimportez pas : contactez-nous avant de continuer.', 'error');
         byId('cloudSignOutGate').hidden = false;
@@ -321,6 +324,7 @@
       return;
     }
     lock();
+    document.documentElement.classList.remove('cloud-resuming');
     byId('cloudLoginPane').hidden = false;
     byId('cloudImportPane').hidden = true;
     byId('cloudSignOutGate').hidden = true;
@@ -340,11 +344,12 @@
     if (raw) {
       session = JSON.parse(raw);
       begin().catch(error => {
+        document.documentElement.classList.remove('cloud-resuming');
         clearSession();
         byId('cloudLoginPane').hidden = false;
         byId('cloudImportPane').hidden = true;
         gateMessage(error.message, 'error');
       });
     }
-  } catch { clearSession(); }
+  } catch { clearSession(); document.documentElement.classList.remove('cloud-resuming'); }
 })();

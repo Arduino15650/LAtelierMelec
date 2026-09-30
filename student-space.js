@@ -114,6 +114,7 @@
     profile = profiles[0];
     const dashboardWasVisible = !dashboard.hidden;
     authPane.hidden = true; dashboard.hidden = false;
+    document.documentElement.classList.remove('student-resuming');
     showContact(false);
     const intro = $('studentProfileStatus');
     intro.textContent = `Bonjour ${profile.first_name} ${profile.last_name}.`;
@@ -341,6 +342,6 @@
   window.addEventListener('pageshow', event => {
     if (event.persisted) refreshStudentAccess();
   });
-  openDashboard().catch(() => { authPane.hidden = false; dashboard.hidden = true; });
+  openDashboard().catch(() => { authPane.hidden = false; dashboard.hidden = true; document.documentElement.classList.remove('student-resuming'); });
 })();
 

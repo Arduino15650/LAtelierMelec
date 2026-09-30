@@ -12,6 +12,7 @@
 .teaching-space .teach-card.manual-manager{background:#f3ebfb!important;border-color:#b991d7!important;color:#2f2144!important}
 #teachingView:has(.teach-tabs [data-teach-tab="manual-td"].active) .teach-card.manual-manager{background:#e9f7ee!important;border-color:#82c49b!important;color:#17442f!important}
 .manual-manager,.manual-reader,.manual-lesson-page,.manual-section{box-sizing:border-box;min-width:0;overflow-wrap:anywhere}
+.manual-loading{pointer-events:none}
 .manual-manager h2{margin:0 0 .5rem}
 .manual-pickers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:12px;padding:14px 0;border-top:1px solid #bdd3eb}
 .manual-pickers label,.manual-lesson>label{display:grid;gap:6px;min-width:0;font-weight:750}

@@ -86,7 +86,7 @@
       while((match=pattern.exec(text))){
         replacement.append(document.createTextNode(text.slice(start,match.index)));
         const asset=assets.find(a=>a.id===match[1]&&a.section_id===section.dataset.section&&a.mime_type.startsWith('image/'));
-        if(asset){const image=document.createElement('img');image.alt=asset.file_name;image.className='manual-inline-image manual-align-'+(match[2]||'center');const width=Math.max(1,Math.min(100,Number(match[3])||100));image.style.width=width+'%';image.style.setProperty('--image-width',image.style.width);if(match[2]==='free'){image.style.left=Math.max(0,Math.min(100-width,Number(match[4])||0))+'%';image.style.top=Math.max(0,Math.min(10000,Number(match[5])||0))+'px';}replacement.append(image);loadImage(asset,image);}
+        if(asset){const image=document.createElement('img');image.alt=asset.file_name;image.className='manual-inline-image manual-align-free';const width=Math.max(1,Math.min(100,Number(match[3])||100));const maxX=100-width,oldX=match[2]==='right'?maxX:match[2]==='left'?0:maxX/2;image.style.width=width+'%';image.style.setProperty('--image-width',image.style.width);image.style.left=Math.max(0,Math.min(maxX,match[2]==='free'?(Number(match[4])||0):oldX))+'%';image.style.top=Math.max(0,Math.min(10000,Number(match[5])||0))+'px';replacement.append(image);loadImage(asset,image);}
         else replacement.append(document.createTextNode(match[0]));
         start=pattern.lastIndex;
       }
