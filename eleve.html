@@ -6,7 +6,6 @@
   <script>try{if(sessionStorage.getItem('melec-cloud-session-v1'))document.documentElement.classList.add('student-resuming')}catch{}</script>
   <style>html.student-resuming #studentAuth > :not(#studentAuthStatus){display:none}html.student-resuming #studentAuthStatus:empty::before{content:'Reconnexion en cours…'}</style>
   <link rel="stylesheet" href="portal.css?v=20260926-apercu-pdf2">
-  <link rel="stylesheet" href="manual.css?v=20260930-blocks1">
   <style>
     .student-refresh-actions{align-items:center;margin-bottom:16px}
     .student-refresh-actions #studentRefresh{min-height:48px;padding:11px 20px;background:#f6ad25;border:2px solid #9d5900;color:#172f49;font-size:1rem;font-weight:800;box-shadow:0 3px 0 #9d5900}
@@ -77,17 +76,11 @@
         <p id="studentAuthStatus" class="form-status" role="status" aria-live="polite"></p>
       </section>
       <section id="studentDashboard" class="portal-panel portal-dashboard" hidden>
-        <div class="portal-actions student-refresh-actions"><button id="studentRefresh" type="button" aria-label="Actualiser le manuel numérique et les TP">↻ Actualiser</button><button id="studentContactButton" class="subtle" type="button">Contacter l’enseignant</button><button id="studentLogout" class="subtle" type="button">Déconnexion</button></div>
+        <div class="portal-actions student-refresh-actions"><button id="studentRefresh" type="button" aria-label="Actualiser les TP">↻ Actualiser</button><button id="studentContactButton" class="subtle" type="button">Contacter l’enseignant</button><button id="studentLogout" class="subtle" type="button">Déconnexion</button></div>
         <p id="studentRefreshStatus" class="portal-small" role="status" aria-live="polite"></p>
         <div id="studentProfileStatus" class="portal-message" role="status" aria-live="polite"></div>
         <p id="studentClassName" class="student-class-name" hidden></p>
-        <div id="studentContentTabs" class="portal-tabs" hidden><button id="studentManualTab" type="button" class="active">Manuel numérique</button><button id="studentTdTab" type="button">Travaux dirigés</button><button id="studentTpTab" type="button">TP en atelier</button></div>
-        <section id="studentManualPane" class="student-pane" hidden>
-          <h2>Mon manuel numérique</h2><div id="studentManualContent"></div>
-        </section>
-        <section id="studentTdPane" class="student-pane" hidden>
-          <h2>Mes travaux dirigés</h2><div id="studentTdContent"></div>
-        </section>
+        <div id="studentContentTabs" class="portal-tabs" hidden><button id="studentTpTab" type="button" class="active">TP en atelier</button></div>
         <section id="studentTpPane" class="student-pane" hidden>
           <h2>TP en atelier</h2><p id="studentTpNotice" class="portal-message" role="status"></p>
           <div id="studentTpList" class="portal-list"></div>
@@ -106,12 +99,10 @@
   </div>
   <script src="portal-api.js?v=20260930-storage-retry3"></script>
   <script src="content-render.js?v=20260930-continuation1"></script>
-  <script src="manual-blocks.js?v=20260930-blocks1"></script>
   <script src="portal-contact.js?v=20260925-1"></script>
   <script src="student-pdf-forms.js?v=20260927-4"></script>
   <script src="student-pdf-viewer.js?v=20260927-2"></script>
-  <script src="manual-student.js?v=20260930-timeout2"></script>
-  <script src="student-space.js?v=20260930-timeout2"></script>
+  <script src="student-space.js?v=20260930-tp-only1"></script>
   <script src="referential.js?v=20260928-1"></script>
   <script src="student-referential-ccf.js?v=20260929-tp-lock6"></script>
   <script>
