@@ -22,6 +22,39 @@
   let cleanupViewer = null;
   let assignments = [], tpItems = [], activeTp = null, selectedContentTab = 'tp';
   let tpItemsLoadedAt = 0, tpItemsKey = '';
+  const documentCache = new Map();
+  let documentCacheBytes = 0;
+  const MAX_DOCUMENT_CACHE_BYTES = 24 * 1024 * 1024;
+  function clearDocumentCache() {
+    documentCache.clear();
+    documentCacheBytes = 0;
+  }
+  async function loadDocument(asset) {
+    const cached = documentCache.get(asset.object_path);
+    if (cached) return cached;
+    const pending = api.download(asset.object_path, {retryTransient:true});
+    documentCache.set(asset.object_path, pending);
+    try {
+      const blob = await pending;
+      if (documentCache.get(asset.object_path) === pending) {
+        if (blob.size <= MAX_DOCUMENT_CACHE_BYTES) {
+          while (documentCacheBytes + blob.size > MAX_DOCUMENT_CACHE_BYTES && documentCache.size > 1) {
+            const oldest = documentCache.keys().next().value;
+            if (oldest === asset.object_path) break;
+            const previous = documentCache.get(oldest);
+            if (previous instanceof Blob) documentCacheBytes -= previous.size;
+            documentCache.delete(oldest);
+          }
+          documentCache.set(asset.object_path, blob);
+          documentCacheBytes += blob.size;
+        } else documentCache.delete(asset.object_path);
+      }
+      return blob;
+    } catch (error) {
+      if (documentCache.get(asset.object_path) === pending) documentCache.delete(asset.object_path);
+      throw error;
+    }
+  }
   function tpEnd(assignment) {
     if (assignment.validated_at) return 0;
     return assignment.reactivated_at
@@ -125,7 +158,7 @@
       intro.textContent += ' Votre inscription est en attente de validation par l’enseignant.';
       return;
     }
-    await Promise.all([classNamePromise, loadTpAssignments()]);
+    await loadTpAssignments();
     if (activeTp) {
       if (cleanupViewer) { cleanupViewer(); cleanupViewer=null; }
       updateLearningLock();switchContentTab('tp');
@@ -146,6 +179,7 @@
       tpItemsLoadedAt = Date.now();
     }
     activeTp = assignments.find(row => tpEnd(row) > Date.now()) || null;
+    if (previousActiveId !== activeTp?.id) clearDocumentCache();
     if (preserveViewer && previousActiveId && activeTp?.id === previousActiveId) return;
     clearTpViewer();
     const list = $('studentTpList'); list.replaceChildren();
@@ -207,7 +241,7 @@
           }
           button.disabled=true;
           try {
-            const blob = await api.download(asset.object_path);
+            const blob = await loadDocument(asset);
             if (!viewer.isConnected || !activeTp || tpEnd(activeTp) <= Date.now()) throw new Error('L’accès à ce TP a expiré.');
             await tpPdfCleanup?.flush?.();
             tpPdfCleanup?.(); tpPdfCleanup = null;
@@ -260,7 +294,7 @@
     const status = $('studentRefreshStatus');
     button.disabled = true;
     button.textContent = 'Actualisation…';
-    message(status, 'Mise à jour du manuel numérique et des TP en cours…');
+    message(status, 'Mise à jour des TP en cours…');
     try {
       await openDashboard();
       message(status, 'Contenus actualisés.');
@@ -273,7 +307,7 @@
   };
   $('studentLogout').onclick = async () => {
     if (cleanupViewer) cleanupViewer();
-    clearTpViewer(); activeTp=null; assignments=[]; tpItems=[]; tpItemsLoadedAt=0; tpItemsKey='';
+    clearTpViewer(); clearDocumentCache(); activeTp=null; assignments=[]; tpItems=[]; tpItemsLoadedAt=0; tpItemsKey='';
     await api.signOut();
     dashboard.hidden = true; authPane.hidden = false; profile = null;
     switchTab('login');
@@ -283,7 +317,7 @@
     const remaining = tpEnd(activeTp) - Date.now();
     const info = $('studentTpList').querySelector('.student-tp-card .portal-small');
     if (info) info.textContent = remaining > 0 ? 'Temps restant : ' + formatDuration(remaining) : 'Temps écoulé · TP verrouillé.';
-    if (remaining <= 0) { clearTpViewer(); activeTp=null; selectedContentTab='tp'; openDashboard().catch(error => message($('studentTpNotice'),error.message,true)); }
+    if (remaining <= 0) { clearTpViewer(); clearDocumentCache(); activeTp=null; selectedContentTab='tp'; openDashboard().catch(error => message($('studentTpNotice'),error.message,true)); }
   },1000);
   let accessRefreshInProgress = false;
   async function refreshStudentAccess() {
@@ -298,7 +332,7 @@
       if (cleanupViewer) cleanupViewer();
       $('studentTpPane').hidden = true;
       $('studentContentTabs').hidden = true;
-      clearTpViewer(); activeTp=null;
+      clearTpViewer(); clearDocumentCache(); activeTp=null;
       $('studentProfileStatus').textContent = 'Votre accès a été suspendu ou révoqué par l’enseignant.';
     }
     if (profile.approved_at && profile.class_id && !profile.blocked_at) {
@@ -332,5 +366,4 @@
       message(authStatus, 'Le serveur ne répond pas correctement : ' + error.message + ' Votre session est conservée ; actualisez pour réessayer.', true);
   });
 })();
-
 
