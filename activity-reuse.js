@@ -12,7 +12,12 @@
       const id=familyId(activity),current=map.get(id);
       if(!current||activity.id===id)map.set(id,activity);
     });
-    return [...map].map(([id,activity])=>({id,activity})).sort((a,b)=>a.activity.title.localeCompare(b.activity.title,'fr',{sensitivity:'base'}));
+    const byTitle=new Map();
+    [...map].map(([id,activity])=>({id,activity})).sort((a,b)=>a.activity.title.localeCompare(b.activity.title,'fr',{sensitivity:'base'})).forEach(item=>{
+      const key=String(item.activity.title||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('fr');
+      if(!byTitle.has(key))byTitle.set(key,item);
+    });
+    return [...byTitle.values()];
   };
   const groups=()=>Array.isArray(state.studentGroups)?state.studentGroups.filter(group=>group.className===choice.className):[];
   const pupils=()=>{
