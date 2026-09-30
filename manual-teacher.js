@@ -274,7 +274,6 @@
       editor.addEventListener('input',event=>{if(event.target.closest('[data-block-text]'))dirty=true;});
       editor.addEventListener('keyup',event=>{const text=event.target.closest('[data-block-text]');if(text)rememberSelection(text);});
       editor.addEventListener('mouseup',event=>{const text=event.target.closest('[data-block-text]');if(text)rememberSelection(text);});
-      editor.addEventListener('focusout',event=>{const text=event.target.closest('[data-block-text]');if(text)rememberSelection(text);});
       editor.addEventListener('paste',event=>{
         const text=event.target.closest('[data-block-text]');if(!text)return;
         const file=[...(event.clipboardData?.items||[])].find(item=>item.type.startsWith('image/'))?.getAsFile();
@@ -335,12 +334,16 @@
   }
   function setupFloatingToolbar(){
     const tools=body.querySelector('.manual-floating-toolbar');if(!tools)return;
+    // Mémoriser la sélection avant que la palette ne prenne le focus.
+    tools.addEventListener('pointerdown',()=>{if(activeBlockText?.isConnected)rememberSelection(activeBlockText);},true);
     tools.addEventListener('mousedown',event=>{if(event.target.closest('button'))event.preventDefault();});
     tools.querySelectorAll('[data-format]').forEach(button=>button.onclick=()=>blockCommand(button.dataset.format));
     tools.querySelectorAll('[data-format-select]').forEach(select=>select.onchange=()=>{if(select.value)blockCommand(select.dataset.formatSelect,select.value);select.value='';});
     tools.querySelectorAll('[data-spacing]').forEach(select=>select.onchange=()=>{blockSpacing(select.dataset.spacing,select.value);select.value='';});
     tools.querySelectorAll('[data-swatch]').forEach(button=>button.onclick=()=>blockCommand(button.dataset.swatch,button.dataset.value));
-    tools.querySelectorAll('[data-color]').forEach(input=>input.oninput=()=>blockCommand(input.dataset.color,input.value));
+    // "input" est émis pendant l'ouverture du sélecteur de couleurs : cela
+    // redonnait immédiatement le focus au texte et interrompait le choix.
+    tools.querySelectorAll('[data-color]').forEach(input=>input.onchange=()=>blockCommand(input.dataset.color,input.value));
     tools.querySelectorAll('[data-history]').forEach(button=>button.onclick=()=>blockCommand(button.dataset.history));
     tools.querySelector('[data-table]').onclick=()=>{
       const rows=Number(prompt('Nombre de lignes (1 à 30) :','3'));if(!Number.isInteger(rows)||rows<1||rows>30)return;

@@ -1,19 +1,16 @@
-Palette flottante pour l’éditeur du manuel numérique et des TD.
+Correctif de sélection et de couleurs de la palette flottante.
 
-Si vous avez déjà versé la livraison « A_VERSER_GITHUB_EDITEUR_2026-09-30 »,
-remplacez uniquement ces trois fichiers à la racine du dépôt GitHub :
-enseignant.html, manual-teacher.js et manual.css.
+Si la livraison précédente de la palette est déjà en ligne, remplacez
+uniquement enseignant.html et manual-teacher.js à la racine du dépôt GitHub.
+Ne déposez pas ce fichier LISEZ_MOI.txt.
 
-N’ajoutez pas ce fichier LISEZ_MOI.txt. Si la livraison précédente n’a pas
-encore été versée, installez d’abord ses huit fichiers, puis remplacez ces
-trois fichiers par ceux du présent dossier.
+Si la livraison précédente n'est pas encore en ligne, installez-la d'abord,
+puis remplacez ces deux fichiers par ceux du présent dossier.
 
-La palette complète reste fixée au bas de l’écran dans la vue enseignant.
-Elle agit sur le bloc de texte actif du cours, des TD ou des corrections.
-Elle contient notamment police, taille, styles, listes, alignement, couleurs,
-interligne, tableau, vidéo et annuler/rétablir. Sur les petits écrans, la
-palette peut défiler dans sa propre zone pour laisser la page lisible.
+La sélection est mémorisée avant le clic sur la palette. Le sélecteur de
+couleur personnalisé n'interrompt plus le choix pendant son ouverture.
+Vérifications locales : sélection d'une seule ligne, couleur prédéfinie,
+italique appliqué ensuite, couleur personnalisée sur une autre ligne,
+enregistrement et prévisualisation.
 
-Contrôles locaux : affichage de la palette, gras, italique, annulation,
-interligne après enregistrement et position fixe. Aucun déploiement GitHub
-n’a été effectué automatiquement.
+Aucune publication GitHub n'a été effectuée automatiquement.
