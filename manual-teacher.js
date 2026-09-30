@@ -12,6 +12,8 @@
   let body, classId, notify, themes=[], chapters=[], lessons=[], sections=[], assets=[], mode='manual',tdEditorView='td';
   let themeId='', chapterId='', lessonId='', request=0, busy=false, dirty=false;
   let loadedClassId='', loadedAt=0;
+  const blockUploads=new Set(),removedBlockAssets=new Set();
+  let blockUploadError='';
   const selections=new WeakMap();
   const editorHistories=new WeakMap();
   function history(editor){return editorHistories.get(editor);}
@@ -190,13 +192,109 @@
     const section=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind);
     const files=section?assets.filter(x=>x.section_id===section.id):[];
     return `<section class="manual-section" data-kind="${kind}" ${mode==='manual-td'&&tdEditorView!==kind?'hidden':''}><div class="manual-section-head"><h4>${label(kind)}</h4><span class="manual-state ${section?.published?'on':''}">${section?.published?'Publié':'Brouillon'}</span></div>
-      ${toolbar(kind)}
-      <div class="manual-editor" data-editor contenteditable="true" role="textbox" aria-multiline="true" aria-label="Contenu ${label(kind)}">${safe(section?.content_html||'')}</div>
-      <div class="manual-image-tools" data-image-tools hidden><strong>Image sélectionnée</strong><span>Glissez-la avec la souris ou le doigt.</span><button type="button" data-image-align="left">À gauche</button><button type="button" data-image-align="center">Centrer</button><button type="button" data-image-align="right">À droite</button><label>Taille <input type="range" data-image-width min="1" max="100" step="1" value="100"><output data-image-size>100 %</output></label><button type="button" data-write-below>Écrire sous l’image</button><button type="button" data-image-remove>Supprimer cette image</button><button type="button" data-image-close aria-label="Fermer les outils de l’image">Fermer</button></div>
-      <div class="manual-table-tools" data-table-tools hidden><strong>Tableau sélectionné</strong><button type="button" data-table-remove>Supprimer ce tableau</button><button type="button" data-table-close>Fermer</button></div>
-      <div class="manual-files">${files.filter(file=>!file.mime_type.startsWith('image/')).map(file=>`<span class="manual-file-chip"><button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button></span>`).join('')}</div>
-      <label class="manual-upload">Ajouter des PDF ou documents bureautiques<input type="file" data-upload="${kind}" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple></label>
+      <p class="teach-help">Ajoutez des blocs dans l’ordre. Après une image ou un PDF, cliquez sur « Ajouter du texte » pour continuer.</p>
+      <div class="manual-block-editor" data-block-editor>${window.MelecManualBlocks.parse(section?.content_html||'',files).map(block=>blockCard(block,files)).join('')}</div>
+      <div class="manual-block-add"><button type="button" data-add-block="text">＋ Ajouter du texte</button><button type="button" data-add-block="image">＋ Ajouter une image</button><button type="button" data-add-block="pdf">＋ Ajouter un PDF</button><input type="file" data-block-file="image" accept="image/png,image/jpeg,image/webp,image/gif" hidden><input type="file" data-block-file="pdf" accept="application/pdf,.pdf" hidden></div>
+      <div class="manual-files">${files.filter(file=>!file.mime_type.startsWith('image/')&&file.mime_type!=='application/pdf').map(file=>`<span class="manual-file-chip"><button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button></span>`).join('')}</div>
       ${section?`<div class="manual-section-actions"><button type="button" data-toggle-section="${section.id}" class="subtle">${section.published?'Masquer cette section':'Publier cette section'}</button><button type="button" data-delete-section="${kind}" class="warn">Supprimer ${label(kind).toLowerCase()}</button></div>`:''}</section>`;
+  }
+  function blockCard(block,files=[]){
+    const asset=files.find(file=>file.id===block.id),title=asset?.file_name||'Fichier introuvable';
+    const actions=`<div class="manual-block-actions"><button type="button" data-move-block="up" title="Monter ce bloc">↑ Monter</button><button type="button" data-move-block="down" title="Descendre ce bloc">↓ Descendre</button><button type="button" data-remove-block class="warn" title="Supprimer ce bloc">Supprimer</button></div>`;
+    if(block.type==='image')return `<div class="manual-content-block" data-block-type="image" data-asset-id="${esc(block.id)}" data-align="${esc(block.align)}" data-width="${window.MelecManualBlocks.clamp(block.width)}"><div class="manual-block-head"><strong>Image · ${esc(title)}</strong>${actions}</div><div class="manual-block-image manual-block-align-${esc(block.align)}"><img data-block-image alt="${esc(title)}"></div><div class="manual-block-options"><label>Alignement <select data-block-align><option value="left" ${block.align==='left'?'selected':''}>Gauche</option><option value="center" ${block.align==='center'?'selected':''}>Centre</option><option value="right" ${block.align==='right'?'selected':''}>Droite</option></select></label><label>Largeur <input type="range" data-block-width min="1" max="100" value="${window.MelecManualBlocks.clamp(block.width)}"><output>${window.MelecManualBlocks.clamp(block.width)} %</output></label></div></div>`;
+    if(block.type==='pdf')return `<div class="manual-content-block" data-block-type="pdf" data-asset-id="${esc(block.id)}"><div class="manual-block-head"><strong>PDF · ${esc(title)}</strong>${actions}</div><p>Le document sera consultable dans la leçon, sans bouton de téléchargement.</p><button type="button" data-preview-pdf>Voir le PDF</button><div class="manual-block-pdf-preview" hidden></div></div>`;
+    return `<div class="manual-content-block" data-block-type="text"><div class="manual-block-head"><strong>Texte</strong>${actions}</div><div class="manual-block-format"><button type="button" data-block-format="bold" title="Gras">G</button><button type="button" data-block-format="italic" title="Italique">I</button><button type="button" data-block-format="insertUnorderedList" title="Liste">• Liste</button><button type="button" data-block-format="formatBlock" data-value="h3" title="Titre">Titre</button></div><div class="manual-block-text" data-block-text contenteditable="true" role="textbox" aria-multiline="true" aria-label="Texte du cours">${safe(block.html||'<p><br></p>')}</div></div>`;
+  }
+  function blockData(editor){
+    return [...editor.querySelectorAll(':scope > [data-block-type]')].map(node=>{
+      const type=node.dataset.blockType;
+      if(type==='text')return{type,html:node.querySelector('[data-block-text]')?.innerHTML||''};
+      if(type==='image')return{type,id:node.dataset.assetId,align:node.dataset.align,width:Number(node.dataset.width)};
+      return{type:'pdf',id:node.dataset.assetId};
+    });
+  }
+  async function loadBlockImage(block){
+    const asset=assets.find(row=>row.id===block.dataset.assetId),image=block.querySelector('[data-block-image]');
+    if(!asset||!image)return;
+    image.alt='Chargement de l’image…';
+    try{const blob=await teacherImageBlob(asset.object_path);if(!image.isConnected)return;const url=URL.createObjectURL(blob);teacherUrls.push(url);image.src=url;await image.decode();image.alt=asset.file_name;}
+    catch{if(image.isConnected)image.alt='Image momentanément indisponible';}
+  }
+  function styleBlockImage(block){
+    const image=block.querySelector('.manual-block-image');if(!image)return;
+    image.className='manual-block-image manual-block-align-'+window.MelecManualBlocks.align(block.dataset.align);
+    image.style.width=window.MelecManualBlocks.clamp(block.dataset.width)+'%';
+  }
+  function addTextBlock(editor,after=null){
+    const holder=document.createElement('div');holder.innerHTML=blockCard({type:'text',html:'<p><br></p>'});
+    const block=holder.firstElementChild;
+    if(after?.parentElement===editor)after.after(block);else editor.append(block);
+    dirty=true;block.querySelector('[data-block-text]').focus();return block;
+  }
+  async function addFileBlock(section,kind,file,after=null){
+    const record=sections.find(row=>row.lesson_id===lessonId&&row.kind===section.dataset.kind);
+    if(!record)throw new Error('Enregistrez d’abord la leçon.');
+    const allowed=kind==='image'?['image/png','image/jpeg','image/webp','image/gif']:['application/pdf'];
+    const limit=kind==='image'?10:20;
+    if(!allowed.includes(file.type)||file.size>limit*1024*1024)throw new Error(`Fichier refusé : ${kind==='image'?'PNG, JPG, WebP ou GIF':'PDF'} de moins de ${limit} Mo requis.`);
+    const name=(file.name||`${kind}.${kind==='pdf'?'pdf':'png'}`).replace(/[^a-zA-Z0-9._-]/g,'_');
+    const path='manual/'+lessonId+'/'+crypto.randomUUID()+'-'+name;
+    await api.upload(path,new File([file],name,{type:file.type}));
+    let asset;
+    try{
+      const created=await api.rest('manual_assets?select=id,section_id,object_path,file_name,mime_type,created_at',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({section_id:record.id,object_path:path,file_name:file.name||name,mime_type:file.type})});
+      asset=created?.[0];if(!asset?.id)throw new Error('Le fichier n’a pas été confirmé.');
+    }catch(error){await api.removeFiles([path]).catch(()=>{});throw error;}
+    assets.push(asset);
+    const editor=section.querySelector('[data-block-editor]'),holder=document.createElement('div');
+    holder.innerHTML=blockCard({type:kind,id:asset.id,align:'center',width:60},[asset]);
+    const block=holder.firstElementChild;
+    if(after?.parentElement===editor)after.after(block);else editor.append(block);
+    styleBlockImage(block);if(kind==='image')loadBlockImage(block);
+    addTextBlock(editor,block);dirty=true;
+  }
+  function startBlockUpload(section,kind,file,after=null){
+    blockUploadError='';
+    const task=addFileBlock(section,kind,file,after).catch(error=>{blockUploadError=error.message;notify(error.message,true);throw error;});
+    blockUploads.add(task);task.finally(()=>blockUploads.delete(task)).catch(()=>{});
+    task.catch(()=>{});
+  }
+  function setupBlockEditors(){
+    body.querySelectorAll('.manual-section').forEach(section=>{
+      const editor=section.querySelector('[data-block-editor]');
+      editor.querySelectorAll('[data-block-type="image"]').forEach(block=>{styleBlockImage(block);loadBlockImage(block);});
+      editor.addEventListener('input',event=>{if(event.target.closest('[data-block-text]'))dirty=true;});
+      editor.addEventListener('keyup',event=>{const text=event.target.closest('[data-block-text]');if(text)rememberSelection(text);});
+      editor.addEventListener('mouseup',event=>{const text=event.target.closest('[data-block-text]');if(text)rememberSelection(text);});
+      editor.addEventListener('paste',event=>{
+        const text=event.target.closest('[data-block-text]');if(!text)return;
+        const file=[...(event.clipboardData?.items||[])].find(item=>item.type.startsWith('image/'))?.getAsFile();
+        if(file){event.preventDefault();startBlockUpload(section,'image',file,text.closest('[data-block-type]'));return;}
+        if(/<img\b/i.test(event.clipboardData?.getData('text/html')||'')){
+          event.preventDefault();notify('L’image copiée ne contient pas de fichier. Enregistrez-la, puis utilisez « Ajouter une image ».',true);
+        }
+      });
+      editor.addEventListener('dragover',event=>{if([...event.dataTransfer?.items||[]].some(item=>item.kind==='file'))event.preventDefault();});
+      editor.addEventListener('drop',event=>{
+        const file=[...(event.dataTransfer?.files||[])][0];if(!file)return;
+        event.preventDefault();const kind=file.type==='application/pdf'?'pdf':'image';
+        startBlockUpload(section,kind,file,event.target.closest('[data-block-type]'));
+      });
+      editor.addEventListener('mousedown',event=>{if(event.target.closest('[data-block-format]'))event.preventDefault();});
+      editor.addEventListener('click',event=>{
+        const block=event.target.closest('[data-block-type]');if(!block)return;
+        const move=event.target.closest('[data-move-block]');
+        if(move){const peer=move.dataset.moveBlock==='up'?block.previousElementSibling:block.nextElementSibling;if(peer){if(move.dataset.moveBlock==='up')peer.before(block);else peer.after(block);dirty=true;}return;}
+        if(event.target.closest('[data-remove-block]')){if(block.dataset.assetId)removedBlockAssets.add(block.dataset.assetId);block.remove();dirty=true;return;}
+        const format=event.target.closest('[data-block-format]');
+        if(format){const text=block.querySelector('[data-block-text]'),range=selections.get(text);if(!range)return notify('Sélectionnez d’abord du texte.',true);text.focus();const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);document.execCommand(format.dataset.blockFormat,false,format.dataset.value||null);rememberSelection(text);dirty=true;return;}
+        if(event.target.closest('[data-preview-pdf]')){const mount=block.querySelector('.manual-block-pdf-preview');if(!mount.hidden){mount.hidden=true;mount.replaceChildren();return;}const asset=assets.find(row=>row.id===block.dataset.assetId);if(!asset)return;mount.hidden=false;mount.textContent='Chargement du PDF…';api.download(asset.object_path).then(blob=>{if(!mount.isConnected)return;const url=URL.createObjectURL(blob);teacherUrls.push(url);mount.innerHTML=`<iframe title="${esc(asset.file_name)}" src="${url}"></iframe>`;}).catch(error=>{mount.textContent=error.message;});}
+      });
+      editor.addEventListener('change',event=>{const block=event.target.closest('[data-block-type="image"]');if(!block)return;if(event.target.matches('[data-block-align]'))block.dataset.align=event.target.value;styleBlockImage(block);dirty=true;});
+      editor.addEventListener('input',event=>{const block=event.target.closest('[data-block-type="image"]');if(!block||!event.target.matches('[data-block-width]'))return;block.dataset.width=event.target.value;block.querySelector('output').textContent=event.target.value+' %';styleBlockImage(block);dirty=true;});
+      section.querySelectorAll('[data-add-block]').forEach(button=>button.onclick=()=>{if(button.dataset.addBlock==='text')addTextBlock(editor);else section.querySelector(`[data-block-file="${button.dataset.addBlock}"]`).click();});
+      section.querySelectorAll('[data-block-file]').forEach(input=>input.onchange=()=>{const file=input.files?.[0];if(file)startBlockUpload(section,input.dataset.blockFile,file);input.value='';});
+    });
   }
   function rememberSelection(editor) {
     const selection=window.getSelection();
@@ -358,7 +456,7 @@
   }
   function draw() {
     teacherUrls.forEach(URL.revokeObjectURL);teacherUrls=[];
-    dirty=false;
+    dirty=false;removedBlockAssets.clear();blockUploadError='';
     const {theme,chapter,lesson}=selected();
     const chapterChoices=theme?chapters.filter(x=>x.theme_id===theme.id):[];
     const lessonChoices=chapter?lessons.filter(x=>x.chapter_id===chapter.id):[];
@@ -389,6 +487,8 @@
       body.querySelectorAll('[data-teacher-part]').forEach(item=>item.classList.toggle('active',item===button));
       body.querySelectorAll('.manual-section').forEach(section=>section.hidden=section.dataset.kind!==tdEditorView);
     });
+    body.querySelector('#manualLessonTitle').addEventListener('input',()=>{dirty=true;});
+    setupBlockEditors();
     body.querySelectorAll('[data-editor],#manualLessonTitle').forEach(node=>node.addEventListener('input',()=>{dirty=true;node.querySelectorAll?.('.manual-write-below').forEach(p=>{if(p.textContent.trim())p.classList.remove('manual-write-below');});if(node.matches('[data-editor]')){reserveEditorImageSpace(node);recordEdit(node,true);}}));
     body.querySelectorAll('[data-editor]').forEach(editor=>{
       ['keyup','pointerup','touchend','focusout'].forEach(name=>editor.addEventListener(name,()=>rememberSelection(editor)));
@@ -586,24 +686,13 @@
   }
   async function rename(table,id,value){const title=value.trim();if(!title)return notify('Saisissez un titre.',true);await update(table,id,{title},'Titre modifié.');}
   function editorHtml(kind){
-    const editor=body.querySelector(`.manual-section[data-kind="${kind}"] [data-editor]`);
-    if(!editor)return '';
-    const copy=editor.cloneNode(true);
-    copy.querySelectorAll('.manual-image-anchor').forEach(node=>{node.classList.remove('manual-image-anchor');node.style.minHeight='';if(!node.getAttribute('style'))node.removeAttribute('style');});
-    copy.querySelectorAll('p[data-manual-continuation]').forEach(node=>{
-      node.style.marginTop='';
-      if(!node.textContent.trim()&&!node.querySelector('img,[data-manual-image]'))node.remove();
-    });
-    copy.querySelectorAll('[data-manual-image]').forEach(node=>{
-      const layout=imageAlign(node.dataset.imageAlign),width=imageWidth(node.dataset.imageWidth);
-      const position=layout==='free'?`|${Math.round(Number(node.dataset.imageX)||0)}|${Math.round(Number(node.dataset.imageY)||0)}`:'';
-      node.replaceWith(document.createTextNode(`[[image:${node.dataset.manualImage}|${layout}|${width}${position}]]`));
-    });
-    return safe(copy.innerHTML);
+    const editor=body.querySelector(`.manual-section[data-kind="${kind}"] [data-block-editor]`);
+    return editor?window.MelecManualBlocks.serialize(blockData(editor)):'';
   }
   async function persistEditor(){
     const title=body.querySelector('#manualLessonTitle').value.trim();if(!title)throw new Error('Donnez un titre à la leçon.');
-    await prepareInlineImages();
+    const uploaded=await Promise.allSettled([...blockUploads]);
+    if(uploaded.some(result=>result.status==='rejected')||blockUploadError)throw new Error(blockUploadError||'Un fichier n’a pas été ajouté. Corrigez l’erreur avant d’enregistrer.');
     const current=selected().lesson;
     await api.rest('manual_lessons?id=eq.'+current.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,updated_at:new Date().toISOString()})});
     for(const [kind] of visibleKinds()){
@@ -612,6 +701,14 @@
       if(section)await api.rest('manual_sections?id=eq.'+section.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       else await api.rest('manual_sections',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,lesson_id:current.id,kind})});
     }
+    for(const id of removedBlockAssets){
+      if(body.querySelector(`[data-asset-id="${id}"]`))continue;
+      const asset=assets.find(row=>row.id===id);if(!asset)continue;
+      await api.rest('manual_assets?id=eq.'+encodeURIComponent(id)+'&section_id=eq.'+encodeURIComponent(asset.section_id),{method:'DELETE'});
+      await api.removeFiles([asset.object_path]);
+      assets=assets.filter(row=>row.id!==id);
+    }
+    removedBlockAssets.clear();
   }
   async function saveAll(){
     if(!body.querySelector('#manualLessonTitle').value.trim())return notify('Donnez un titre à la leçon.',true);
@@ -655,7 +752,38 @@
     try{const blob=await api.download(asset.object_path),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=asset.file_name;link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}
     catch(error){notify(error.message,true);}
   }
+  async function previewBlockLesson(){
+    const title=body.querySelector('#manualLessonTitle').value.trim()||selected().lesson.title;
+    const dialog=document.createElement('dialog');dialog.className='manual-preview';
+    const markup=visibleKinds().map(([kind,name])=>{
+      const editor=body.querySelector(`.manual-section[data-kind="${kind}"] [data-block-editor]`);
+      const blocks=editor?blockData(editor):[];
+      return `<section><h3>${name}</h3><div class="manual-preview-blocks">${blocks.map(block=>{
+        if(block.type==='text')return `<div class="manual-preview-text">${safe(block.html)}</div>`;
+        const asset=assets.find(row=>row.id===block.id);
+        if(block.type==='image')return `<figure class="manual-view-image manual-view-align-${window.MelecManualBlocks.align(block.align)}" style="width:${window.MelecManualBlocks.clamp(block.width)}%"><img data-preview-image="${esc(block.id)}" alt="${esc(asset?.file_name||'Image')}"></figure>`;
+        return `<div class="manual-view-pdf"><strong>📄 ${esc(asset?.file_name||'PDF')}</strong><button type="button" data-preview-pdf="${esc(block.id)}">Lire le PDF</button><div data-preview-pdf-mount></div></div>`;
+      }).join('')}</div></section>`;
+    }).join('');
+    dialog.innerHTML=`<div class="manual-preview-head"><h2>${esc(title)}</h2><button type="button" data-close>Fermer</button></div>${markup}`;
+    const urls=[];document.body.append(dialog);dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.onclose=()=>{urls.forEach(URL.revokeObjectURL);dialog.remove();};dialog.showModal();
+    dialog.querySelectorAll('[data-preview-image]').forEach(async image=>{
+      const asset=assets.find(row=>row.id===image.dataset.previewImage);if(!asset)return;
+      const existing=body.querySelector(`[data-asset-id="${asset.id}"] [data-block-image]`);
+      if(existing?.complete&&existing.naturalWidth){image.src=existing.src;return;}
+      try{const blob=await teacherImageBlob(asset.object_path);if(!image.isConnected)return;const url=URL.createObjectURL(blob);urls.push(url);image.src=url;}catch{image.alt='Image indisponible';}
+    });
+    dialog.querySelectorAll('[data-preview-pdf]').forEach(button=>button.onclick=async()=>{
+      const mount=button.closest('.manual-view-pdf').querySelector('[data-preview-pdf-mount]');
+      if(mount.childElementCount){mount.replaceChildren();return;}
+      const asset=assets.find(row=>row.id===button.dataset.previewPdf);if(!asset)return;
+      mount.textContent='Chargement du PDF…';
+      try{const blob=await api.download(asset.object_path);if(!mount.isConnected)return;const url=URL.createObjectURL(blob);urls.push(url);mount.innerHTML=`<iframe title="${esc(asset.file_name)}" src="${url}"></iframe>`;}
+      catch(error){mount.textContent=error.message;}
+    });
+  }
   async function preview(){
+    return previewBlockLesson();
     try{await prepareInlineImages();}
     catch(error){notify(error.message,true);return;}
     const lesson=selected().lesson, title=body.querySelector('#manualLessonTitle').value.trim()||lesson.title;

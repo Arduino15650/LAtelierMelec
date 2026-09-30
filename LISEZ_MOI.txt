@@ -1,21 +1,28 @@
-Correctif de l'editeur du manuel et de l'affichage des images.
+Nouvel éditeur simple du manuel numérique — livraison du 30 septembre 2026.
 
-Seuls les six fichiers de ce dossier sont a remplacer a la racine du depot GitHub :
-eleve.html, enseignant.html, manual-student.js, manual-teacher.js, manual.css,
-content-render.js.
-Ne deposez pas ce fichier texte.
+Copiez uniquement les huit fichiers de ce dossier à la racine du dépôt GitHub,
+en remplaçant les fichiers de même nom. Le nouveau manual-blocks.js doit aussi
+être ajouté. Ne déposez pas ce fichier LISEZ_MOI.txt.
 
-Ce correctif supprime la hauteur reservee dans le paragraphe de l'image, qui decalait
-les lignes suivantes. L'image libre peut en revanche recouvrir du texte si elle est
-deplacee dessus : placez-la dans un espace libre. Apres chaque image collee,
-un vrai paragraphe editable est place sous l'image et le curseur y est amene.
-Ce fonctionnement a ete essaye localement avec trois images successives et du texte
-entre chaque image, puis controle dans la previsualisation. Les images en cours de
-chargement montrent un indicateur, puis l'image ou un bouton de nouvel essai.
+Fichiers : enseignant.html, eleve.html, manual-blocks.js, manual-teacher.js,
+manual-student.js, manual.css, content-render.js, service-worker.js.
 
-Le code de ces six fichiers a ete controle localement (syntaxe JS et diff).
-Le chargement reel sur GitHub Pages et Supabase ne sera verifiable qu'apres depot.
-Aucun de ces fichiers n'a ete publie automatiquement sur GitHub.
+L’éditeur utilise des blocs ordonnés : texte, image et PDF. Vous pouvez ajouter
+autant de blocs que nécessaire, monter ou descendre un bloc, le supprimer, puis
+enregistrer. Une image n’est plus flottante dans un paragraphe : le texte qui
+la suit reste éditable dans son propre bloc. La prévisualisation reprend cet
+ordre. Les anciennes leçons sont converties à l’affichage sans modifier leurs
+données tant que vous ne les enregistrez pas.
 
-L'alerte Supabase « Leaked Password Protection Disabled » concerne la securite des
-mots de passe et non l'affichage des images. Aucun parametre Auth n'a ete modifie.
+Les fichiers sont toujours stockés dans le stockage Supabase existant et le
+contenu dans manual_sections.content_html. Aucune commande SQL n’est requise.
+Un PDF est proposé à la consultation dans la leçon, sans bouton de téléchargement.
+Comme pour toute page web, il est impossible d’empêcher absolument la copie
+ou l’enregistrement par un élève ayant accès au document.
+
+Contrôles réalisés localement avec une leçon simulée : reprise d’une image
+ancienne, ajout d’image et de texte après PDF, déplacement, enregistrement,
+prévisualisation et affichage élève. La connexion réelle à GitHub Pages et à
+Supabase n’est pas validée par ce test local.
+
+Aucun fichier n’a été publié automatiquement sur GitHub dans cette livraison.
