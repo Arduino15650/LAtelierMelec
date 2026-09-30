@@ -178,13 +178,21 @@
     dirty=true;control.value='';
   }
   async function prepareInlineImages(){
-    if(inlineCaptureInFlight)return inlineCaptureInFlight;
+    if(inlineCaptureInFlight){
+      await inlineCaptureInFlight;
+      if([...body.querySelectorAll('[data-editor] img')].some(image=>!image.closest('[data-manual-image]')))
+        return prepareInlineImages();
+      return;
+    }
     inlineCaptureInFlight=(async()=>{
       for(const [kind] of visibleKinds()){
         const editor=body.querySelector(`.manual-section[data-kind="${kind}"] [data-editor]`);
         if(!editor)continue;
-        for(const image of [...editor.querySelectorAll('img')]){
-          if(image.closest('[data-manual-image]'))continue;
+        // Une nouvelle image peut être collée pendant l'envoi de la précédente.
+        // Rebalayer jusqu'à épuisement évite de perdre la troisième image (ou les suivantes).
+        while(true){
+          const image=[...editor.querySelectorAll('img')].find(node=>!node.closest('[data-manual-image]'));
+          if(!image)break;
           let frame=image.closest('.manual-editor-image');
           if(!frame){frame=document.createElement('span');frame.contentEditable='false';frame.className='manual-editor-image';setImageLayout(frame,'free',25,0,0);image.replaceWith(frame);frame.append(image);anchorFreeImages(editor);image.addEventListener('load',()=>reserveEditorImageSpace(editor),{once:true});reserveEditorImageSpace(editor);}
           const section=sections.find(row=>row.lesson_id===lessonId&&row.kind===kind);
