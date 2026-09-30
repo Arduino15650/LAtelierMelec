@@ -137,6 +137,13 @@
       root.querySelectorAll('.manual-image-anchor').forEach(anchor=>anchor.style.minHeight='');
       root.style.minHeight='';
       const frames=[...root.querySelectorAll('.manual-reading-image-frame')].filter(frame=>getComputedStyle(frame).position==='absolute');
+      root.querySelectorAll('p[data-manual-continuation]').forEach(paragraph=>{
+        paragraph.style.marginTop='0px';
+        const before=frames.filter(frame=>Boolean(frame.compareDocumentPosition(paragraph)&Node.DOCUMENT_POSITION_FOLLOWING));
+        if(!before.length)return;
+        const bottom=Math.max(...before.map(frame=>frame.getBoundingClientRect().bottom));
+        paragraph.style.marginTop=Math.max(0,Math.ceil(bottom-paragraph.getBoundingClientRect().top+16))+'px';
+      });
       if(frames.length){
         const top=root.getBoundingClientRect().top;
         root.style.minHeight=Math.max(0,Math.ceil(Math.max(...frames.map(frame=>frame.getBoundingClientRect().bottom-top+16))))+'px';

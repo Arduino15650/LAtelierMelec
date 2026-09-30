@@ -64,6 +64,7 @@
         return fragment;
       }
       const output = document.createElement(node.tagName === 'FONT' ? 'span' : node.tagName.toLowerCase());
+      if (node.tagName === 'P' && node.getAttribute('data-manual-continuation') === 'true') output.dataset.manualContinuation = 'true';
       const style = node.style;
       const face = node.getAttribute('face') || style.fontFamily.replaceAll('"','').replaceAll("'",'');
       if (fonts.has(face)) output.style.fontFamily = face;

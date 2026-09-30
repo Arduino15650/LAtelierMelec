@@ -85,6 +85,9 @@
 .manual-editor:focus-visible{outline:3px solid #457fbb;outline-offset:2px}
 .manual-editor .manual-write-below{min-height:0;padding:0;border:0;background:transparent;cursor:text}
 .manual-editor .manual-write-below::before{display:none}
+.manual-editor p[data-manual-continuation]{position:relative;min-height:38px;padding:8px 10px;border:1px dashed #8aafd4;border-radius:8px;background:#f7fbff;cursor:text}
+.manual-editor p[data-manual-continuation]:has(>br:only-child)::before{content:"Continuez le cours ici, sous l’image";position:absolute;top:8px;left:10px;color:#426481;pointer-events:none}
+.manual-editor p[data-manual-continuation]:focus::before{display:none}
 .manual-upload{display:grid;gap:6px;margin:12px 0;font-weight:700}
 .manual-upload input{box-sizing:border-box;max-width:100%;min-width:0;font:inherit}
 .manual-preview{box-sizing:border-box;width:min(1000px,calc(100vw - 24px));max-height:94svh;padding:clamp(16px,3vw,30px);border:2px solid #6ca7d9;border-radius:18px;background:#fff;color:#173450;overflow:auto}
