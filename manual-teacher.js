@@ -11,6 +11,7 @@
   };
   let body, classId, notify, themes=[], chapters=[], lessons=[], sections=[], assets=[], mode='manual',tdEditorView='td';
   let themeId='', chapterId='', lessonId='', request=0, busy=false, dirty=false;
+  let loadedClassId='', loadedAt=0;
   const selections=new WeakMap();
   let teacherUrls=[];
   function label(kind) { return kinds.find(entry => entry[0] === kind)?.[1] || kind; }
@@ -46,6 +47,8 @@
       assets=sections.length ? await api.rest('manual_assets?section_id=in.('+sections.map(x=>x.id).join(',')+')&select=id,section_id,object_path,file_name,mime_type,created_at&order=created_at.asc') : [];
       if(ticket!==request)return;
       draw();
+      loadedClassId=classId;
+      loadedAt=Date.now();
     } catch(error) { if(ticket===request){body.innerHTML='<div class="teach-card manual-error">Le manuel est indisponible. Vérifiez que son script SQL est installé.</div>';notify(error.message,true);} }
   }
   function sectionCard(kind,lesson) {
@@ -361,8 +364,9 @@
   }
   window.MelecManualTeacher={canLeave(){return !dirty||confirm('Quitter la leçon sans enregistrer vos modifications ?');},resetSelection(){themeId='';chapterId='';lessonId='';dirty=false;},render(nextBody,nextClassId,nextNotify,nextMode='manual'){
     body=nextBody;notify=nextNotify;mode=nextMode;
-    if(classId!==nextClassId){classId=nextClassId;themeId='';chapterId='';lessonId='';}
+    if(classId!==nextClassId){classId=nextClassId;themeId='';chapterId='';lessonId='';loadedAt=0;}
     if(!classId){body.innerHTML='<div class="teach-card">Choisissez une classe pour créer son manuel.</div>';return;}
+    if(loadedClassId===classId&&Date.now()-loadedAt<15000&&!busy){draw();return;}
     load();
   }};
 })();

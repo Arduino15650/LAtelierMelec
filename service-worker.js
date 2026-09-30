@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v137-manual-delete';
+const CACHE_NAME = 'bac-pro-melec-v138-navigation';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
 const CORE_FILES = ['./logo-bac-pro-melec-v3.webp'];
 

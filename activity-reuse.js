@@ -12,12 +12,7 @@
       const id=familyId(activity),current=map.get(id);
       if(!current||activity.id===id)map.set(id,activity);
     });
-    const byTitle=new Map();
-    [...map].map(([id,activity])=>({id,activity})).sort((a,b)=>a.activity.title.localeCompare(b.activity.title,'fr',{sensitivity:'base'})).forEach(item=>{
-      const key=String(item.activity.title||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('fr');
-      if(!byTitle.has(key))byTitle.set(key,item);
-    });
-    return [...byTitle.values()];
+    return [...map].map(([id,activity])=>({id,activity})).sort((a,b)=>a.activity.title.localeCompare(b.activity.title,'fr',{sensitivity:'base'}));
   };
   const groups=()=>Array.isArray(state.studentGroups)?state.studentGroups.filter(group=>group.className===choice.className):[];
   const pupils=()=>{
@@ -53,7 +48,7 @@
     view.innerHTML='<div class="page-head"><div><h1>Liste des activités</h1><p>Réutilisez une activité existante pour une classe, un groupe et les élèves de votre choix.</p></div></div>'+
       '<section class="panel activity-reuse-panel"><div class="activity-reuse-fields">'+
       '<div class="field"><label for="reuseActivity">1. Activité créée</label><select id="reuseActivity"><option value="">Choisir une activité…</option>'+
-      available.map(item=>'<option value="'+esc(item.id)+'"'+(choice.familyId===item.id?' selected':'')+'>'+esc(item.activity.title)+'</option>').join('')+'</select></div>'+
+      available.map(item=>'<option value="'+esc(item.id)+'"'+(choice.familyId===item.id?' selected':'')+'>'+esc(item.activity.title)+' · '+esc((item.activity.competencies||[]).join(', ')||'compétences non précisées')+'</option>').join('')+'</select></div>'+
       '<div class="field"><label for="reuseClass">2. Classe</label><select id="reuseClass"'+(!choice.familyId?' disabled':'')+'><option value="">Choisir une classe…</option>'+
       classes.map(name=>'<option value="'+esc(name)+'"'+(choice.className===name?' selected':'')+'>'+esc(name)+'</option>').join('')+'</select></div>'+
       '<div class="field"><label for="reuseGroup">3. Groupe</label><select id="reuseGroup"'+(!choice.className?' disabled':'')+'><option value="">Choisir un groupe…</option><option value="__all__"'+(choice.groupId==='__all__'?' selected':'')+'>Toute la classe</option>'+

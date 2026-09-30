@@ -10,6 +10,7 @@
   let previewEpoch = 0;
   let loadedSession = '', lastLoaded = 0, loadInFlight = null;
   let studentsLoadedAt = 0;
+  let messagesLoadedAt = 0, tpLoadedAt = 0, tpLoadedClassId = '';
   const kindNames = { course: 'Cours', td: 'Travaux dirigés', tp: 'Travaux pratiques' };
   const originalShow = window.show;
   function sessionKey() {
@@ -42,7 +43,7 @@
       if (!root.querySelector('#teachClass')) render();
       if (Date.now() - lastLoaded > 30000) load(true).catch(error => status(error.message, true));
     } else {
-      classes = []; chapters = []; items = []; students = []; messages = []; studentsLoadedAt = 0;
+      classes = []; chapters = []; items = []; students = []; messages = []; studentsLoadedAt = 0; messagesLoadedAt = 0; tpLoadedAt = 0;
       loadedSession = '';
       load().catch(error => status(error.message, true));
     }
@@ -113,11 +114,13 @@
         pendingStudents = students.filter(student =>
           (!student.approved_at || !student.class_id) &&
           (student.class_id === classId || (!student.class_id && student.requested_class?.trim().toLocaleLowerCase('fr') === selectedClass?.name.trim().toLocaleLowerCase('fr'))));
+        tpLoadedClassId = classId;
+        tpLoadedAt = Date.now();
       }
     } else { chapters = []; items = []; }
     students = await profilesPromise;
     if (refreshStudents) studentsLoadedAt = Date.now();
-    if (auxiliary) messages = await auxiliary;
+    if (auxiliary) { messages = await auxiliary; messagesLoadedAt = Date.now(); }
     render();
   }
   async function refreshAuxiliary(selectedTab) {
@@ -126,7 +129,7 @@
       : await api.rest('contact_messages?select=*&order=created_at.desc&limit=100');
     if (tab !== selectedTab || !root.offsetParent) return;
     if (selectedTab === 'students' || selectedTab === 'alerts') { students = result; studentsLoadedAt = Date.now(); }
-    else messages = result;
+    else { messages = result; messagesLoadedAt = Date.now(); }
     render();
   }
   function render() {
@@ -144,8 +147,9 @@
         if(nextTab==='tp')selectedTpId='';
       }
       tab = nextTab; selectedItemId = ''; editing = null; render();
-      if (tab === 'students' || tab === 'alerts' || tab === 'messages') refreshAuxiliary(tab).catch(err => status(err.message, true));
-      if (tab === 'tp') loadClass().catch(err => status(err.message, true));
+      if ((tab === 'students' || tab === 'alerts') && Date.now()-studentsLoadedAt>=15000) refreshAuxiliary(tab).catch(err => status(err.message, true));
+      if (tab === 'messages' && Date.now()-messagesLoadedAt>=15000) refreshAuxiliary(tab).catch(err => status(err.message, true));
+      if (tab === 'tp' && (tpLoadedClassId!==classId || Date.now()-tpLoadedAt>=15000)) loadClass().catch(err => status(err.message, true));
     });
     if (tab === 'students') renderStudents();
     else if (tab === 'alerts') renderAlerts();
