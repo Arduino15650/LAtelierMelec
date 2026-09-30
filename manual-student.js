@@ -7,7 +7,7 @@
   let imageCacheBytes=0,imageCacheEpoch=0;
   const queuedImages=new WeakMap();
   const imageObserver=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{
-    entries.forEach(entry=>{if(!entry.isIntersecting)return;imageObserver.unobserve(entry.target);const asset=queuedImages.get(entry.target);if(asset)loadImage(asset,entry.target);});
+    entries.forEach(entry=>{if(!entry.isIntersecting)return;imageObserver.unobserve(entry.target);const queued=queuedImages.get(entry.target);if(queued)loadImage(queued.asset,queued.image);});
   },{rootMargin:'400px'}):null;
   const target=()=>document.getElementById(mode==='manual'?'studentManualContent':'studentTdContent');
   ['studentManualPane','studentTdPane'].forEach(id=>{
@@ -17,7 +17,8 @@
     }));
   });
   function cleanup(){imageObserver?.disconnect();pdfCleanups.forEach(close=>close());pdfCleanups=[];objectUrls.forEach(URL.revokeObjectURL);objectUrls=[];}
-  function queueImage(asset,image,eager=false){if(imageObserver&&!eager){queuedImages.set(image,asset);imageObserver.observe(image);}else loadImage(asset,image);}
+  function queueImage(asset,image,eager=false){const frame=image.closest('.manual-reading-image-frame');if(imageObserver&&!eager&&frame){queuedImages.set(frame,{asset,image});imageObserver.observe(frame);}else loadImage(asset,image);}
+  function imagePlaceholder(){const placeholder=document.createElement('span');placeholder.className='manual-image-placeholder';placeholder.textContent='Chargement de l’image…';return placeholder;}
   function clearImageCache(){imageCacheEpoch++;imageBlobs.clear();imageRequests.clear();imageCacheBytes=0;}
   async function imageBlob(path){
     const cached=imageBlobs.get(path);
@@ -117,7 +118,7 @@
       while((match=pattern.exec(text))){
         replacement.append(document.createTextNode(text.slice(start,match.index)));
         const asset=assets.find(a=>a.id===match[1]&&a.section_id===section.dataset.section&&a.mime_type.startsWith('image/'));
-        if(asset){const image=document.createElement('img');image.alt='';image.className='manual-inline-image manual-align-free manual-image-loading';const width=Math.max(1,Math.min(100,Number(match[3])||100));const maxX=100-width,oldX=match[2]==='right'?maxX:match[2]==='left'?0:maxX/2;image.style.width=width+'%';image.style.setProperty('--image-width',image.style.width);image.style.left=Math.max(0,Math.min(maxX,match[2]==='free'?(Number(match[4])||0):oldX))+'%';image.style.top=Math.max(0,Math.min(10000,Number(match[5])||0))+'px';replacement.append(image);queueImage(asset,image,imagesQueued++<2);}
+        if(asset){const frame=document.createElement('span'),image=document.createElement('img');frame.className='manual-reading-image-frame manual-align-free';image.alt='';image.className='manual-inline-image manual-image-loading';const width=Math.max(1,Math.min(100,Number(match[3])||100));const maxX=100-width,oldX=match[2]==='right'?maxX:match[2]==='left'?0:maxX/2;frame.style.width=width+'%';frame.style.setProperty('--image-width',frame.style.width);frame.style.left=Math.max(0,Math.min(maxX,match[2]==='free'?(Number(match[4])||0):oldX))+'%';frame.style.top=Math.max(0,Math.min(10000,Number(match[5])||0))+'px';frame.append(imagePlaceholder(),image);replacement.append(frame);queueImage(asset,image,imagesQueued++<2);}
         else replacement.append(document.createTextNode(match[0]));
         start=pattern.lastIndex;
       }
@@ -131,7 +132,16 @@
     reserveReadingImages(html);
   }
   function reserveReadingImages(root){
-    requestAnimationFrame(()=>{if(!root?.isConnected)return;root.querySelectorAll('.manual-image-anchor').forEach(anchor=>{anchor.style.minHeight='';const images=[...anchor.querySelectorAll('.manual-align-free')].filter(node=>node.classList.contains('manual-image-loading')||node.complete&&node.naturalWidth);if(images.length){const top=anchor.getBoundingClientRect().top;anchor.style.minHeight=Math.ceil(Math.max(...images.map(node=>node.getBoundingClientRect().bottom-top+16)))+'px';}});});
+    requestAnimationFrame(()=>{
+      if(!root?.isConnected)return;
+      root.querySelectorAll('.manual-image-anchor').forEach(anchor=>anchor.style.minHeight='');
+      root.style.minHeight='';
+      const frames=[...root.querySelectorAll('.manual-reading-image-frame')].filter(frame=>getComputedStyle(frame).position==='absolute');
+      if(frames.length){
+        const top=root.getBoundingClientRect().top;
+        root.style.minHeight=Math.max(0,Math.ceil(Math.max(...frames.map(frame=>frame.getBoundingClientRect().bottom-top+16))))+'px';
+      }
+    });
   }
   async function fetchLesson(id){
     const cacheKey=mode+':'+id;
@@ -152,7 +162,7 @@
       if(!blob.size||blob.type&&!blob.type.startsWith('image/'))throw new Error('Fichier image invalide');
       url=URL.createObjectURL(blob);objectUrls.push(url);image.src=url;
       await image.decode();if(!image.isConnected)return;
-      image.alt=asset.file_name;image.classList.remove('manual-image-loading');
+      image.alt=asset.file_name;image.classList.remove('manual-image-loading');image.closest('.manual-reading-image-frame')?.querySelector('.manual-image-placeholder')?.remove();
       reserveReadingImages(image.closest('.manual-reading-html'));
     }
     catch(error){
@@ -163,7 +173,8 @@
         const root=image.closest('.manual-reading-html');
         const retry=document.createElement('button');retry.type='button';retry.className='manual-image-retry';
         retry.textContent='Image momentanément indisponible · Réessayer';
-        retry.onclick=()=>{image.removeAttribute('src');image.alt='';image.classList.add('manual-image-loading');retry.replaceWith(image);queueImage(asset,image);};
+        retry.onclick=()=>{image.removeAttribute('src');image.alt='';image.classList.add('manual-image-loading');retry.replaceWith(image);image.closest('.manual-reading-image-frame')?.prepend(imagePlaceholder());queueImage(asset,image);};
+        image.closest('.manual-reading-image-frame')?.querySelector('.manual-image-placeholder')?.remove();
         image.replaceWith(retry);reserveReadingImages(root);
       }
       console.warn('Image du manuel indisponible :',error?.message||error);

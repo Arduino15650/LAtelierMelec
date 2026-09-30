@@ -1,0 +1,18 @@
+Correctif de l'editeur du manuel et de l'affichage des images.
+
+Seuls les cinq fichiers de ce dossier sont a remplacer a la racine du depot GitHub :
+eleve.html, enseignant.html, manual-student.js, manual-teacher.js, manual.css.
+Ne deposez pas ce fichier texte.
+
+Ce correctif supprime la hauteur reservee dans le paragraphe de l'image, qui decalait
+les lignes suivantes. L'image libre peut en revanche recouvrir du texte si elle est
+deplacee dessus : placez-la dans un espace libre. Un paragraphe normal reste
+disponible apres l'image pour poursuivre la redaction. Les images en cours de
+chargement montrent un indicateur, puis l'image ou un bouton de nouvel essai.
+
+Le code de ces cinq fichiers a ete controle localement (syntaxe JS et diff).
+Le chargement reel sur GitHub Pages et Supabase ne sera verifiable qu'apres depot.
+Aucun de ces fichiers n'a ete publie automatiquement sur GitHub.
+
+L'alerte Supabase « Leaked Password Protection Disabled » concerne la securite des
+mots de passe et non l'affichage des images. Aucun parametre Auth n'a ete modifie.
