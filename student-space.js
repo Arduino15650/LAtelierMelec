@@ -20,7 +20,7 @@
   }
   let profile = null;
   let cleanupViewer = null;
-  let assignments = [], tpItems = [], activeTp = null, selectedContentTab = 'manual';
+  let assignments = [], tpItems = [], activeTp = null, selectedContentTab = 'tp';
   let tpItemsLoadedAt = 0, tpItemsKey = '';
   function tpEnd(assignment) {
     if (assignment.validated_at) return 0;
@@ -37,23 +37,12 @@
   function updateLearningLock() {
     const locked=Boolean(activeTp);
     $('studentContentTabs').dataset.tpActive=String(locked);
-    ['studentManualTab','studentTdTab'].forEach(id=>{$(id).disabled=locked;});
-    if(locked)window.MelecManualStudent.clear();
   }
   function switchContentTab(next) {
-    if (activeTp && next !== 'tp') return;
-    if (['manual','td'].includes(selectedContentTab) && next !== selectedContentTab) window.MelecManualStudent.clear({preserveImages:true});
-    selectedContentTab = next;
-    $('studentManualTab').classList.toggle('active', next === 'manual');
-    $('studentTdTab').classList.toggle('active', next === 'td');
-    $('studentTpTab').classList.toggle('active', next === 'tp');
-    $('studentManualPane').hidden = next !== 'manual';
-    $('studentTdPane').hidden = next !== 'td';
-    $('studentTpPane').hidden = next !== 'tp';
-    if (['manual','td'].includes(next) && profile?.class_id) window.MelecManualStudent.load(profile.class_id,next);
+    selectedContentTab = 'tp';
+    $('studentTpTab').classList.add('active');
+    $('studentTpPane').hidden = false;
   }
-  $('studentManualTab').onclick = () => switchContentTab('manual');
-  $('studentTdTab').onclick = () => switchContentTab('td');
   $('studentTpTab').onclick = () => switchContentTab('tp');
   const authPane = $('studentAuth');
   const dashboard = $('studentDashboard');
@@ -129,8 +118,6 @@
       }).catch(() => { classLabel.textContent = 'Classe attribuée : nom indisponible'; });
     }
     if (!dashboardWasVisible) {
-      $('studentManualPane').hidden = true;
-      $('studentTdPane').hidden = true;
       $('studentTpPane').hidden = true;
     }
     $('studentContentTabs').hidden = !approved;
@@ -141,7 +128,6 @@
     await Promise.all([classNamePromise, loadTpAssignments()]);
     if (activeTp) {
       if (cleanupViewer) { cleanupViewer(); cleanupViewer=null; }
-      window.MelecManualStudent.clear();
       updateLearningLock();switchContentTab('tp');
     }
     else {updateLearningLock();switchContentTab(selectedContentTab);}
@@ -287,7 +273,7 @@
   };
   $('studentLogout').onclick = async () => {
     if (cleanupViewer) cleanupViewer();
-    clearTpViewer(); window.MelecManualStudent.clear(); activeTp=null; assignments=[]; tpItems=[]; tpItemsLoadedAt=0; tpItemsKey='';
+    clearTpViewer(); activeTp=null; assignments=[]; tpItems=[]; tpItemsLoadedAt=0; tpItemsKey='';
     await api.signOut();
     dashboard.hidden = true; authPane.hidden = false; profile = null;
     switchTab('login');
@@ -297,7 +283,7 @@
     const remaining = tpEnd(activeTp) - Date.now();
     const info = $('studentTpList').querySelector('.student-tp-card .portal-small');
     if (info) info.textContent = remaining > 0 ? 'Temps restant : ' + formatDuration(remaining) : 'Temps écoulé · TP verrouillé.';
-    if (remaining <= 0) { clearTpViewer(); activeTp=null; selectedContentTab='manual'; openDashboard().catch(error => message($('studentTpNotice'),error.message,true)); }
+    if (remaining <= 0) { clearTpViewer(); activeTp=null; selectedContentTab='tp'; openDashboard().catch(error => message($('studentTpNotice'),error.message,true)); }
   },1000);
   let accessRefreshInProgress = false;
   async function refreshStudentAccess() {
@@ -310,9 +296,6 @@
     } catch { /* Les requêtes de contenu restent protégées par RLS même hors réseau. */ }
     if ((!profile.approved_at || !profile.class_id || profile.blocked_at) && !$('studentContentTabs').hidden) {
       if (cleanupViewer) cleanupViewer();
-      window.MelecManualStudent.clear();
-      $('studentManualPane').hidden = true;
-      $('studentTdPane').hidden = true;
       $('studentTpPane').hidden = true;
       $('studentContentTabs').hidden = true;
       clearTpViewer(); activeTp=null;
@@ -330,7 +313,7 @@
           if (!wasActive && cleanupViewer) { cleanupViewer(); cleanupViewer=null; }
           updateLearningLock();switchContentTab('tp');
         }
-        else { updateLearningLock();if (wasActive) switchContentTab('manual'); }
+        else { updateLearningLock();if (wasActive) switchContentTab('tp'); }
       } catch { /* Les règles RLS continuent à protéger chaque accès aux documents. */ }
     }
     } finally { accessRefreshInProgress = false; }
@@ -349,4 +332,5 @@
       message(authStatus, 'Le serveur ne répond pas correctement : ' + error.message + ' Votre session est conservée ; actualisez pour réessayer.', true);
   });
 })();
+
 
