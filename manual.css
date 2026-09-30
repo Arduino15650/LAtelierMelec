@@ -55,6 +55,7 @@
 .manual-editor-image{display:block;max-width:100%;margin:.4em 0;cursor:pointer;border:2px solid transparent;border-radius:9px}
 .manual-editor-image.is-selected{border-color:#1565aa;box-shadow:0 0 0 2px #b9dcf8}
 .manual-editor-image img{display:block;width:100%;height:auto;border-radius:8px}
+.manual-editor-image img.manual-image-loading{visibility:hidden;aspect-ratio:4/3}
 .manual-editor-image.manual-align-free{position:absolute;z-index:2;float:none;clear:none;display:block;max-width:100%;margin:0!important;touch-action:none;user-select:none}
 .manual-inline-image.manual-image-loading{visibility:hidden;aspect-ratio:4/3}
 .manual-image-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:8px 0;padding:9px;border:1px solid #8db9dd;border-radius:10px;background:#e8f4ff}
@@ -68,8 +69,10 @@
 .manual-editor::after,.manual-preview-content::after,.manual-reading-html::after{content:"";display:block;clear:both}
 .manual-editor table{border-collapse:collapse;max-width:100%;width:100%}
 .manual-editor td,.manual-editor th{min-width:60px;padding:8px;border:1px solid #809bb8}
-.manual-editor{box-sizing:border-box;width:100%;min-height:175px;max-height:55svh;overflow:auto;padding:14px;border:1px solid #9ab8d5;border-radius:10px;background:#fff;color:#173450;font:inherit;line-height:1.55}
+.manual-editor{box-sizing:border-box;width:100%;min-height:260px;max-height:none;overflow:visible;padding:14px;border:1px solid #9ab8d5;border-radius:10px;background:#fff;color:#173450;font:inherit;line-height:1.55}
 .manual-editor:focus-visible{outline:3px solid #457fbb;outline-offset:2px}
+.manual-editor .manual-write-below{position:relative;box-sizing:border-box;min-height:76px;padding:26px 10px 10px;border:1px dashed #8aafd4;border-radius:8px;background:#f7fbff;cursor:text}
+.manual-editor .manual-write-below::before{content:"Cliquez ici pour continuer le cours sous l’image";position:absolute;top:7px;left:10px;color:#426481;font-size:.85em;pointer-events:none}
 .manual-upload{display:grid;gap:6px;margin:12px 0;font-weight:700}
 .manual-upload input{box-sizing:border-box;max-width:100%;min-width:0;font:inherit}
 .manual-preview{box-sizing:border-box;width:min(1000px,calc(100vw - 24px));max-height:94svh;padding:clamp(16px,3vw,30px);border:2px solid #6ca7d9;border-radius:18px;background:#fff;color:#173450;overflow:auto}

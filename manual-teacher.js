@@ -14,6 +14,21 @@
   let loadedClassId='', loadedAt=0;
   const selections=new WeakMap();
   let teacherUrls=[];
+  const imageBlobs=new Map(),imageRequests=new Map();
+  let imageCacheBytes=0;
+  async function teacherImageBlob(path){
+    const hit=imageBlobs.get(path);
+    if(hit){imageBlobs.delete(path);imageBlobs.set(path,hit);return hit;}
+    if(imageRequests.has(path))return imageRequests.get(path);
+    const pending=api.download(path).then(blob=>{
+      if(blob.size&&blob.size<=10*1024*1024){
+        while(imageCacheBytes+blob.size>40*1024*1024&&imageBlobs.size){const oldest=imageBlobs.keys().next().value;imageCacheBytes-=imageBlobs.get(oldest).size;imageBlobs.delete(oldest);}
+        imageBlobs.set(path,blob);imageCacheBytes+=blob.size;
+      }
+      return blob;
+    }).finally(()=>imageRequests.delete(path));
+    imageRequests.set(path,pending);return pending;
+  }
   let inlineCaptureInFlight=null;
   const imagePattern=()=>/\[\[image:([0-9a-f-]{36})(?:\|(left|center|right|free)\|(\d{1,3})(?:\|(\d{1,3})\|(\d{1,5}))?)?\]\]/gi;
   const imageWidth=value=>Math.max(1,Math.min(100,Number(value)||100));
@@ -43,7 +58,7 @@
       if(!editor.isConnected)return;
       editor.querySelectorAll('.manual-image-anchor').forEach(anchor=>{
         anchor.style.minHeight='';
-        const images=[...anchor.querySelectorAll('.manual-editor-image.manual-align-free')].filter(image=>image.querySelector('img')?.complete&&image.querySelector('img')?.naturalWidth);
+        const images=[...anchor.querySelectorAll('.manual-editor-image.manual-align-free')].filter(image=>{const img=image.querySelector('img');return img?.classList.contains('manual-image-loading')||img?.complete&&img?.naturalWidth;});
         if(!images.length)return;
         const top=anchor.getBoundingClientRect().top;
         const bottom=Math.max(...images.map(image=>image.getBoundingClientRect().bottom-top+16));
@@ -59,10 +74,19 @@
       next=document.createElement('p');next.append(document.createElement('br'));
       (anchor&&editor.contains(anchor)?anchor:frame).after(next);
     }
+    next.classList.add('manual-write-below');
     reserveEditorImageSpace(editor);
     editor.focus();const range=document.createRange();range.selectNodeContents(next);range.collapse(true);
     const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
     selections.set(editor,range.cloneRange());next.scrollIntoView({block:'nearest'});dirty=true;
+  }
+  function ensureTrailingTextBlock(editor){
+    const last=editor.lastElementChild;
+    if(last?.querySelector('.manual-editor-image')){
+      const paragraph=document.createElement('p');paragraph.append(document.createElement('br'));editor.append(paragraph);
+    }
+    const tail=editor.lastElementChild;
+    if(tail?.matches('p')&&!tail.textContent.trim()&&tail.previousElementSibling?.querySelector('.manual-editor-image'))tail.classList.add('manual-write-below');
   }
   function reserveImageSpace(root){
     requestAnimationFrame(()=>{
@@ -89,19 +113,19 @@
   async function list(table, filter, columns='*') {
     return api.rest(table+'?'+filter+'&select='+columns+'&order=position.asc,created_at.asc');
   }
-  async function load() {
+  async function load(level='all') {
     const ticket=++request;
     const keepView=Boolean(body.querySelector('.manual-manager'));
     if(keepView){body.classList.add('manual-loading');body.setAttribute('aria-busy','true');}
     else body.innerHTML='<div class="teach-card">Chargement du thème sélectionné…</div>';
     try {
-      themes=await list('manual_themes','class_id=eq.'+encodeURIComponent(classId),'id,title,position,published,created_at');
+      if(level==='all')themes=await list('manual_themes','class_id=eq.'+encodeURIComponent(classId),'id,title,position,published,created_at');
       if(ticket!==request)return;
       if(!themes.some(x=>x.id===themeId)){themeId='';chapterId='';lessonId='';}
-      chapters=themeId ? await list('manual_chapters','theme_id=eq.'+themeId,'id,theme_id,title,position,published,created_at') : [];
+      if(level==='all'||level==='theme')chapters=themeId ? await list('manual_chapters','theme_id=eq.'+themeId,'id,theme_id,title,position,published,created_at') : [];
       if(ticket!==request)return;
       if(!chapters.some(x=>x.id===chapterId&&x.theme_id===themeId)){chapterId='';lessonId='';}
-      lessons=chapterId ? await list('manual_lessons','chapter_id=eq.'+chapterId,'id,chapter_id,title,position,published,created_at') : [];
+      if(level==='all'||level==='theme'||level==='chapter')lessons=chapterId ? await list('manual_lessons','chapter_id=eq.'+chapterId,'id,chapter_id,title,position,published,created_at') : [];
       if(ticket!==request)return;
       if(!lessons.some(x=>x.id===lessonId&&x.chapter_id===chapterId))lessonId='';
       sections=lessonId ? await api.rest('manual_sections?lesson_id=eq.'+lessonId+'&select=id,lesson_id,kind,content_html,published,updated_at') : [];
@@ -213,8 +237,16 @@
   }
   async function loadTeacherImage(asset,image){
     if(!asset)return;
-    try{const blob=await api.download(asset.object_path);if(!image.isConnected)return;const url=URL.createObjectURL(blob);teacherUrls.push(url);image.onload=()=>reserveEditorImageSpace(image.closest('[data-editor]'));image.src=url;}
-    catch{if(image.isConnected)image.alt='Image indisponible';}
+    image.classList.add('manual-image-loading');image.alt='';
+    try{
+      const blob=await teacherImageBlob(asset.object_path);if(!image.isConnected)return;
+      if(!blob.size||blob.type&&!blob.type.startsWith('image/'))throw new Error('Fichier image invalide');
+      const url=URL.createObjectURL(blob);teacherUrls.push(url);image.src=url;
+      await image.decode();if(!image.isConnected)return;
+      image.alt=asset.file_name;image.classList.remove('manual-image-loading');
+      reserveEditorImageSpace(image.closest('[data-editor]'));
+    }
+    catch{if(image.isConnected){image.classList.remove('manual-image-loading');image.alt='Image indisponible';}}
   }
   function hydrateTeacherImages(editor){
     const kind=editor.closest('.manual-section').dataset.kind;
@@ -235,7 +267,7 @@
       }
       fragment.append(document.createTextNode(text.slice(start)));node.replaceWith(fragment);
     });
-    anchorFreeImages(editor);reserveEditorImageSpace(editor);
+    anchorFreeImages(editor);ensureTrailingTextBlock(editor);reserveEditorImageSpace(editor);
   }
   function selectedImage(section){return section.querySelector('[data-image-tools]')?.selectedFrame||null;}
   function selectImage(frame){
@@ -255,11 +287,11 @@
       selection.removeAllRanges();selection.addRange(at);selections.set(editor,at.cloneRange());
     }else{const paragraph=document.createElement('p');paragraph.append(frame);editor.append(paragraph);}
     anchorFreeImages(editor);image.onload=()=>reserveEditorImageSpace(editor);reserveEditorImageSpace(editor);
-    writeBelowImage(frame);
     if(caretRect){
       const anchor=frame.offsetParent,rect=anchor?.getBoundingClientRect();
       if(rect?.width)setImageLayout(frame,'free',25,(caretRect.left-rect.left)*100/rect.width,(caretRect.top-rect.top)+anchor.scrollTop);
     }
+    writeBelowImage(frame);
     dirty=true;
   }
   function draw() {
@@ -275,17 +307,17 @@
       ${chapter?`<div class="manual-level-actions"><label>Nom du chapitre<input id="manualChapterTitle" maxlength="180" value="${esc(chapter.title)}"></label><button type="button" id="manualRenameChapter" class="subtle">Renommer</button><button type="button" id="manualToggleChapter" class="subtle">${chapter.published?'Masquer le chapitre':'Publier le chapitre'}</button><button type="button" id="manualDeleteChapter" class="warn">Supprimer le chapitre</button></div>`:''}
       ${chapter?`<div class="manual-pickers"><label>Leçon<select id="manualLesson"><option value="">Choisir une leçon…</option>${lessonChoices.map(x=>`<option value="${x.id}" ${x.id===lessonId?'selected':''}>${esc(x.title)}${x.published?' ✓':''}</option>`).join('')}</select></label><label>Nouvelle leçon<input id="manualNewLesson" maxlength="180" placeholder="Ex. Le disjoncteur différentiel"></label><button type="button" id="manualAddLesson">Créer la leçon</button></div>`:''}
       ${lesson?`<div class="manual-lesson"><label>Titre de la leçon<input id="manualLessonTitle" maxlength="180" value="${esc(lesson.title)}"></label>${mode==='manual-td'?`<nav class="manual-td-submenu" aria-label="Édition des travaux dirigés"><button type="button" data-teacher-part="td" class="${tdEditorView==='td'?'active':''}">Travaux dirigés</button><button type="button" data-teacher-part="corrections" class="${tdEditorView==='corrections'?'active':''}">Correction des TD</button></nav>`:''}<div class="manual-sections">${visibleKinds().map(([kind])=>sectionCard(kind,lesson)).join('')}</div><div class="manual-actions"><button type="button" id="manualPreview" class="subtle">Prévisualiser</button><button type="button" id="manualSave">Enregistrer</button><button type="button" id="manualPublishLesson">Publier le thème, chapitre et la leçon</button><button type="button" id="manualPublish" class="subtle">${mode==='manual'?'Publier le cours':'Publier les TD et leurs corrections'}</button><button type="button" id="manualHide" class="warn" ${lesson.published?'':'hidden'}>Masquer la leçon</button><button type="button" id="manualDeleteLesson" class="warn">Supprimer la leçon entière</button></div><p class="teach-help">La suppression d’une leçon entière efface aussi son cours, ses TD, ses corrections et leurs fichiers. Pour ne retirer qu’une partie, utilisez le bouton de suppression dans sa section.</p></div>`:''}</div>`;
-    body.querySelector('#manualTheme').onchange=e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=themeId;return;}themeId=e.target.value;chapterId='';lessonId='';load();};
+    body.querySelector('#manualTheme').onchange=e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=themeId;return;}themeId=e.target.value;chapterId='';lessonId='';load('theme');};
     body.querySelector('#manualAddTheme').onclick=()=>create('theme');
     body.querySelector('#manualRenameTheme')?.addEventListener('click',()=>rename('manual_themes',theme.id,body.querySelector('#manualThemeTitle').value));
     body.querySelector('#manualToggleTheme')?.addEventListener('click',()=>update('manual_themes',theme.id,{published:!theme.published},theme.published?'Thème masqué.':'Thème publié.'));
     body.querySelector('#manualDeleteTheme')?.addEventListener('click',()=>removeContent('theme'));
-    body.querySelector('#manualChapter')?.addEventListener('change',e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=chapterId;return;}chapterId=e.target.value;lessonId='';load();});
+    body.querySelector('#manualChapter')?.addEventListener('change',e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=chapterId;return;}chapterId=e.target.value;lessonId='';load('chapter');});
     body.querySelector('#manualAddChapter')?.addEventListener('click',()=>create('chapter'));
     body.querySelector('#manualRenameChapter')?.addEventListener('click',()=>rename('manual_chapters',chapter.id,body.querySelector('#manualChapterTitle').value));
     body.querySelector('#manualToggleChapter')?.addEventListener('click',()=>update('manual_chapters',chapter.id,{published:!chapter.published},chapter.published?'Chapitre masqué.':'Chapitre publié.'));
     body.querySelector('#manualDeleteChapter')?.addEventListener('click',()=>removeContent('chapter'));
-    body.querySelector('#manualLesson')?.addEventListener('change',e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=lessonId;return;}lessonId=e.target.value;load();});
+    body.querySelector('#manualLesson')?.addEventListener('change',e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=lessonId;return;}lessonId=e.target.value;load('lesson');});
     body.querySelector('#manualAddLesson')?.addEventListener('click',()=>create('lesson'));
     if(!lesson)return;
     body.querySelector('#manualDeleteLesson').onclick=()=>removeContent('lesson');
@@ -295,12 +327,17 @@
       body.querySelectorAll('[data-teacher-part]').forEach(item=>item.classList.toggle('active',item===button));
       body.querySelectorAll('.manual-section').forEach(section=>section.hidden=section.dataset.kind!==tdEditorView);
     });
-    body.querySelectorAll('[data-editor],#manualLessonTitle').forEach(node=>node.addEventListener('input',()=>{dirty=true;}));
+    body.querySelectorAll('[data-editor],#manualLessonTitle').forEach(node=>node.addEventListener('input',()=>{dirty=true;node.querySelectorAll?.('.manual-write-below').forEach(p=>{if(p.textContent.trim())p.classList.remove('manual-write-below');});}));
     body.querySelectorAll('[data-editor]').forEach(editor=>{
       ['keyup','pointerup','touchend','focusout'].forEach(name=>editor.addEventListener(name,()=>rememberSelection(editor)));
       hydrateTeacherImages(editor);
       editor.addEventListener('click',event=>{const frame=event.target.closest('.manual-editor-image');if(frame&&editor.contains(frame))selectImage(frame);});
       editor.addEventListener('pointerdown',event=>{
+        const writing=event.target.closest('.manual-write-below');
+        if(writing&&editor.contains(writing)){
+          event.preventDefault();editor.focus();const range=document.createRange();range.selectNodeContents(writing);range.collapse(true);
+          const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);selections.set(editor,range.cloneRange());return;
+        }
         const frame=event.target.closest('.manual-editor-image');if(!frame||!editor.contains(frame))return;
         event.preventDefault();selectImage(frame);
         const anchor=frame.offsetParent,baseX=Number(frame.dataset.imageX)||0,baseY=Number(frame.dataset.imageY)||0,startX=event.clientX,startY=event.clientY;
@@ -550,7 +587,7 @@
   }
   window.MelecManualTeacher={canLeave(){return !dirty||confirm('Quitter la leçon sans enregistrer vos modifications ?');},resetSelection(){themeId='';chapterId='';lessonId='';dirty=false;},render(nextBody,nextClassId,nextNotify,nextMode='manual'){
     body=nextBody;notify=nextNotify;mode=nextMode;
-    if(classId!==nextClassId){classId=nextClassId;themeId='';chapterId='';lessonId='';loadedAt=0;}
+    if(classId!==nextClassId){classId=nextClassId;themeId='';chapterId='';lessonId='';loadedAt=0;imageBlobs.clear();imageCacheBytes=0;}
     if(!classId){body.innerHTML='<div class="teach-card">Choisissez une classe pour créer son manuel.</div>';return;}
     if(loadedClassId===classId&&Date.now()-loadedAt<15000&&!busy){draw();return;}
     load();
