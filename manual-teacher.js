@@ -51,7 +51,7 @@
   }
   let teacherUrls=[];
   const uploadedImageSources=new Map();
-  const imageBlobs=new Map(),imageRequests=new Map();
+  const imageBlobs=new Map(),imageRequests=new Map(),imageUrls=new Map();
   let imageCacheBytes=0;
   async function teacherImageBlob(path){
     const hit=imageBlobs.get(path);
@@ -59,7 +59,7 @@
     if(imageRequests.has(path))return imageRequests.get(path);
     const pending=api.download(path,{retryTransient:true}).then(blob=>{
       if(blob.size&&blob.size<=10*1024*1024){
-        while(imageCacheBytes+blob.size>40*1024*1024&&imageBlobs.size){const oldest=imageBlobs.keys().next().value;imageCacheBytes-=imageBlobs.get(oldest).size;imageBlobs.delete(oldest);}
+        while(imageCacheBytes+blob.size>64*1024*1024&&imageBlobs.size){const oldest=imageBlobs.keys().next().value;imageCacheBytes-=imageBlobs.get(oldest).size;imageBlobs.delete(oldest);if(imageUrls.has(oldest)){URL.revokeObjectURL(imageUrls.get(oldest));imageUrls.delete(oldest);}}
         imageBlobs.set(path,blob);imageCacheBytes+=blob.size;
       }
       return blob;
@@ -224,8 +224,12 @@
     const asset=assets.find(row=>row.id===block.dataset.assetId),image=block.querySelector('[data-block-image]');
     if(!asset||!image)return;
     image.alt='Chargement de l’image…';
-    try{const blob=await teacherImageBlob(asset.object_path);if(!image.isConnected)return;const url=URL.createObjectURL(blob);teacherUrls.push(url);image.src=url;await image.decode();image.alt=asset.file_name;}
-    catch{if(image.isConnected)image.alt='Image momentanément indisponible';}
+    try{
+      let url=imageUrls.get(asset.object_path);
+      if(!url){const blob=await teacherImageBlob(asset.object_path);if(!image.isConnected)return;url=URL.createObjectURL(blob);imageUrls.set(asset.object_path,url);}
+      image.src=url;await image.decode();if(image.isConnected)image.alt=asset.file_name;
+    }
+    catch{const url=imageUrls.get(asset.object_path);if(url){URL.revokeObjectURL(url);imageUrls.delete(asset.object_path);}if(image.isConnected)image.alt='Image momentanément indisponible';}
   }
   function styleBlockImage(block){
     const image=block.querySelector('.manual-block-image');if(!image)return;
@@ -863,7 +867,7 @@
   }
   window.MelecManualTeacher={canLeave(){return !dirty||confirm('Quitter la leçon sans enregistrer vos modifications ?');},resetSelection(){themeId='';chapterId='';lessonId='';dirty=false;},render(nextBody,nextClassId,nextNotify,nextMode='manual'){
     body=nextBody;notify=nextNotify;mode=nextMode;
-    if(classId!==nextClassId){classId=nextClassId;themeId='';chapterId='';lessonId='';loadedAt=0;imageBlobs.clear();imageCacheBytes=0;}
+    if(classId!==nextClassId){classId=nextClassId;themeId='';chapterId='';lessonId='';loadedAt=0;imageBlobs.clear();imageUrls.forEach(URL.revokeObjectURL);imageUrls.clear();imageCacheBytes=0;}
     if(!classId){body.innerHTML='<div class="teach-card">Choisissez une classe pour créer son manuel.</div>';return;}
     if(loadedClassId===classId&&Date.now()-loadedAt<15000&&!busy){draw();return;}
     load();

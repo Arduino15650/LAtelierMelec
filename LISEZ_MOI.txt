@@ -1,16 +1,20 @@
-Correctif de sélection et de couleurs de la palette flottante.
+Correctif de chargement des images du manuel numérique et des TD.
 
-Si la livraison précédente de la palette est déjà en ligne, remplacez
-uniquement enseignant.html et manual-teacher.js à la racine du dépôt GitHub.
-Ne déposez pas ce fichier LISEZ_MOI.txt.
+Après les livraisons précédentes, remplacez uniquement les quatre fichiers
+de ce dossier à la racine du dépôt GitHub : enseignant.html, eleve.html,
+manual-teacher.js et manual-student.js. Ne déposez pas ce fichier texte.
 
-Si la livraison précédente n'est pas encore en ligne, installez-la d'abord,
-puis remplacez ces deux fichiers par ceux du présent dossier.
+Côté élève, toutes les images de la leçon commencent à charger dès son
+ouverture, dans la limite de quatre chargements simultanés. Le chargement
+ne dépend plus du défilement. Côté enseignant et élève, les images déjà
+chargées restent réutilisables pendant la session ; elles ne sont plus
+téléchargées à chaque réaffichage de la même leçon.
 
-La sélection est mémorisée avant le clic sur la palette. Le sélecteur de
-couleur personnalisé n'interrompt plus le choix pendant son ouverture.
-Vérifications locales : sélection d'une seule ligne, couleur prédéfinie,
-italique appliqué ensuite, couleur personnalisée sur une autre ligne,
-enregistrement et prévisualisation.
+Le compartiment Supabase reste privé. Le cache est uniquement en mémoire
+et est effacé lors du changement de classe ou de la déconnexion. Le tout
+premier affichage dépend encore de la taille des images et du réseau.
 
-Aucune publication GitHub n'a été effectuée automatiquement.
+Test local avec trois images : affichage des trois côté enseignant et côté
+élève ; aucune requête supplémentaire lors d'une seconde ouverture dans
+chaque espace. Aucun test connecté au Supabase de production n'a été fait.
+Rien n'a été publié automatiquement sur GitHub.
