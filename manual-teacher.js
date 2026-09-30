@@ -16,7 +16,7 @@
   let teacherUrls=[];
   let inlineCaptureInFlight=null;
   const imagePattern=()=>/\[\[image:([0-9a-f-]{36})(?:\|(left|center|right)\|(\d{1,3}))?\]\]/gi;
-  const imageWidth=value=>Math.max(20,Math.min(100,Number(value)||100));
+  const imageWidth=value=>Math.max(1,Math.min(100,Number(value)||100));
   const imageAlign=value=>['left','center','right'].includes(value)?value:'center';
   function setImageLayout(node,align,width){
     node.dataset.imageAlign=imageAlign(align);node.dataset.imageWidth=String(imageWidth(width));
@@ -67,8 +67,8 @@
     return `<section class="manual-section" data-kind="${kind}" ${mode==='manual-td'&&tdEditorView!==kind?'hidden':''}><div class="manual-section-head"><h4>${label(kind)}</h4><span class="manual-state ${section?.published?'on':''}">${section?.published?'Publié':'Brouillon'}</span></div>
       ${toolbar(kind)}
       <div class="manual-editor" data-editor contenteditable="true" role="textbox" aria-multiline="true" aria-label="Contenu ${label(kind)}">${safe(section?.content_html||'')}</div>
-      <div class="manual-image-tools" data-image-tools hidden><strong>Image sélectionnée</strong><button type="button" data-image-align="left">À gauche</button><button type="button" data-image-align="center">Centrer</button><button type="button" data-image-align="right">À droite</button><label>Taille <input type="range" data-image-width min="20" max="100" step="5" value="100"><output data-image-size>100 %</output></label><button type="button" data-image-move="up">↑ Monter</button><button type="button" data-image-move="down">↓ Descendre</button><button type="button" data-image-remove>Retirer du texte</button></div>
-      <div class="manual-files">${files.map(file=>`<span class="manual-file-chip">${file.mime_type.startsWith('image/')?`<img data-teacher-image="${file.id}" alt="${esc(file.file_name)}" class="manual-teacher-thumbnail"><button type="button" data-insert-image="${file.id}" class="subtle">Insérer l’image dans le texte</button>`:`<button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button>`}</span>`).join('')}</div>
+      <div class="manual-image-tools" data-image-tools hidden><strong>Image sélectionnée</strong><button type="button" data-image-align="left">À gauche</button><button type="button" data-image-align="center">Centrer</button><button type="button" data-image-align="right">À droite</button><label>Taille <input type="range" data-image-width min="1" max="100" step="1" value="100"><output data-image-size>100 %</output></label><button type="button" data-image-move="up">↑ Monter</button><button type="button" data-image-move="down">↓ Descendre</button><button type="button" data-image-remove>Retirer du texte</button></div>
+      <div class="manual-files">${files.map(file=>`<span class="manual-file-chip">${file.mime_type.startsWith('image/')?`<button type="button" data-insert-image="${file.id}" class="subtle">Insérer « ${esc(file.file_name)} » dans le texte</button>`:`<button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button>`}</span>`).join('')}</div>
       <label class="manual-upload">Ajouter des images, PDF ou documents bureautiques<input type="file" data-upload="${kind}" accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple></label>
       ${section?`<div class="manual-section-actions"><button type="button" data-toggle-section="${section.id}" class="subtle">${section.published?'Masquer cette section':'Publier cette section'}</button><button type="button" data-delete-section="${kind}" class="warn">Supprimer ${label(kind).toLowerCase()}</button></div>`:''}</section>`;
   }
@@ -257,7 +257,6 @@
       });
       tools.querySelector('[data-image-remove]').onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(frame?.isConnected){frame.remove();dirty=true;}tools.selectedFrame=null;tools.hidden=true;};
     });
-    body.querySelectorAll('[data-teacher-image]').forEach(image=>loadTeacherImage(assets.find(asset=>asset.id===image.dataset.teacherImage),image));
     body.querySelectorAll('[data-format],[data-swatch],[data-table],[data-video],[data-insert-image]').forEach(button=>button.onmousedown=event=>event.preventDefault());
     body.querySelectorAll('[data-format]').forEach(button=>button.onclick=()=>formatSelection(button,button.dataset.format));
     body.querySelectorAll('[data-format-select]').forEach(select=>select.onchange=()=>{if(select.value)formatSelection(select,select.dataset.formatSelect,select.value);select.value='';});
@@ -439,15 +438,10 @@
     catch(error){notify(error.message,true);return;}
     const lesson=selected().lesson, title=body.querySelector('#manualLessonTitle').value.trim()||lesson.title;
     const dialog=document.createElement('dialog');dialog.className='manual-preview';
-    dialog.innerHTML=`<div class="manual-preview-head"><h2>${esc(title)}</h2><button type="button" data-close>Fermer</button></div>${visibleKinds().map(([kind,name])=>{const sec=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind),html=editorHtml(kind),attached=assets.filter(x=>x.section_id===sec?.id);return `<section data-preview-section="${sec?.id||''}"><h3>${name}</h3><div class="manual-preview-content">${html||'<p>Section vide.</p>'}</div>${attached.filter(x=>x.mime_type.startsWith('image/')&&!html.includes('[[image:'+x.id)).map(x=>`<img class="manual-inline-image" data-preview-image="${x.id}" alt="${esc(x.file_name)}">`).join('')}${attached.filter(x=>!x.mime_type.startsWith('image/')).map(x=>`<button type="button" data-preview-file="${x.id}" class="subtle">📎 ${esc(x.file_name)}</button>`).join('')}</section>`}).join('')}`;
+    dialog.innerHTML=`<div class="manual-preview-head"><h2>${esc(title)}</h2><button type="button" data-close>Fermer</button></div>${visibleKinds().map(([kind,name])=>{const sec=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind),html=editorHtml(kind),attached=assets.filter(x=>x.section_id===sec?.id);return `<section data-preview-section="${sec?.id||''}"><h3>${name}</h3><div class="manual-preview-content">${html||'<p>Section vide.</p>'}</div>${attached.filter(x=>!x.mime_type.startsWith('image/')).map(x=>`<button type="button" data-preview-file="${x.id}" class="subtle">📎 ${esc(x.file_name)}</button>`).join('')}</section>`}).join('')}`;
     const urls=[];
     document.body.append(dialog);dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.onclose=()=>{urls.forEach(URL.revokeObjectURL);dialog.remove();};dialog.showModal();
     dialog.querySelectorAll('[data-preview-file]').forEach(button=>button.onclick=()=>download(assets.find(x=>x.id===button.dataset.previewFile)));
-    dialog.querySelectorAll('[data-preview-image]').forEach(image=>{
-      const asset=assets.find(x=>x.id===image.dataset.previewImage);
-      if(!asset)return;
-      api.download(asset.object_path).then(blob=>{if(!image.isConnected)return;const url=URL.createObjectURL(blob);urls.push(url);image.src=url;}).catch(()=>{if(image.isConnected)image.alt='Image indisponible';});
-    });
     dialog.querySelectorAll('[data-preview-section]').forEach(section=>{
       const mount=section.querySelector('.manual-preview-content');
       mount.querySelectorAll('a[href]').forEach(link=>{
