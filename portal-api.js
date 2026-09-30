@@ -86,12 +86,27 @@
     });
     return decode(response);
   }
-  async function download(path) {
-    const response = await fetch(URL + '/storage/v1/object/authenticated/melec-private/' + path.split('/').map(encodeURIComponent).join('/'), {
-      headers: { apikey: KEY, Authorization: 'Bearer ' + await token() }
-    });
-    if (!response.ok) throw new Error('Document indisponible ou accès expiré.');
-    return response.blob();
+  async function download(path, options = {}) {
+    const url = URL + '/storage/v1/object/authenticated/melec-private/' + path.split('/').map(encodeURIComponent).join('/');
+    const attempts = options.retryTransient ? 3 : 1;
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      let response;
+      try {
+        response = await fetch(url, {
+          headers: { apikey: KEY, Authorization: 'Bearer ' + await token() },
+          cache: attempt ? 'reload' : 'default'
+        });
+      } catch (error) {
+        if (attempt === attempts - 1) throw error;
+        await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
+        continue;
+      }
+      if (response.ok) return response.blob();
+      // 544 est un délai dépassé de la passerelle Supabase, pas un refus RLS.
+      if (!options.retryTransient || ![304, 429, 500, 502, 503, 504, 544].includes(response.status) || attempt === attempts - 1)
+        throw new Error('Document indisponible ou accès expiré (HTTP ' + response.status + ').');
+      await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
+    }
   }
   async function removeFiles(paths) {
     if (!Array.isArray(paths) || !paths.length) return [];

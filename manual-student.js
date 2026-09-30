@@ -3,6 +3,8 @@
   const api=window.MelecPortal, esc=api.escapeHtml;
   let themes=[],chapters=[],lessons=[],sections=[],assets=[],selectedId='',selectedThemeId='',classId='',epoch=0,objectUrls=[],pdfCleanups=[],mode='manual',tdView='td';
   const lessonData=new Map();
+  const imageBlobs=new Map(),imageRequests=new Map();
+  let imageCacheBytes=0,imageCacheEpoch=0;
   const queuedImages=new WeakMap();
   const imageObserver=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{
     entries.forEach(entry=>{if(!entry.isIntersecting)return;imageObserver.unobserve(entry.target);const asset=queuedImages.get(entry.target);if(asset)loadImage(asset,entry.target);});
@@ -16,9 +18,29 @@
   });
   function cleanup(){imageObserver?.disconnect();pdfCleanups.forEach(close=>close());pdfCleanups=[];objectUrls.forEach(URL.revokeObjectURL);objectUrls=[];}
   function queueImage(asset,image){if(imageObserver){queuedImages.set(image,asset);imageObserver.observe(image);}else loadImage(asset,image);}
+  function clearImageCache(){imageCacheEpoch++;imageBlobs.clear();imageRequests.clear();imageCacheBytes=0;}
+  async function imageBlob(path){
+    const cached=imageBlobs.get(path);
+    if(cached){imageBlobs.delete(path);imageBlobs.set(path,cached);return cached;}
+    if(!imageRequests.has(path)){
+      const cacheEpoch=imageCacheEpoch;
+      const request=api.download(path,{retryTransient:true}).then(blob=>{
+        if(cacheEpoch===imageCacheEpoch&&blob.size<=20*1024*1024){
+          while(imageCacheBytes+blob.size>20*1024*1024&&imageBlobs.size){
+            const oldest=imageBlobs.keys().next().value;
+            imageCacheBytes-=imageBlobs.get(oldest).size;imageBlobs.delete(oldest);
+          }
+          imageBlobs.set(path,blob);imageCacheBytes+=blob.size;
+        }
+        return blob;
+      }).finally(()=>{if(imageRequests.get(path)===request)imageRequests.delete(path);});
+      imageRequests.set(path,request);
+    }
+    return imageRequests.get(path);
+  }
   async function load(nextClassId,nextMode='manual'){
     if(!nextClassId)return;
-    const ticket=++epoch;classId=nextClassId;mode=nextMode;tdView='td';selectedId='';selectedThemeId='';themes=[];chapters=[];lessons=[];sections=[];assets=[];lessonData.clear();cleanup();
+    const ticket=++epoch;classId=nextClassId;mode=nextMode;tdView='td';selectedId='';selectedThemeId='';themes=[];chapters=[];lessons=[];sections=[];assets=[];lessonData.clear();cleanup();clearImageCache();
     target().innerHTML='<p>Chargement des contenus…</p>';
     try{
       const result=await api.rest('manual_themes?class_id=eq.'+encodeURIComponent(classId)+'&published=is.true&select=id,title,position&order=position.asc,created_at.asc');
@@ -122,15 +144,28 @@
   }
   async function loadImage(asset,image){
     image.dataset.asset=asset.id;
+    let url;
     try{
-      const blob=await api.download(asset.object_path);if(!image.isConnected)return;
+      const blob=await imageBlob(asset.object_path);if(!image.isConnected)return;
       if(!blob.size||blob.type&&!blob.type.startsWith('image/'))throw new Error('Fichier image invalide');
-      const url=URL.createObjectURL(blob);objectUrls.push(url);image.src=url;
+      url=URL.createObjectURL(blob);objectUrls.push(url);image.src=url;
       await image.decode();if(!image.isConnected)return;
       image.alt=asset.file_name;image.classList.remove('manual-image-loading');
       reserveReadingImages(image.closest('.manual-reading-html'));
     }
-    catch{if(image.isConnected){const root=image.closest('.manual-reading-html');image.replaceWith(document.createTextNode('Image indisponible pour cette leçon.'));reserveReadingImages(root);}}
+    catch(error){
+      if(url)URL.revokeObjectURL(url);
+      const cached=imageBlobs.get(asset.object_path);
+      if(cached){imageCacheBytes-=cached.size;imageBlobs.delete(asset.object_path);}
+      if(image.isConnected){
+        const root=image.closest('.manual-reading-html');
+        const retry=document.createElement('button');retry.type='button';retry.className='manual-image-retry';
+        retry.textContent='Image momentanément indisponible · Réessayer';
+        retry.onclick=()=>{image.removeAttribute('src');image.alt='';image.classList.add('manual-image-loading');retry.replaceWith(image);queueImage(asset,image);};
+        image.replaceWith(retry);reserveReadingImages(root);
+      }
+      console.warn('Image du manuel indisponible :',error?.message||error);
+    }
   }
   async function openLesson(id){
     if(!id||id===selectedId)return;
@@ -149,5 +184,5 @@
       pdfCleanups.push(close);
     }catch(error){mount.textContent=error.message;}
   }
-  window.MelecManualStudent={load,clear(){epoch++;cleanup();lessonData.clear();themes=[];chapters=[];lessons=[];sections=[];assets=[];selectedId='';selectedThemeId='';['studentManualContent','studentTdContent'].forEach(id=>document.getElementById(id)?.replaceChildren());}};
+  window.MelecManualStudent={load,clear(){epoch++;cleanup();clearImageCache();lessonData.clear();themes=[];chapters=[];lessons=[];sections=[];assets=[];selectedId='';selectedThemeId='';['studentManualContent','studentTdContent'].forEach(id=>document.getElementById(id)?.replaceChildren());}};
 })();

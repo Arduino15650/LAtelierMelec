@@ -58,6 +58,7 @@
 .manual-editor-image img.manual-image-loading{visibility:hidden;aspect-ratio:4/3}
 .manual-editor-image.manual-align-free{position:absolute;z-index:2;float:none;clear:none;display:block;max-width:100%;margin:0!important;touch-action:none;user-select:none}
 .manual-inline-image.manual-image-loading{visibility:hidden;aspect-ratio:4/3}
+.manual-image-retry{display:inline-block;max-width:100%;min-height:42px;margin:10px 0;padding:8px 12px;border:1px solid #a95e3c;border-radius:9px;background:#fff0e8;color:#673018;font:inherit;font-weight:700;cursor:pointer}
 .manual-image-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:8px 0;padding:9px;border:1px solid #8db9dd;border-radius:10px;background:#e8f4ff}
 .manual-image-tools[hidden]{display:none}
 .manual-image-tools button{min-height:36px;padding:5px 9px}

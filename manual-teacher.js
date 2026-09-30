@@ -20,7 +20,7 @@
     const hit=imageBlobs.get(path);
     if(hit){imageBlobs.delete(path);imageBlobs.set(path,hit);return hit;}
     if(imageRequests.has(path))return imageRequests.get(path);
-    const pending=api.download(path).then(blob=>{
+    const pending=api.download(path,{retryTransient:true}).then(blob=>{
       if(blob.size&&blob.size<=10*1024*1024){
         while(imageCacheBytes+blob.size>40*1024*1024&&imageBlobs.size){const oldest=imageBlobs.keys().next().value;imageCacheBytes-=imageBlobs.get(oldest).size;imageBlobs.delete(oldest);}
         imageBlobs.set(path,blob);imageCacheBytes+=blob.size;
@@ -577,7 +577,7 @@
           replacement.append(document.createTextNode(text.slice(start,match.index)));
           const asset=assets.find(a=>a.id===match[1]&&a.section_id===section.dataset.previewSection&&a.mime_type.startsWith('image/'));
           if(asset){const image=document.createElement('img');image.alt=asset.file_name;image.className='manual-inline-image';setImageLayout(image,match[2],match[3],match[4],match[5]);replacement.append(image);
-            api.download(asset.object_path).then(blob=>{if(!image.isConnected)return;const url=URL.createObjectURL(blob);urls.push(url);image.onload=()=>reserveImageSpace(mount);image.src=url;}).catch(()=>{if(image.isConnected)image.alt='Image indisponible';});}
+            teacherImageBlob(asset.object_path).then(blob=>{if(!image.isConnected)return;const url=URL.createObjectURL(blob);urls.push(url);image.onload=()=>reserveImageSpace(mount);image.src=url;}).catch(()=>{if(image.isConnected)image.alt='Image indisponible';});}
           else replacement.append(document.createTextNode(match[0]));start=pattern.lastIndex;
         }
         replacement.append(document.createTextNode(text.slice(start)));node.replaceWith(replacement);
