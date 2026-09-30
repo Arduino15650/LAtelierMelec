@@ -57,7 +57,7 @@
       if(!contactPanel.hidden){document.getElementById('contactForm').reset();contactPanel.scrollIntoView({block:'nearest'});}
     });
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const version='127';
+      const version='153';
       window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v='+version,{updateViaCache:'none'}).then(reg=>reg.update()).catch(console.error));
     }
   </script>
