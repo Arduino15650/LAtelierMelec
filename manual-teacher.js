@@ -15,6 +15,15 @@
   const selections=new WeakMap();
   let teacherUrls=[];
   let inlineCaptureInFlight=null;
+  const imagePattern=()=>/\[\[image:([0-9a-f-]{36})(?:\|(left|center|right)\|(\d{1,3}))?\]\]/gi;
+  const imageWidth=value=>Math.max(20,Math.min(100,Number(value)||100));
+  const imageAlign=value=>['left','center','right'].includes(value)?value:'center';
+  function setImageLayout(node,align,width){
+    node.dataset.imageAlign=imageAlign(align);node.dataset.imageWidth=String(imageWidth(width));
+    node.classList.remove('manual-align-left','manual-align-center','manual-align-right');
+    node.classList.add('manual-align-'+node.dataset.imageAlign);
+    node.style.width=node.dataset.imageWidth+'%';node.style.setProperty('--image-width',node.dataset.imageWidth+'%');
+  }
   function label(kind) { return kinds.find(entry => entry[0] === kind)?.[1] || kind; }
   function visibleKinds() { return kinds.filter(([kind])=>mode==='manual'?kind==='course':kind==='td'||kind==='corrections'); }
   function safe(html) { return window.MelecContent.sanitize(html); }
@@ -58,6 +67,7 @@
     return `<section class="manual-section" data-kind="${kind}" ${mode==='manual-td'&&tdEditorView!==kind?'hidden':''}><div class="manual-section-head"><h4>${label(kind)}</h4><span class="manual-state ${section?.published?'on':''}">${section?.published?'Publié':'Brouillon'}</span></div>
       ${toolbar(kind)}
       <div class="manual-editor" data-editor contenteditable="true" role="textbox" aria-multiline="true" aria-label="Contenu ${label(kind)}">${safe(section?.content_html||'')}</div>
+      <div class="manual-image-tools" data-image-tools hidden><strong>Image sélectionnée</strong><button type="button" data-image-align="left">À gauche</button><button type="button" data-image-align="center">Centrer</button><button type="button" data-image-align="right">À droite</button><label>Taille <input type="range" data-image-width min="20" max="100" step="5" value="100"><output data-image-size>100 %</output></label><button type="button" data-image-move="up">↑ Monter</button><button type="button" data-image-move="down">↓ Descendre</button><button type="button" data-image-remove>Retirer du texte</button></div>
       <div class="manual-files">${files.map(file=>`<span class="manual-file-chip">${file.mime_type.startsWith('image/')?`<img data-teacher-image="${file.id}" alt="${esc(file.file_name)}" class="manual-teacher-thumbnail"><button type="button" data-insert-image="${file.id}" class="subtle">Insérer l’image dans le texte</button>`:`<button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button>`}</span>`).join('')}</div>
       <label class="manual-upload">Ajouter des images, PDF ou documents bureautiques<input type="file" data-upload="${kind}" accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple></label>
       ${section?`<div class="manual-section-actions"><button type="button" data-toggle-section="${section.id}" class="subtle">${section.published?'Masquer cette section':'Publier cette section'}</button><button type="button" data-delete-section="${kind}" class="warn">Supprimer ${label(kind).toLowerCase()}</button></div>`:''}</section>`;
@@ -125,7 +135,7 @@
           }catch(error){await api.removeFiles([path]).catch(()=>{});throw error;}
           assets.push(asset);
           const frame=document.createElement('span');
-          frame.contentEditable='false';frame.dataset.manualImage=asset.id;frame.className='manual-editor-image';
+          frame.contentEditable='false';frame.dataset.manualImage=asset.id;frame.className='manual-editor-image';setImageLayout(frame,'center',100);
           image.alt=image.alt||name;image.replaceWith(frame);frame.append(image);
           dirty=true;
         }
@@ -160,18 +170,35 @@
     const walker=document.createTreeWalker(editor,NodeFilter.SHOW_TEXT),nodes=[];
     while(walker.nextNode())nodes.push(walker.currentNode);
     nodes.forEach(node=>{
-      const text=node.textContent,pattern=/\[\[image:([0-9a-f-]{36})\]\]/gi;
+      const text=node.textContent,pattern=imagePattern();
       if(!pattern.test(text))return;pattern.lastIndex=0;
       const fragment=document.createDocumentFragment();let start=0,match;
       while((match=pattern.exec(text))){
         fragment.append(document.createTextNode(text.slice(start,match.index)));
         const asset=assets.find(row=>row.id===match[1]&&row.section_id===section.id&&row.mime_type.startsWith('image/'));
-        if(asset){const frame=document.createElement('span');frame.contentEditable='false';frame.dataset.manualImage=asset.id;frame.className='manual-editor-image';const image=document.createElement('img');image.alt=asset.file_name;frame.append(image);fragment.append(frame);loadTeacherImage(asset,image);}
+        if(asset){const frame=document.createElement('span');frame.contentEditable='false';frame.dataset.manualImage=asset.id;frame.className='manual-editor-image';setImageLayout(frame,match[2],match[3]);const image=document.createElement('img');image.alt=asset.file_name;frame.append(image);fragment.append(frame);loadTeacherImage(asset,image);}
         else fragment.append(document.createTextNode(match[0]));
         start=pattern.lastIndex;
       }
       fragment.append(document.createTextNode(text.slice(start)));node.replaceWith(fragment);
     });
+  }
+  function selectedImage(section){return section.querySelector('[data-image-tools]')?.selectedFrame||null;}
+  function selectImage(frame){
+    const section=frame.closest('.manual-section'),tools=section.querySelector('[data-image-tools]');
+    section.querySelectorAll('.manual-editor-image.is-selected').forEach(node=>node.classList.remove('is-selected'));
+    frame.classList.add('is-selected');tools.selectedFrame=frame;tools.hidden=false;
+    tools.querySelector('[data-image-width]').value=frame.dataset.imageWidth||'100';
+    tools.querySelector('[data-image-size]').textContent=(frame.dataset.imageWidth||'100')+' %';
+  }
+  function insertClipboardImage(editor,file){
+    const image=document.createElement('img');image.alt=file.name||'Image collée';image.src=URL.createObjectURL(file);teacherUrls.push(image.src);
+    const selection=window.getSelection(),range=selections.get(editor)||selection?.rangeCount&&selection.getRangeAt(0);
+    if(range&&editor.contains(range.commonAncestorContainer)){
+      const at=range.cloneRange();at.deleteContents();at.insertNode(image);at.setStartAfter(image);at.collapse(true);
+      selection.removeAllRanges();selection.addRange(at);selections.set(editor,at.cloneRange());
+    }else editor.append(image);
+    dirty=true;
   }
   function draw() {
     teacherUrls.forEach(URL.revokeObjectURL);teacherUrls=[];
@@ -210,6 +237,25 @@
     body.querySelectorAll('[data-editor]').forEach(editor=>{
       ['keyup','pointerup','touchend','focusout'].forEach(name=>editor.addEventListener(name,()=>rememberSelection(editor)));
       hydrateTeacherImages(editor);
+      editor.addEventListener('click',event=>{const frame=event.target.closest('[data-manual-image]');if(frame&&editor.contains(frame))selectImage(frame);});
+      editor.addEventListener('paste',event=>{
+        const item=[...(event.clipboardData?.items||[])].find(item=>item.type.startsWith('image/'));
+        if(item&&!event.clipboardData.getData('text/html')){
+          const file=item.getAsFile();if(file){event.preventDefault();insertClipboardImage(editor,file);}
+        }
+        setTimeout(()=>prepareInlineImages().catch(error=>notify(error.message,true)),0);
+      });
+    });
+    body.querySelectorAll('[data-image-tools]').forEach(tools=>{
+      tools.querySelectorAll('[data-image-align]').forEach(button=>button.onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;setImageLayout(frame,button.dataset.imageAlign,frame.dataset.imageWidth);dirty=true;});
+      tools.querySelector('[data-image-width]').oninput=event=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;setImageLayout(frame,frame.dataset.imageAlign,event.target.value);tools.querySelector('[data-image-size]').textContent=frame.dataset.imageWidth+' %';dirty=true;};
+      tools.querySelectorAll('[data-image-move]').forEach(button=>button.onclick=()=>{
+        const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;
+        const editor=frame.closest('[data-editor]'),block=frame.parentElement===editor?frame:frame.closest('p,div,li,blockquote')||frame;
+        const sibling=button.dataset.imageMove==='up'?block.previousElementSibling:block.nextElementSibling;
+        if(sibling){button.dataset.imageMove==='up'?sibling.before(frame):sibling.after(frame);dirty=true;}
+      });
+      tools.querySelector('[data-image-remove]').onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(frame?.isConnected){frame.remove();dirty=true;}tools.selectedFrame=null;tools.hidden=true;};
     });
     body.querySelectorAll('[data-teacher-image]').forEach(image=>loadTeacherImage(assets.find(asset=>asset.id===image.dataset.teacherImage),image));
     body.querySelectorAll('[data-format],[data-swatch],[data-table],[data-video],[data-insert-image]').forEach(button=>button.onmousedown=event=>event.preventDefault());
@@ -331,7 +377,7 @@
     const editor=body.querySelector(`.manual-section[data-kind="${kind}"] [data-editor]`);
     if(!editor)return '';
     const copy=editor.cloneNode(true);
-    copy.querySelectorAll('[data-manual-image]').forEach(node=>node.replaceWith(document.createTextNode('[[image:'+node.dataset.manualImage+']]')));
+    copy.querySelectorAll('[data-manual-image]').forEach(node=>node.replaceWith(document.createTextNode(`[[image:${node.dataset.manualImage}|${imageAlign(node.dataset.imageAlign)}|${imageWidth(node.dataset.imageWidth)}]]`)));
     return safe(copy.innerHTML);
   }
   async function persistEditor(){
@@ -393,7 +439,7 @@
     catch(error){notify(error.message,true);return;}
     const lesson=selected().lesson, title=body.querySelector('#manualLessonTitle').value.trim()||lesson.title;
     const dialog=document.createElement('dialog');dialog.className='manual-preview';
-    dialog.innerHTML=`<div class="manual-preview-head"><h2>${esc(title)}</h2><button type="button" data-close>Fermer</button></div>${visibleKinds().map(([kind,name])=>{const sec=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind),html=editorHtml(kind),attached=assets.filter(x=>x.section_id===sec?.id);return `<section data-preview-section="${sec?.id||''}"><h3>${name}</h3><div class="manual-preview-content">${html||'<p>Section vide.</p>'}</div>${attached.filter(x=>x.mime_type.startsWith('image/')&&!html.includes('[[image:'+x.id+']]')).map(x=>`<img class="manual-inline-image" data-preview-image="${x.id}" alt="${esc(x.file_name)}">`).join('')}${attached.filter(x=>!x.mime_type.startsWith('image/')).map(x=>`<button type="button" data-preview-file="${x.id}" class="subtle">📎 ${esc(x.file_name)}</button>`).join('')}</section>`}).join('')}`;
+    dialog.innerHTML=`<div class="manual-preview-head"><h2>${esc(title)}</h2><button type="button" data-close>Fermer</button></div>${visibleKinds().map(([kind,name])=>{const sec=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind),html=editorHtml(kind),attached=assets.filter(x=>x.section_id===sec?.id);return `<section data-preview-section="${sec?.id||''}"><h3>${name}</h3><div class="manual-preview-content">${html||'<p>Section vide.</p>'}</div>${attached.filter(x=>x.mime_type.startsWith('image/')&&!html.includes('[[image:'+x.id)).map(x=>`<img class="manual-inline-image" data-preview-image="${x.id}" alt="${esc(x.file_name)}">`).join('')}${attached.filter(x=>!x.mime_type.startsWith('image/')).map(x=>`<button type="button" data-preview-file="${x.id}" class="subtle">📎 ${esc(x.file_name)}</button>`).join('')}</section>`}).join('')}`;
     const urls=[];
     document.body.append(dialog);dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.onclose=()=>{urls.forEach(URL.revokeObjectURL);dialog.remove();};dialog.showModal();
     dialog.querySelectorAll('[data-preview-file]').forEach(button=>button.onclick=()=>download(assets.find(x=>x.id===button.dataset.previewFile)));
@@ -411,12 +457,12 @@
       const walker=document.createTreeWalker(mount,NodeFilter.SHOW_TEXT),nodes=[];
       while(walker.nextNode())nodes.push(walker.currentNode);
       nodes.forEach(node=>{
-        const pattern=/\[\[image:([0-9a-f-]{36})\]\]/gi,text=node.textContent;if(!pattern.test(text))return;pattern.lastIndex=0;
+        const pattern=imagePattern(),text=node.textContent;if(!pattern.test(text))return;pattern.lastIndex=0;
         const replacement=document.createDocumentFragment();let start=0,match;
         while((match=pattern.exec(text))){
           replacement.append(document.createTextNode(text.slice(start,match.index)));
           const asset=assets.find(a=>a.id===match[1]&&a.section_id===section.dataset.previewSection&&a.mime_type.startsWith('image/'));
-          if(asset){const image=document.createElement('img');image.alt=asset.file_name;image.className='manual-inline-image';replacement.append(image);
+          if(asset){const image=document.createElement('img');image.alt=asset.file_name;image.className='manual-inline-image';setImageLayout(image,match[2],match[3]);replacement.append(image);
             api.download(asset.object_path).then(blob=>{if(!image.isConnected)return;const url=URL.createObjectURL(blob);urls.push(url);image.src=url;}).catch(()=>{if(image.isConnected)image.alt='Image indisponible';});}
           else replacement.append(document.createTextNode(match[0]));start=pattern.lastIndex;
         }
