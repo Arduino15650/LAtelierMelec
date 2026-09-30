@@ -17,7 +17,7 @@
     }));
   });
   function cleanup(){imageObserver?.disconnect();pdfCleanups.forEach(close=>close());pdfCleanups=[];objectUrls.forEach(URL.revokeObjectURL);objectUrls=[];}
-  function queueImage(asset,image){if(imageObserver){queuedImages.set(image,asset);imageObserver.observe(image);}else loadImage(asset,image);}
+  function queueImage(asset,image,eager=false){if(imageObserver&&!eager){queuedImages.set(image,asset);imageObserver.observe(image);}else loadImage(asset,image);}
   function clearImageCache(){imageCacheEpoch++;imageBlobs.clear();imageRequests.clear();imageCacheBytes=0;}
   async function imageBlob(path){
     const cached=imageBlobs.get(path);
@@ -40,7 +40,8 @@
   }
   async function load(nextClassId,nextMode='manual'){
     if(!nextClassId)return;
-    const ticket=++epoch;classId=nextClassId;mode=nextMode;tdView='td';selectedId='';selectedThemeId='';themes=[];chapters=[];lessons=[];sections=[];assets=[];lessonData.clear();cleanup();clearImageCache();
+    const classChanged=classId&&classId!==nextClassId;
+    const ticket=++epoch;classId=nextClassId;mode=nextMode;tdView='td';selectedId='';selectedThemeId='';themes=[];chapters=[];lessons=[];sections=[];assets=[];lessonData.clear();cleanup();if(classChanged)clearImageCache();
     target().innerHTML='<p>Chargement des contenus…</p>';
     try{
       const result=await api.rest('manual_themes?class_id=eq.'+encodeURIComponent(classId)+'&published=is.true&select=id,title,position&order=position.asc,created_at.asc');
@@ -108,6 +109,7 @@
     });
     const walker=document.createTreeWalker(html,NodeFilter.SHOW_TEXT);
     const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+    let imagesQueued=0;
     nodes.forEach(node=>{
       const text=node.textContent,pattern=/\[\[image:([0-9a-f-]{36})(?:\|(left|center|right|free)\|(\d{1,3})(?:\|(\d{1,3})\|(\d{1,5}))?)?\]\]/gi;
       if(!pattern.test(text))return;pattern.lastIndex=0;
@@ -115,7 +117,7 @@
       while((match=pattern.exec(text))){
         replacement.append(document.createTextNode(text.slice(start,match.index)));
         const asset=assets.find(a=>a.id===match[1]&&a.section_id===section.dataset.section&&a.mime_type.startsWith('image/'));
-        if(asset){const image=document.createElement('img');image.alt='';image.className='manual-inline-image manual-align-free manual-image-loading';const width=Math.max(1,Math.min(100,Number(match[3])||100));const maxX=100-width,oldX=match[2]==='right'?maxX:match[2]==='left'?0:maxX/2;image.style.width=width+'%';image.style.setProperty('--image-width',image.style.width);image.style.left=Math.max(0,Math.min(maxX,match[2]==='free'?(Number(match[4])||0):oldX))+'%';image.style.top=Math.max(0,Math.min(10000,Number(match[5])||0))+'px';replacement.append(image);queueImage(asset,image);}
+        if(asset){const image=document.createElement('img');image.alt='';image.className='manual-inline-image manual-align-free manual-image-loading';const width=Math.max(1,Math.min(100,Number(match[3])||100));const maxX=100-width,oldX=match[2]==='right'?maxX:match[2]==='left'?0:maxX/2;image.style.width=width+'%';image.style.setProperty('--image-width',image.style.width);image.style.left=Math.max(0,Math.min(maxX,match[2]==='free'?(Number(match[4])||0):oldX))+'%';image.style.top=Math.max(0,Math.min(10000,Number(match[5])||0))+'px';replacement.append(image);queueImage(asset,image,imagesQueued++<2);}
         else replacement.append(document.createTextNode(match[0]));
         start=pattern.lastIndex;
       }
@@ -184,5 +186,5 @@
       pdfCleanups.push(close);
     }catch(error){mount.textContent=error.message;}
   }
-  window.MelecManualStudent={load,clear(){epoch++;cleanup();clearImageCache();lessonData.clear();themes=[];chapters=[];lessons=[];sections=[];assets=[];selectedId='';selectedThemeId='';['studentManualContent','studentTdContent'].forEach(id=>document.getElementById(id)?.replaceChildren());}};
+  window.MelecManualStudent={load,clear(options={}){epoch++;cleanup();if(!options.preserveImages)clearImageCache();lessonData.clear();themes=[];chapters=[];lessons=[];assets=[];selectedId='';selectedThemeId='';['studentManualContent','studentTdContent'].forEach(id=>document.getElementById(id)?.replaceChildren());}};
 })();

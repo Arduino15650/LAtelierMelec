@@ -42,7 +42,7 @@
   }
   function switchContentTab(next) {
     if (activeTp && next !== 'tp') return;
-    if (['manual','td'].includes(selectedContentTab) && next !== selectedContentTab) window.MelecManualStudent.clear();
+    if (['manual','td'].includes(selectedContentTab) && next !== selectedContentTab) window.MelecManualStudent.clear({preserveImages:true});
     selectedContentTab = next;
     $('studentManualTab').classList.toggle('active', next === 'manual');
     $('studentTdTab').classList.toggle('active', next === 'td');
