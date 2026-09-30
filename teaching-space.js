@@ -2,7 +2,7 @@
   'use strict';
   const api = MelecPortal, esc = api.escapeHtml, root = document.getElementById('teachingView');
   let classes = [], chapters = [], items = [], students = [], messages = [];
-  let classId = '', tab = 'manual', editing = null, blocks = [], draftAssets = [], activeItem = null, originalAssets = [];
+  let classId = '', tab = 'tp', editing = null, blocks = [], draftAssets = [], activeItem = null, originalAssets = [];
   let selectedChapterId = '', selectedItemId = '';
   let tpAssignments = [], classStudents = [], pendingStudents = [], selectedTpId = '', draftRoles = [];
   let requestClassId = '';
@@ -70,7 +70,7 @@
   }
   async function load(background = false) {
     if (loadInFlight) return loadInFlight;
-    if (!background) root.innerHTML = '<div class="teach-head"><div><h1>Manuel numérique · Travaux dirigés · TP</h1><p>Contenus de classe et accès élèves</p></div></div><div class="teach-card">Chargement… <span id="teachStatus"></span></div>';
+    if (!background) root.innerHTML = '<div class="teach-head"><div><h1>TP en atelier</h1><p>Contenus de classe et accès élèves</p></div></div><div class="teach-card">Chargement… <span id="teachStatus"></span></div>';
     const key = sessionKey();
     loadInFlight = (async () => {
       // La base applique les règles d'accès : aucune donnée n'est affichée avant contrôle du compte.
@@ -133,17 +133,15 @@
     render();
   }
   function render() {
-    root.innerHTML = `<div class="teach-head"><div><h1>Manuel numérique · Travaux dirigés · TP</h1><p>Créer et publier des ressources par classe.</p></div></div>
-      <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><button type="button" id="teachSyncClasses" class="subtle">Ajouter les classes de l’application</button></div><p class="teach-help">Le manuel publié est accessible aux élèves validés, sauf pendant leur TP actif.</p></div>
-      <div class="teach-tabs" role="tablist">${[['manual','Manuel numérique'],['manual-td','Travaux dirigés'],['tp','Travaux pratiques'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
+    root.innerHTML = `<div class="teach-head"><div><h1>TP en atelier</h1><p>Créer et publier des travaux pratiques par classe.</p></div></div>
+      <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><button type="button" id="teachSyncClasses" class="subtle">Ajouter les classes de l’application</button></div></div>
+      <div class="teach-tabs" role="tablist">${[['tp','Travaux pratiques'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
       <div id="teachBody"></div><p id="teachStatus" class="teach-status" role="status"></p>`;
-    root.querySelector('#teachClass').onchange = e => { if(['manual','manual-td'].includes(tab)&&!window.MelecManualTeacher.canLeave()){e.target.value=classId;return;} classId = e.target.value; selectedChapterId = ''; selectedItemId = ''; editing = null; loadClass().catch(err => status(err.message, true)); };
+    root.querySelector('#teachClass').onchange = e => { classId = e.target.value; selectedChapterId = ''; selectedItemId = ''; editing = null; loadClass().catch(err => status(err.message, true)); };
     root.querySelector('#teachSyncClasses').onclick = syncClasses;
     root.querySelectorAll('[data-teach-tab]').forEach(button => button.onclick = () => {
-      if(['manual','manual-td'].includes(tab)&&button.dataset.teachTab!==tab&&!window.MelecManualTeacher.canLeave())return;
       const nextTab=button.dataset.teachTab;
       if(nextTab!==tab){
-        if(['manual','manual-td'].includes(nextTab))window.MelecManualTeacher.resetSelection();
         if(nextTab==='tp')selectedTpId='';
       }
       tab = nextTab; selectedItemId = ''; editing = null; render();
@@ -155,8 +153,7 @@
     else if (tab === 'alerts') renderAlerts();
     else if (tab === 'messages') renderMessages();
     else if (tab === 'tp') renderTp();
-    else if (tab === 'manual' || tab === 'manual-td') window.MelecManualTeacher.render(root.querySelector('#teachBody'),classId,status,tab);
-    else renderContent();
+    else { tab = 'tp'; renderTp(); }
   }
   async function syncClasses() {
     try {
@@ -740,3 +737,4 @@
   }
   if (location.hash === '#teaching') setTimeout(() => show('teaching'), 0);
 })();
+
