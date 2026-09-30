@@ -31,17 +31,47 @@
   }
   function anchorFreeImages(root){
     root.querySelectorAll('.manual-align-free').forEach(image=>{
-      const anchor=image.parentElement?.closest('p,div,li,h2,h3,h4,blockquote');
-      (anchor&&root.contains(anchor)?anchor:root).classList.add('manual-image-anchor');
+      let anchor=image.parentElement?.closest('p,div,li,h2,h3,h4,blockquote');
+      if(!anchor||anchor===root||!root.contains(anchor)){
+        anchor=document.createElement('p');image.before(anchor);anchor.append(image);
+      }
+      anchor.classList.add('manual-image-anchor');
     });
+  }
+  function reserveEditorImageSpace(editor){
+    requestAnimationFrame(()=>{
+      if(!editor.isConnected)return;
+      editor.querySelectorAll('.manual-image-anchor').forEach(anchor=>{
+        anchor.style.minHeight='';
+        const images=[...anchor.querySelectorAll('.manual-editor-image.manual-align-free')].filter(image=>image.querySelector('img')?.complete&&image.querySelector('img')?.naturalWidth);
+        if(!images.length)return;
+        const top=anchor.getBoundingClientRect().top;
+        const bottom=Math.max(...images.map(image=>image.getBoundingClientRect().bottom-top+16));
+        anchor.style.minHeight=Math.ceil(bottom)+'px';
+      });
+    });
+  }
+  function writeBelowImage(frame){
+    const editor=frame.closest('[data-editor]');if(!editor)return;
+    const anchor=frame.parentElement?.closest('p,div,li,h2,h3,h4,blockquote');
+    let next=anchor?.nextElementSibling;
+    if(!next||!next.matches('p')||next.textContent.trim()||next.querySelector('img,[data-manual-image]')){
+      next=document.createElement('p');next.append(document.createElement('br'));
+      (anchor&&editor.contains(anchor)?anchor:frame).after(next);
+    }
+    reserveEditorImageSpace(editor);
+    editor.focus();const range=document.createRange();range.selectNodeContents(next);range.collapse(true);
+    const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+    selections.set(editor,range.cloneRange());next.scrollIntoView({block:'nearest'});dirty=true;
   }
   function reserveImageSpace(root){
     requestAnimationFrame(()=>{
       if(!root.isConnected)return;
-      root.style.minHeight='';
-      const start=root.getBoundingClientRect().top;
-      const bottom=Math.max(root.offsetHeight,...[...root.querySelectorAll('.manual-align-free')].filter(image=>image.complete&&image.naturalWidth).map(image=>image.getBoundingClientRect().bottom-start+12));
-      root.style.minHeight=Math.ceil(bottom)+'px';
+      root.querySelectorAll('.manual-image-anchor').forEach(anchor=>{
+        anchor.style.minHeight='';
+        const images=[...anchor.querySelectorAll('.manual-align-free')].filter(image=>image.complete&&image.naturalWidth);
+        if(images.length){const top=anchor.getBoundingClientRect().top;anchor.style.minHeight=Math.ceil(Math.max(...images.map(image=>image.getBoundingClientRect().bottom-top+16)))+'px';}
+      });
     });
   }
   function label(kind) { return kinds.find(entry => entry[0] === kind)?.[1] || kind; }
@@ -90,7 +120,7 @@
     return `<section class="manual-section" data-kind="${kind}" ${mode==='manual-td'&&tdEditorView!==kind?'hidden':''}><div class="manual-section-head"><h4>${label(kind)}</h4><span class="manual-state ${section?.published?'on':''}">${section?.published?'Publié':'Brouillon'}</span></div>
       ${toolbar(kind)}
       <div class="manual-editor" data-editor contenteditable="true" role="textbox" aria-multiline="true" aria-label="Contenu ${label(kind)}">${safe(section?.content_html||'')}</div>
-      <div class="manual-image-tools" data-image-tools hidden><strong>Image sélectionnée</strong><span>Glissez-la avec la souris ou le doigt.</span><button type="button" data-image-align="left">À gauche</button><button type="button" data-image-align="center">Centrer</button><button type="button" data-image-align="right">À droite</button><label>Taille <input type="range" data-image-width min="1" max="100" step="1" value="100"><output data-image-size>100 %</output></label><button type="button" data-image-remove>Retirer du texte</button></div>
+      <div class="manual-image-tools" data-image-tools hidden><strong>Image sélectionnée</strong><span>Glissez-la avec la souris ou le doigt.</span><button type="button" data-image-align="left">À gauche</button><button type="button" data-image-align="center">Centrer</button><button type="button" data-image-align="right">À droite</button><label>Taille <input type="range" data-image-width min="1" max="100" step="1" value="100"><output data-image-size>100 %</output></label><button type="button" data-write-below>Écrire sous l’image</button><button type="button" data-image-remove>Retirer du texte</button></div>
       <div class="manual-files">${files.filter(file=>!file.mime_type.startsWith('image/')).map(file=>`<span class="manual-file-chip"><button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button></span>`).join('')}</div>
       <label class="manual-upload">Ajouter des PDF ou documents bureautiques<input type="file" data-upload="${kind}" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple></label>
       ${section?`<div class="manual-section-actions"><button type="button" data-toggle-section="${section.id}" class="subtle">${section.published?'Masquer cette section':'Publier cette section'}</button><button type="button" data-delete-section="${kind}" class="warn">Supprimer ${label(kind).toLowerCase()}</button></div>`:''}</section>`;
@@ -132,7 +162,7 @@
         for(const image of [...editor.querySelectorAll('img')]){
           if(image.closest('[data-manual-image]'))continue;
           let frame=image.closest('.manual-editor-image');
-          if(!frame){frame=document.createElement('span');frame.contentEditable='false';frame.className='manual-editor-image';setImageLayout(frame,'free',25,0,0);image.replaceWith(frame);frame.append(image);anchorFreeImages(editor);}
+          if(!frame){frame=document.createElement('span');frame.contentEditable='false';frame.className='manual-editor-image';setImageLayout(frame,'free',25,0,0);image.replaceWith(frame);frame.append(image);anchorFreeImages(editor);image.addEventListener('load',()=>reserveEditorImageSpace(editor),{once:true});reserveEditorImageSpace(editor);}
           const section=sections.find(row=>row.lesson_id===lessonId&&row.kind===kind);
           if(!section)throw new Error('Enregistrez d’abord la leçon avant de coller une image.');
           const src=image.getAttribute('src')||'';
@@ -183,7 +213,7 @@
   }
   async function loadTeacherImage(asset,image){
     if(!asset)return;
-    try{const blob=await api.download(asset.object_path);if(!image.isConnected)return;const url=URL.createObjectURL(blob);teacherUrls.push(url);image.src=url;}
+    try{const blob=await api.download(asset.object_path);if(!image.isConnected)return;const url=URL.createObjectURL(blob);teacherUrls.push(url);image.onload=()=>reserveEditorImageSpace(image.closest('[data-editor]'));image.src=url;}
     catch{if(image.isConnected)image.alt='Image indisponible';}
   }
   function hydrateTeacherImages(editor){
@@ -205,7 +235,7 @@
       }
       fragment.append(document.createTextNode(text.slice(start)));node.replaceWith(fragment);
     });
-    anchorFreeImages(editor);
+    anchorFreeImages(editor);reserveEditorImageSpace(editor);
   }
   function selectedImage(section){return section.querySelector('[data-image-tools]')?.selectedFrame||null;}
   function selectImage(frame){
@@ -224,7 +254,8 @@
       const at=range.cloneRange();at.deleteContents();at.insertNode(frame);at.setStartAfter(frame);at.collapse(true);
       selection.removeAllRanges();selection.addRange(at);selections.set(editor,at.cloneRange());
     }else{const paragraph=document.createElement('p');paragraph.append(frame);editor.append(paragraph);}
-    anchorFreeImages(editor);
+    anchorFreeImages(editor);image.onload=()=>reserveEditorImageSpace(editor);reserveEditorImageSpace(editor);
+    writeBelowImage(frame);
     if(caretRect){
       const anchor=frame.offsetParent,rect=anchor?.getBoundingClientRect();
       if(rect?.width)setImageLayout(frame,'free',25,(caretRect.left-rect.left)*100/rect.width,(caretRect.top-rect.top)+anchor.scrollTop);
@@ -277,6 +308,7 @@
         const move=next=>{
           const width=anchor?.getBoundingClientRect().width||editor.clientWidth;
           setImageLayout(frame,'free',frame.dataset.imageWidth,baseX+(next.clientX-startX)*100/width,baseY+next.clientY-startY);
+          reserveEditorImageSpace(editor);
           dirty=true;
         };
         const stop=()=>{frame.removeEventListener('pointermove',move);frame.removeEventListener('pointerup',stop);frame.removeEventListener('pointercancel',stop);};
@@ -299,9 +331,10 @@
       });
     });
     body.querySelectorAll('[data-image-tools]').forEach(tools=>{
-      tools.querySelectorAll('[data-image-align]').forEach(button=>button.onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;const width=Number(frame.dataset.imageWidth)||25;const x=button.dataset.imageAlign==='left'?0:button.dataset.imageAlign==='right'?100-width:(100-width)/2;setImageLayout(frame,'free',width,x,frame.dataset.imageY);anchorFreeImages(frame.closest('[data-editor]'));dirty=true;});
-      tools.querySelector('[data-image-width]').oninput=event=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;setImageLayout(frame,'free',event.target.value,frame.dataset.imageX,frame.dataset.imageY);anchorFreeImages(frame.closest('[data-editor]'));tools.querySelector('[data-image-size]').textContent=frame.dataset.imageWidth+' %';dirty=true;};
-      tools.querySelector('[data-image-remove]').onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(frame?.isConnected){frame.remove();dirty=true;}tools.selectedFrame=null;tools.hidden=true;};
+      tools.querySelectorAll('[data-image-align]').forEach(button=>button.onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;const width=Number(frame.dataset.imageWidth)||25;const x=button.dataset.imageAlign==='left'?0:button.dataset.imageAlign==='right'?100-width:(100-width)/2;setImageLayout(frame,'free',width,x,frame.dataset.imageY);anchorFreeImages(frame.closest('[data-editor]'));reserveEditorImageSpace(frame.closest('[data-editor]'));dirty=true;});
+      tools.querySelector('[data-image-width]').oninput=event=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;setImageLayout(frame,'free',event.target.value,frame.dataset.imageX,frame.dataset.imageY);anchorFreeImages(frame.closest('[data-editor]'));reserveEditorImageSpace(frame.closest('[data-editor]'));tools.querySelector('[data-image-size]').textContent=frame.dataset.imageWidth+' %';dirty=true;};
+      tools.querySelector('[data-write-below]').onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(frame?.isConnected)writeBelowImage(frame);};
+      tools.querySelector('[data-image-remove]').onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(frame?.isConnected){const editor=frame.closest('[data-editor]');frame.remove();reserveEditorImageSpace(editor);dirty=true;}tools.selectedFrame=null;tools.hidden=true;};
     });
     body.querySelectorAll('[data-format],[data-swatch],[data-table],[data-video]').forEach(button=>button.onmousedown=event=>event.preventDefault());
     body.querySelectorAll('[data-format]').forEach(button=>button.onclick=()=>formatSelection(button,button.dataset.format));
@@ -421,6 +454,7 @@
     const editor=body.querySelector(`.manual-section[data-kind="${kind}"] [data-editor]`);
     if(!editor)return '';
     const copy=editor.cloneNode(true);
+    copy.querySelectorAll('.manual-image-anchor').forEach(node=>{node.classList.remove('manual-image-anchor');node.style.minHeight='';if(!node.getAttribute('style'))node.removeAttribute('style');});
     copy.querySelectorAll('[data-manual-image]').forEach(node=>{
       const layout=imageAlign(node.dataset.imageAlign),width=imageWidth(node.dataset.imageWidth);
       const position=layout==='free'?`|${Math.round(Number(node.dataset.imageX)||0)}|${Math.round(Number(node.dataset.imageY)||0)}`:'';
