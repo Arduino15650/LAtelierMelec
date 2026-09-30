@@ -13,7 +13,41 @@
   let themeId='', chapterId='', lessonId='', request=0, busy=false, dirty=false;
   let loadedClassId='', loadedAt=0;
   const selections=new WeakMap();
+  const editorHistories=new WeakMap();
+  function history(editor){return editorHistories.get(editor);}
+  function recordEdit(editor,typing=false){
+    const state=history(editor);if(!state)return;
+    const html=editor.innerHTML,now=Date.now();
+    if(state.items[state.index]===html){if(!typing)state.typing=false;return;}
+    state.items.splice(state.index+1);
+    if(typing&&state.typing&&now-state.lastTyped<600&&state.index>0)state.items[state.index]=html;
+    else{state.items.push(html);state.index++;}
+    if(state.items.length>80){state.items.shift();state.index--;}
+    state.typing=typing;state.lastTyped=now;
+    updateHistoryButtons(editor);
+  }
+  function updateHistoryButtons(editor){
+    const state=history(editor),section=editor.closest('.manual-section');if(!state||!section)return;
+    const undo=section.querySelector('[data-history="undo"]'),redo=section.querySelector('[data-history="redo"]');
+    if(undo)undo.disabled=state.index<1;if(redo)redo.disabled=state.index>=state.items.length-1;
+  }
+  function travelHistory(editor,direction){
+    const state=history(editor);if(!state)return;
+    const next=state.index+direction;if(next<0||next>=state.items.length)return;
+    state.index=next;state.typing=false;editor.innerHTML=state.items[next];
+    editor.querySelectorAll('[data-manual-image]').forEach(frame=>{
+      const image=frame.querySelector('img'),asset=assets.find(row=>row.id===frame.dataset.manualImage);
+      if(image&&asset&&(!image.getAttribute('src')||!image.complete))loadTeacherImage(asset,image);
+    });
+    anchorFreeImages(editor);ensureTrailingTextBlock(editor);reserveEditorImageSpace(editor);
+    const section=editor.closest('.manual-section');section.querySelectorAll('.is-selected').forEach(node=>node.classList.remove('is-selected'));
+    section.querySelectorAll('[data-image-tools],[data-table-tools]').forEach(tools=>{tools.hidden=true;tools.selectedFrame=null;tools.selectedTable=null;});
+    editor.focus();const range=document.createRange();range.selectNodeContents(editor);range.collapse(false);
+    const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);selections.set(editor,range.cloneRange());
+    dirty=true;updateHistoryButtons(editor);
+  }
   let teacherUrls=[];
+  const uploadedImageSources=new Map();
   const imageBlobs=new Map(),imageRequests=new Map();
   let imageCacheBytes=0;
   async function teacherImageBlob(path){
@@ -105,7 +139,7 @@
     const commands=[['bold','Gras','G'],['italic','Italique','I'],['underline','Souligné','S'],['strikeThrough','Barré','S̶'],['subscript','Indice','x₂'],['superscript','Exposant','x²'],['insertUnorderedList','Puces','• Liste'],['insertOrderedList','Numérotation','1. Liste'],['outdent','Réduire le retrait','⇤'],['indent','Augmenter le retrait','⇥'],['justifyLeft','Aligner à gauche','☷'],['justifyCenter','Centrer','☰'],['justifyRight','Aligner à droite','☷'],['justifyFull','Justifier','▤']];
     const colors=['#173450','#d12d32','#e47713','#147a45','#1669b3','#7b4bad'];
     const highlights=['#fff08a','#ffb8bb','#c2f0ce','#bfe6ff','#e5d7ff'];
-    return `<div class="manual-toolbar" role="toolbar" aria-label="Mise en forme ${label(kind)}"><label>Police<select data-format-select="fontName" aria-label="Police"><option value="">Police</option>${['Arial','Aptos','Calibri','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS'].map(font=>`<option value="${font}">${font}</option>`).join('')}</select></label><label>Taille<select data-format-select="fontSize" aria-label="Taille"><option value="">Taille</option>${[['1','10'],['2','12'],['3','14'],['4','16'],['5','18'],['6','24'],['7','32']].map(([value,size])=>`<option value="${value}">${size} pt</option>`).join('')}</select></label>${commands.map(([command,name,symbol])=>`<button type="button" data-format="${command}" title="${name}" aria-label="${name}">${symbol}</button>`).join('')}<label>Interligne<select data-spacing="lineHeight" aria-label="Interligne du paragraphe"><option value="">Interligne</option>${[['1','Serré 1'],['1.15','1,15'],['1.3','1,3'],['1.5','1,5'],['1.8','1,8'],['2','Double 2']].map(([value,text])=>`<option value="${value}">${text}</option>`).join('')}</select></label><label>Après paragraphe<select data-spacing="marginBottom" aria-label="Espace après le paragraphe"><option value="">Espacement</option>${[['0px','Aucun'],['4px','Petit'],['8px','Moyen'],['12px','Grand'],['18px','Très grand']].map(([value,text])=>`<option value="${value}">${text}</option>`).join('')}</select></label><div class="manual-color-group"><span>Texte</span>${colors.map(color=>`<button type="button" class="manual-swatch" data-swatch="foreColor" data-value="${color}" style="--swatch:${color}" aria-label="Texte ${color}"></button>`).join('')}<input type="color" data-color="foreColor" value="#173450" aria-label="Autre couleur du texte"></div><div class="manual-color-group"><span>Surlignage</span>${highlights.map(color=>`<button type="button" class="manual-swatch" data-swatch="hiliteColor" data-value="${color}" style="--swatch:${color}" aria-label="Surlignage ${color}"></button>`).join('')}<input type="color" data-color="hiliteColor" value="#fff08a" aria-label="Autre couleur de surlignage"></div><button type="button" data-table title="Insérer un tableau">▦ Tableau</button><button type="button" data-video title="Insérer une vidéo YouTube ou Vimeo">▶ Vidéo</button></div>`;
+    return `<div class="manual-toolbar" role="toolbar" aria-label="Mise en forme ${label(kind)}"><button type="button" data-history="undo" title="Annuler (Ctrl+Z)" disabled>↶ Annuler</button><button type="button" data-history="redo" title="Rétablir (Ctrl+Y)" disabled>↷ Rétablir</button><label>Police<select data-format-select="fontName" aria-label="Police"><option value="">Police</option>${['Arial','Aptos','Calibri','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS'].map(font=>`<option value="${font}">${font}</option>`).join('')}</select></label><label>Taille<select data-format-select="fontSize" aria-label="Taille"><option value="">Taille</option>${[['1','10'],['2','12'],['3','14'],['4','16'],['5','18'],['6','24'],['7','32']].map(([value,size])=>`<option value="${value}">${size} pt</option>`).join('')}</select></label>${commands.map(([command,name,symbol])=>`<button type="button" data-format="${command}" title="${name}" aria-label="${name}">${symbol}</button>`).join('')}<label>Interligne<select data-spacing="lineHeight" aria-label="Interligne du paragraphe"><option value="">Interligne</option>${[['1','Serré 1'],['1.15','1,15'],['1.3','1,3'],['1.5','1,5'],['1.8','1,8'],['2','Double 2']].map(([value,text])=>`<option value="${value}">${text}</option>`).join('')}</select></label><label>Après paragraphe<select data-spacing="marginBottom" aria-label="Espace après le paragraphe"><option value="">Espacement</option>${[['0px','Aucun'],['4px','Petit'],['8px','Moyen'],['12px','Grand'],['18px','Très grand']].map(([value,text])=>`<option value="${value}">${text}</option>`).join('')}</select></label><div class="manual-color-group"><span>Texte</span>${colors.map(color=>`<button type="button" class="manual-swatch" data-swatch="foreColor" data-value="${color}" style="--swatch:${color}" aria-label="Texte ${color}"></button>`).join('')}<input type="color" data-color="foreColor" value="#173450" aria-label="Autre couleur du texte"></div><div class="manual-color-group"><span>Surlignage</span>${highlights.map(color=>`<button type="button" class="manual-swatch" data-swatch="hiliteColor" data-value="${color}" style="--swatch:${color}" aria-label="Surlignage ${color}"></button>`).join('')}<input type="color" data-color="hiliteColor" value="#fff08a" aria-label="Autre couleur de surlignage"></div><button type="button" data-table title="Insérer un tableau">▦ Tableau</button><button type="button" data-video title="Insérer une vidéo YouTube ou Vimeo">▶ Vidéo</button></div>`;
   }
   function selected() {
     return {theme:themes.find(row=>row.id===themeId), chapter:chapters.find(row=>row.id===chapterId), lesson:lessons.find(row=>row.id===lessonId)};
@@ -144,7 +178,8 @@
     return `<section class="manual-section" data-kind="${kind}" ${mode==='manual-td'&&tdEditorView!==kind?'hidden':''}><div class="manual-section-head"><h4>${label(kind)}</h4><span class="manual-state ${section?.published?'on':''}">${section?.published?'Publié':'Brouillon'}</span></div>
       ${toolbar(kind)}
       <div class="manual-editor" data-editor contenteditable="true" role="textbox" aria-multiline="true" aria-label="Contenu ${label(kind)}">${safe(section?.content_html||'')}</div>
-      <div class="manual-image-tools" data-image-tools hidden><strong>Image sélectionnée</strong><span>Glissez-la avec la souris ou le doigt.</span><button type="button" data-image-align="left">À gauche</button><button type="button" data-image-align="center">Centrer</button><button type="button" data-image-align="right">À droite</button><label>Taille <input type="range" data-image-width min="1" max="100" step="1" value="100"><output data-image-size>100 %</output></label><button type="button" data-write-below>Écrire sous l’image</button><button type="button" data-image-remove>Retirer du texte</button></div>
+      <div class="manual-image-tools" data-image-tools hidden><strong>Image sélectionnée</strong><span>Glissez-la avec la souris ou le doigt.</span><button type="button" data-image-align="left">À gauche</button><button type="button" data-image-align="center">Centrer</button><button type="button" data-image-align="right">À droite</button><label>Taille <input type="range" data-image-width min="1" max="100" step="1" value="100"><output data-image-size>100 %</output></label><button type="button" data-write-below>Écrire sous l’image</button><button type="button" data-image-remove>Supprimer cette image</button><button type="button" data-image-close aria-label="Fermer les outils de l’image">Fermer</button></div>
+      <div class="manual-table-tools" data-table-tools hidden><strong>Tableau sélectionné</strong><button type="button" data-table-remove>Supprimer ce tableau</button><button type="button" data-table-close>Fermer</button></div>
       <div class="manual-files">${files.filter(file=>!file.mime_type.startsWith('image/')).map(file=>`<span class="manual-file-chip"><button type="button" data-download="${file.id}" class="subtle">📎 ${esc(file.file_name)}</button></span>`).join('')}</div>
       <label class="manual-upload">Ajouter des PDF ou documents bureautiques<input type="file" data-upload="${kind}" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple></label>
       ${section?`<div class="manual-section-actions"><button type="button" data-toggle-section="${section.id}" class="subtle">${section.published?'Masquer cette section':'Publier cette section'}</button><button type="button" data-delete-section="${kind}" class="warn">Supprimer ${label(kind).toLowerCase()}</button></div>`:''}</section>`;
@@ -161,7 +196,7 @@
     editor.focus();
     const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
     document.execCommand(command,false,value??null);
-    rememberSelection(editor);dirty=true;
+    rememberSelection(editor);dirty=true;recordEdit(editor);
   }
   function formatSpacing(control,property,value){
     if(!value)return;
@@ -175,7 +210,7 @@
     const blocks=candidates.filter(node=>!candidates.some(other=>other!==node&&node.contains(other)));
     if(!blocks.length){notify('Sélectionnez un paragraphe pour régler son espacement.',true);control.value='';return;}
     blocks.forEach(node=>{node.style[property]=value;});
-    dirty=true;control.value='';
+    dirty=true;control.value='';recordEdit(editor);
   }
   async function prepareInlineImages(){
     if(inlineCaptureInFlight){
@@ -195,6 +230,8 @@
           if(!image)break;
           let frame=image.closest('.manual-editor-image');
           if(!frame){frame=document.createElement('span');frame.contentEditable='false';frame.className='manual-editor-image';setImageLayout(frame,'free',25,0,0);image.replaceWith(frame);frame.append(image);anchorFreeImages(editor);image.addEventListener('load',()=>reserveEditorImageSpace(editor),{once:true});reserveEditorImageSpace(editor);}
+          const known=uploadedImageSources.get(image.getAttribute('src'));
+          if(known){frame.dataset.manualImage=known;continue;}
           const section=sections.find(row=>row.lesson_id===lessonId&&row.kind===kind);
           if(!section)throw new Error('Enregistrez d’abord la leçon avant de coller une image.');
           const src=image.getAttribute('src')||'';
@@ -222,6 +259,7 @@
           }catch(error){await api.removeFiles([path]).catch(()=>{});throw error;}
           assets.push(asset);
           frame.dataset.manualImage=asset.id;image.alt=image.alt||name;
+          uploadedImageSources.set(src,asset.id);
           dirty=true;
         }
       }
@@ -281,7 +319,7 @@
   function selectImage(frame){
     const section=frame.closest('.manual-section'),tools=section.querySelector('[data-image-tools]');
     section.querySelectorAll('.manual-editor-image.is-selected').forEach(node=>node.classList.remove('is-selected'));
-    frame.classList.add('is-selected');tools.selectedFrame=frame;tools.hidden=false;
+    frame.classList.add('is-selected');frame.tabIndex=0;frame.focus({preventScroll:true});tools.selectedFrame=frame;tools.hidden=false;
     tools.querySelector('[data-image-width]').value=frame.dataset.imageWidth||'100';
     tools.querySelector('[data-image-size]').textContent=(frame.dataset.imageWidth||'100')+' %';
   }
@@ -300,7 +338,7 @@
       if(rect?.width)setImageLayout(frame,'free',25,(caretRect.left-rect.left)*100/rect.width,(caretRect.top-rect.top)+anchor.scrollTop);
     }
     writeBelowImage(frame);
-    dirty=true;
+    dirty=true;recordEdit(editor);
   }
   function draw() {
     teacherUrls.forEach(URL.revokeObjectURL);teacherUrls=[];
@@ -335,11 +373,33 @@
       body.querySelectorAll('[data-teacher-part]').forEach(item=>item.classList.toggle('active',item===button));
       body.querySelectorAll('.manual-section').forEach(section=>section.hidden=section.dataset.kind!==tdEditorView);
     });
-    body.querySelectorAll('[data-editor],#manualLessonTitle').forEach(node=>node.addEventListener('input',()=>{dirty=true;node.querySelectorAll?.('.manual-write-below').forEach(p=>{if(p.textContent.trim())p.classList.remove('manual-write-below');});}));
+    body.querySelectorAll('[data-editor],#manualLessonTitle').forEach(node=>node.addEventListener('input',()=>{dirty=true;node.querySelectorAll?.('.manual-write-below').forEach(p=>{if(p.textContent.trim())p.classList.remove('manual-write-below');});if(node.matches('[data-editor]'))recordEdit(node,true);}));
     body.querySelectorAll('[data-editor]').forEach(editor=>{
       ['keyup','pointerup','touchend','focusout'].forEach(name=>editor.addEventListener(name,()=>rememberSelection(editor)));
       hydrateTeacherImages(editor);
-      editor.addEventListener('click',event=>{const frame=event.target.closest('.manual-editor-image');if(frame&&editor.contains(frame))selectImage(frame);});
+      editorHistories.set(editor,{items:[editor.innerHTML],index:0,typing:false,lastTyped:0});
+      editor.addEventListener('keydown',event=>{
+        if(event.key==='Escape'){
+          const section=editor.closest('.manual-section');
+          section.querySelectorAll('[data-image-tools],[data-table-tools]').forEach(tools=>tools.hidden=true);
+          section.querySelectorAll('.is-selected').forEach(node=>node.classList.remove('is-selected'));
+          return;
+        }
+        if(['Delete','Backspace'].includes(event.key)&&event.target.matches('.manual-editor-image.is-selected')){
+          event.preventDefault();editor.closest('.manual-section').querySelector('[data-image-remove]').click();return;
+        }
+        if((event.ctrlKey||event.metaKey)&&!event.altKey&&['z','y'].includes(event.key.toLowerCase())){
+          event.preventDefault();travelHistory(editor,event.key.toLowerCase()==='y'||event.shiftKey?1:-1);
+        }
+      });
+      editor.addEventListener('click',event=>{
+        const frame=event.target.closest('.manual-editor-image');if(frame&&editor.contains(frame)){selectImage(frame);return;}
+        const table=event.target.closest('table');if(table&&editor.contains(table)){
+          const tools=editor.closest('.manual-section').querySelector('[data-table-tools]');
+          editor.querySelectorAll('table.is-selected').forEach(node=>node.classList.remove('is-selected'));
+          table.classList.add('is-selected');tools.selectedTable=table;tools.hidden=false;
+        }
+      });
       editor.addEventListener('pointerdown',event=>{
         const writing=event.target.closest('.manual-write-below');
         if(writing&&editor.contains(writing)){
@@ -356,7 +416,7 @@
           reserveEditorImageSpace(editor);
           dirty=true;
         };
-        const stop=()=>{frame.removeEventListener('pointermove',move);frame.removeEventListener('pointerup',stop);frame.removeEventListener('pointercancel',stop);};
+        const stop=()=>{frame.removeEventListener('pointermove',move);frame.removeEventListener('pointerup',stop);frame.removeEventListener('pointercancel',stop);recordEdit(editor);};
         frame.addEventListener('pointermove',move);frame.addEventListener('pointerup',stop);frame.addEventListener('pointercancel',stop);
       });
       editor.addEventListener('paste',event=>{
@@ -376,10 +436,24 @@
       });
     });
     body.querySelectorAll('[data-image-tools]').forEach(tools=>{
-      tools.querySelectorAll('[data-image-align]').forEach(button=>button.onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;const width=Number(frame.dataset.imageWidth)||25;const x=button.dataset.imageAlign==='left'?0:button.dataset.imageAlign==='right'?100-width:(100-width)/2;setImageLayout(frame,'free',width,x,frame.dataset.imageY);anchorFreeImages(frame.closest('[data-editor]'));reserveEditorImageSpace(frame.closest('[data-editor]'));dirty=true;});
+      tools.querySelector('[data-image-close]').onclick=()=>{tools.selectedFrame?.classList.remove('is-selected');tools.selectedFrame=null;tools.hidden=true;};
+      tools.querySelectorAll('[data-image-align]').forEach(button=>button.onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;const width=Number(frame.dataset.imageWidth)||25;const x=button.dataset.imageAlign==='left'?0:button.dataset.imageAlign==='right'?100-width:(100-width)/2;setImageLayout(frame,'free',width,x,frame.dataset.imageY);anchorFreeImages(frame.closest('[data-editor]'));reserveEditorImageSpace(frame.closest('[data-editor]'));dirty=true;recordEdit(frame.closest('[data-editor]'));});
       tools.querySelector('[data-image-width]').oninput=event=>{const frame=selectedImage(tools.closest('.manual-section'));if(!frame?.isConnected)return;setImageLayout(frame,'free',event.target.value,frame.dataset.imageX,frame.dataset.imageY);anchorFreeImages(frame.closest('[data-editor]'));reserveEditorImageSpace(frame.closest('[data-editor]'));tools.querySelector('[data-image-size]').textContent=frame.dataset.imageWidth+' %';dirty=true;};
+      tools.querySelector('[data-image-width]').onchange=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(frame?.isConnected)recordEdit(frame.closest('[data-editor]'));};
       tools.querySelector('[data-write-below]').onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(frame?.isConnected)writeBelowImage(frame);};
-      tools.querySelector('[data-image-remove]').onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(frame?.isConnected){const editor=frame.closest('[data-editor]');frame.remove();reserveEditorImageSpace(editor);dirty=true;}tools.selectedFrame=null;tools.hidden=true;};
+      tools.querySelector('[data-image-remove]').onclick=()=>{const frame=selectedImage(tools.closest('.manual-section'));if(frame?.isConnected){const editor=frame.closest('[data-editor]'),anchor=frame.parentElement;frame.remove();if(anchor?.classList.contains('manual-image-anchor')&&!anchor.textContent.trim()&&!anchor.querySelector('img'))anchor.remove();reserveEditorImageSpace(editor);dirty=true;recordEdit(editor);}tools.selectedFrame=null;tools.hidden=true;};
+    });
+    body.querySelectorAll('[data-table-tools]').forEach(tools=>{
+      tools.querySelector('[data-table-close]').onclick=()=>{tools.selectedTable?.classList.remove('is-selected');tools.selectedTable=null;tools.hidden=true;};
+      tools.querySelector('[data-table-remove]').onclick=()=>{
+        const table=tools.selectedTable;if(!table?.isConnected)return;
+        const editor=table.closest('[data-editor]');table.remove();tools.selectedTable=null;tools.hidden=true;
+        dirty=true;recordEdit(editor);editor.focus();
+      };
+    });
+    body.querySelectorAll('[data-history]').forEach(button=>button.onclick=()=>{
+      const editor=button.closest('.manual-section').querySelector('[data-editor]');
+      travelHistory(editor,button.dataset.history==='undo'?-1:1);
     });
     body.querySelectorAll('[data-format],[data-swatch],[data-table],[data-video]').forEach(button=>button.onmousedown=event=>event.preventDefault());
     body.querySelectorAll('[data-format]').forEach(button=>button.onclick=()=>formatSelection(button,button.dataset.format));
