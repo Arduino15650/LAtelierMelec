@@ -1,6 +1,10 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const KEY='melec-evaluation-v1';
 let state=load(), draft=null, step=1, currentId=null, gradeActivityId=null, gradeClass='', gradeStudent='';
+window.addEventListener('melec-reset-selection',()=>{
+  draft=null; step=1; currentId=null;
+  gradeActivityId=null; gradeClass=''; gradeStudent='';
+});
 function createId(){return globalThis.crypto?.randomUUID?.()||`melec-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`}
 function cloneData(value){return typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value))}
 function normalizeActivity(activity){

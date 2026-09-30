@@ -82,8 +82,8 @@
       if (!teachers.length) throw new Error('Accès réservé à l’enseignant.');
       if (sessionKey() !== key) return;
       classes = nextClasses;
-      if (!classId || !classes.some(c => c.id === classId)) {
-        classId = classes[0]?.id || '';
+      if (classId && !classes.some(c => c.id === classId)) {
+        classId = '';
         selectedChapterId = ''; selectedItemId = '';
       }
       await loadClass();
@@ -137,7 +137,7 @@
       <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><button type="button" id="teachSyncClasses" class="subtle">Ajouter les classes de l’application</button></div></div>
       <div class="teach-tabs" role="tablist">${[['tp','Travaux pratiques'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
       <div id="teachBody"></div><p id="teachStatus" class="teach-status" role="status"></p>`;
-    root.querySelector('#teachClass').onchange = e => { classId = e.target.value; selectedChapterId = ''; selectedItemId = ''; editing = null; loadClass().catch(err => status(err.message, true)); };
+    root.querySelector('#teachClass').onchange = e => { classId = e.target.value; selectedChapterId = ''; selectedItemId = ''; selectedTpId = ''; editing = null; loadClass().catch(err => status(err.message, true)); };
     root.querySelector('#teachSyncClasses').onclick = syncClasses;
     root.querySelectorAll('[data-teach-tab]').forEach(button => button.onclick = () => {
       const nextTab=button.dataset.teachTab;
@@ -681,8 +681,10 @@
     const pending = students.filter(s => !s.approved_at && !s.blocked_at && rosterMatches(s).length);
     const approved = students.filter(s => s.approved_at && !s.blocked_at);
     const selected = classes.find(c => c.id === requestClassId);
-    const visible = selected ? pending.filter(s => rosterMatches(s).some(r => normalized(r.className) === normalized(selected.name))) : pending;
-    body.innerHTML = `<div class="teach-card"><h2>Demandes d’accès élèves (${pending.length})</h2><p class="teach-help">Seuls les élèves retrouvés dans la liste de l’application peuvent être proposés à la validation. Vérifiez leur identité et leur adresse e-mail avant de remettre le code.</p><div class="teach-row"><label for="requestClassFilter">Afficher la classe</label><select id="requestClassFilter"><option value="">Toutes les classes</option>${classes.map(c => `<option value="${c.id}" ${requestClassId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div><div class="teach-students">${visible.map(s => { const matches = rosterMatches(s); return `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)} · classe demandée : ${esc(s.requested_class)}</small><small>En attente</small></div><select data-roster-student="${s.user_id}"><option value="">Confirmer l’élève du registre</option>${matches.map(r => `<option value="${esc(r.id)}">${esc(r.name)} · ${esc(r.className)}</option>`).join('')}</select><button type="button" data-approve="${s.user_id}">Valider</button></div>`; }).join('') || '<p>Aucune demande concordante pour cette classe.</p>'}</div><h3>Élèves approuvés (${approved.length})</h3><div class="teach-students">${approved.filter(s => !selected || s.class_id === selected.id).map(s => `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)}${s.access_until ? ' · accès jusqu’au ' + esc(new Date(s.access_until).toLocaleString('fr-FR')) : ''}</small></div><div class="teach-row"><button type="button" data-code="${s.user_id}" class="subtle">Nouveau code</button><button type="button" data-unlock="${s.user_id}" class="subtle">Débloquer et renouveler</button><button type="button" data-revoke="${s.user_id}" class="warn">Révoquer</button></div></div>`).join('') || '<p>Aucun élève approuvé dans cette classe.</p>'}</div><div id="issuedCode"></div></div>`;
+    const showAll = requestClassId === 'all';
+    const visible = showAll ? pending : selected ? pending.filter(s => rosterMatches(s).some(r => normalized(r.className) === normalized(selected.name))) : [];
+    const visibleApproved = showAll ? approved : selected ? approved.filter(s => s.class_id === selected.id) : [];
+    body.innerHTML = `<div class="teach-card"><h2>Demandes d’accès élèves (${pending.length})</h2><p class="teach-help">Seuls les élèves retrouvés dans la liste de l’application peuvent être proposés à la validation. Vérifiez leur identité et leur adresse e-mail avant de remettre le code.</p><div class="teach-row"><label for="requestClassFilter">Afficher la classe</label><select id="requestClassFilter"><option value="">Choisir une classe…</option><option value="all" ${showAll ? 'selected' : ''}>Toutes les classes</option>${classes.map(c => `<option value="${c.id}" ${requestClassId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>${!requestClassId ? '<p class="teach-help">Choisissez une classe pour afficher les élèves.</p>' : ''}<div class="teach-students">${visible.map(s => { const matches = rosterMatches(s); return `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)} · classe demandée : ${esc(s.requested_class)}</small><small>En attente</small></div><select data-roster-student="${s.user_id}"><option value="">Confirmer l’élève du registre</option>${matches.map(r => `<option value="${esc(r.id)}">${esc(r.name)} · ${esc(r.className)}</option>`).join('')}</select><button type="button" data-approve="${s.user_id}">Valider</button></div>`; }).join('') || (requestClassId ? '<p>Aucune demande concordante pour cette classe.</p>' : '')}</div><h3>Élèves approuvés (${visibleApproved.length})</h3><div class="teach-students">${visibleApproved.map(s => `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)}${s.access_until ? ' · accès jusqu’au ' + esc(new Date(s.access_until).toLocaleString('fr-FR')) : ''}</small></div><div class="teach-row"><button type="button" data-code="${s.user_id}" class="subtle">Nouveau code</button><button type="button" data-unlock="${s.user_id}" class="subtle">Débloquer et renouveler</button><button type="button" data-revoke="${s.user_id}" class="warn">Révoquer</button></div></div>`).join('') || (requestClassId ? '<p>Aucun élève approuvé dans cette classe.</p>' : '')}</div><div id="issuedCode"></div></div>`;
     const approvedHeading=Array.from(body.querySelectorAll('h3')).find(heading=>heading.textContent.startsWith('Élèves approuvés'));
     if(approvedHeading){const approvedList=approvedHeading.nextElementSibling,details=document.createElement('details'),summary=document.createElement('summary');details.className='teach-approved-details';summary.textContent=approvedHeading.textContent;details.append(summary,approvedList);approvedHeading.replaceWith(details);}
     body.querySelector('.teach-help').textContent = 'Validez uniquement les élèves présents dans le registre et dans la bonne classe. Si le courriel de confirmation manque, utilisez « Renvoyer le courriel ». « Supprimer le compte » conserve l’élève et ses évaluations du registre, mais est refusé si des travaux TP dépendent du compte.';
@@ -735,6 +737,13 @@
   function renderMessages() {
     root.querySelector('#teachBody').innerHTML = `<div class="teach-card"><h2>Messages du formulaire</h2>${messages.map(m => `<article class="teach-message"><strong>${esc(m.last_name)} ${esc(m.first_name)}</strong> · ${esc(m.class_name)}<small class="teach-meta">${esc(m.email)} · ${esc(new Date(m.created_at).toLocaleString('fr-FR'))}</small><p>${esc(m.comment)}</p></article>`).join('') || '<p>Aucun message.</p>'}</div>`;
   }
+  window.addEventListener('melec-reset-selection', () => {
+    classId = ''; tab = 'tp'; selectedChapterId = ''; selectedItemId = '';
+    selectedTpId = ''; requestClassId = ''; editing = null; activeItem = null;
+    previewEpoch++;
+    if (previewCleanup) { previewCleanup(); previewCleanup = null; }
+    document.querySelector('#teachPreview')?.remove();
+    if (root.querySelector('#teachClass')) render();
+  });
   if (location.hash === '#teaching') setTimeout(() => show('teaching'), 0);
 })();
-

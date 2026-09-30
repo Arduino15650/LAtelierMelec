@@ -285,7 +285,11 @@
       createFirstData({ activities: [], students: [] });
     }
   });
-  byId('cloudSyncNow').addEventListener('click', refreshFromCloud);
+  byId('cloudSyncNow').addEventListener('click', () => {
+    // Ne pas quitter un éditeur ouvert : il peut contenir des modifications non sauvegardées.
+    if (document.querySelector('#editorView.hidden')) window.resetToHome?.();
+    refreshFromCloud();
+  });
   function signOut(force) {
     if (!force && readPending()) return alert('Des modifications ne sont pas encore synchronisées. Attendez la confirmation « Synchronisé ».');
     clearSession();

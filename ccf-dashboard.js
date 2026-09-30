@@ -10,6 +10,9 @@
   function competencyScore(a,s,cid){const item=evaluated(a,s)?.competencies?.find(c=>c.id===cid);return item&&Number.isFinite(item.factor)?item.factor:null}
   function pill(cid,factor){const level=factor===null?'none':factor<.25?'red':factor<.5?'orange':factor<.75?'green':'darkgreen';return `<span class="ccf-pill ${level}" title="${esc(cid)} : ${factor===null?'non évaluée':(factor*20).toFixed(2)+' / 20'}">${esc(cid)}<small>${factor===null?'—':(factor*20).toFixed(1)}</small></span>`}
   let filters={results:{className:'',groupId:'',studentId:''},ccf:{className:'',groupId:'',studentId:''}};
+  window.addEventListener('melec-reset-selection',()=>{
+    filters={results:{className:'',groupId:'',studentId:''},ccf:{className:'',groupId:'',studentId:''}};
+  });
   function scope(kind){const f=filters[kind],classes=classOptions();if(!classes.includes(f.className)){f.className='';f.groupId='';f.studentId=''}const groups=state.studentGroups.filter(g=>g.className===f.className),group=groups.find(g=>g.id===f.groupId);if(f.groupId&&f.groupId!=='__class__'&&!group){f.groupId='';f.studentId=''}const available=state.students.filter(s=>s.className===f.className&&(f.groupId==='__class__'||group?.studentIds.includes(s.id))).sort(byName);if(f.studentId&&f.studentId!=='__all__'&&!available.some(s=>s.id===f.studentId))f.studentId='';return{f,classes,groups,available,students:f.studentId==='__all__'?available:available.filter(s=>s.id===f.studentId)}}
   function filterHtml(kind,data){
     const {f,classes,groups,available}=data;
