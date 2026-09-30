@@ -46,6 +46,11 @@
 .manual-toolbar select{max-width:145px;min-height:36px;font:inherit}
 .manual-toolbar [data-spacing]{max-width:155px}
 .manual-toolbar button{min-height:36px!important;padding:6px 11px!important}
+.manual-lesson:has(.manual-floating-toolbar){padding-bottom:clamp(170px,28vh,290px)}
+.manual-floating-toolbar{position:fixed;left:50%;bottom:max(8px,env(safe-area-inset-bottom));z-index:1200;box-sizing:border-box;width:min(1180px,calc(100vw - 20px));max-height:30vh;overflow:auto;overscroll-behavior:contain;margin:0!important;padding:12px 14px;transform:translateX(-50%);border:2px solid #4e83b7;border-radius:16px;background:#f8fbff;box-shadow:0 12px 32px #102d4d55}
+.manual-floating-hint{font-size:.8rem;font-weight:750;color:#315779}
+.manual-floating-toolbar :focus-visible{outline:3px solid #e89425;outline-offset:2px}
+@media(max-width:600px){.manual-lesson:has(.manual-floating-toolbar){padding-bottom:44vh}.manual-floating-toolbar{max-height:40vh;padding:8px;gap:5px}.manual-floating-toolbar label{font-size:.8rem}.manual-floating-toolbar button{min-height:40px!important}}
 .manual-color-group{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
 .manual-color-group>span{font-weight:700;font-size:.85rem}
 .manual-swatch{width:32px;min-width:32px;height:32px;min-height:32px!important;padding:0!important;border:2px solid #fff!important;border-radius:50%!important;background:var(--swatch)!important;box-shadow:0 0 0 1px #55708b}

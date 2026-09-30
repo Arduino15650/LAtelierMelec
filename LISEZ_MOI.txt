@@ -1,28 +1,19 @@
-Nouvel éditeur simple du manuel numérique — livraison du 30 septembre 2026.
+Palette flottante pour l’éditeur du manuel numérique et des TD.
 
-Copiez uniquement les huit fichiers de ce dossier à la racine du dépôt GitHub,
-en remplaçant les fichiers de même nom. Le nouveau manual-blocks.js doit aussi
-être ajouté. Ne déposez pas ce fichier LISEZ_MOI.txt.
+Si vous avez déjà versé la livraison « A_VERSER_GITHUB_EDITEUR_2026-09-30 »,
+remplacez uniquement ces trois fichiers à la racine du dépôt GitHub :
+enseignant.html, manual-teacher.js et manual.css.
 
-Fichiers : enseignant.html, eleve.html, manual-blocks.js, manual-teacher.js,
-manual-student.js, manual.css, content-render.js, service-worker.js.
+N’ajoutez pas ce fichier LISEZ_MOI.txt. Si la livraison précédente n’a pas
+encore été versée, installez d’abord ses huit fichiers, puis remplacez ces
+trois fichiers par ceux du présent dossier.
 
-L’éditeur utilise des blocs ordonnés : texte, image et PDF. Vous pouvez ajouter
-autant de blocs que nécessaire, monter ou descendre un bloc, le supprimer, puis
-enregistrer. Une image n’est plus flottante dans un paragraphe : le texte qui
-la suit reste éditable dans son propre bloc. La prévisualisation reprend cet
-ordre. Les anciennes leçons sont converties à l’affichage sans modifier leurs
-données tant que vous ne les enregistrez pas.
+La palette complète reste fixée au bas de l’écran dans la vue enseignant.
+Elle agit sur le bloc de texte actif du cours, des TD ou des corrections.
+Elle contient notamment police, taille, styles, listes, alignement, couleurs,
+interligne, tableau, vidéo et annuler/rétablir. Sur les petits écrans, la
+palette peut défiler dans sa propre zone pour laisser la page lisible.
 
-Les fichiers sont toujours stockés dans le stockage Supabase existant et le
-contenu dans manual_sections.content_html. Aucune commande SQL n’est requise.
-Un PDF est proposé à la consultation dans la leçon, sans bouton de téléchargement.
-Comme pour toute page web, il est impossible d’empêcher absolument la copie
-ou l’enregistrement par un élève ayant accès au document.
-
-Contrôles réalisés localement avec une leçon simulée : reprise d’une image
-ancienne, ajout d’image et de texte après PDF, déplacement, enregistrement,
-prévisualisation et affichage élève. La connexion réelle à GitHub Pages et à
-Supabase n’est pas validée par ce test local.
-
-Aucun fichier n’a été publié automatiquement sur GitHub dans cette livraison.
+Contrôles locaux : affichage de la palette, gras, italique, annulation,
+interligne après enregistrement et position fixe. Aucun déploiement GitHub
+n’a été effectué automatiquement.

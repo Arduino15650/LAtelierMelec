@@ -15,6 +15,7 @@
   const blockUploads=new Set(),removedBlockAssets=new Set();
   let blockUploadError='';
   const selections=new WeakMap();
+  let activeBlockText=null;
   const editorHistories=new WeakMap();
   function history(editor){return editorHistories.get(editor);}
   function recordEdit(editor,typing=false){
@@ -157,6 +158,12 @@
     const highlights=['#fff08a','#ffb8bb','#c2f0ce','#bfe6ff','#e5d7ff'];
     return `<div class="manual-toolbar" role="toolbar" aria-label="Mise en forme ${label(kind)}"><button type="button" data-history="undo" title="Annuler (Ctrl+Z)" disabled>↶ Annuler</button><button type="button" data-history="redo" title="Rétablir (Ctrl+Y)" disabled>↷ Rétablir</button><label>Police<select data-format-select="fontName" aria-label="Police"><option value="">Police</option>${['Arial','Aptos','Calibri','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS'].map(font=>`<option value="${font}">${font}</option>`).join('')}</select></label><label>Taille<select data-format-select="fontSize" aria-label="Taille"><option value="">Taille</option>${[['1','10'],['2','12'],['3','14'],['4','16'],['5','18'],['6','24'],['7','32']].map(([value,size])=>`<option value="${value}">${size} pt</option>`).join('')}</select></label>${commands.map(([command,name,symbol])=>`<button type="button" data-format="${command}" title="${name}" aria-label="${name}">${symbol}</button>`).join('')}<label>Interligne<select data-spacing="lineHeight" aria-label="Interligne du paragraphe"><option value="">Interligne</option>${[['1','Serré 1'],['1.15','1,15'],['1.3','1,3'],['1.5','1,5'],['1.8','1,8'],['2','Double 2']].map(([value,text])=>`<option value="${value}">${text}</option>`).join('')}</select></label><label>Après paragraphe<select data-spacing="marginBottom" aria-label="Espace après le paragraphe"><option value="">Espacement</option>${[['0px','Aucun'],['4px','Petit'],['8px','Moyen'],['12px','Grand'],['18px','Très grand']].map(([value,text])=>`<option value="${value}">${text}</option>`).join('')}</select></label><div class="manual-color-group"><span>Texte</span>${colors.map(color=>`<button type="button" class="manual-swatch" data-swatch="foreColor" data-value="${color}" style="--swatch:${color}" aria-label="Texte ${color}"></button>`).join('')}<input type="color" data-color="foreColor" value="#173450" aria-label="Autre couleur du texte"></div><div class="manual-color-group"><span>Surlignage</span>${highlights.map(color=>`<button type="button" class="manual-swatch" data-swatch="hiliteColor" data-value="${color}" style="--swatch:${color}" aria-label="Surlignage ${color}"></button>`).join('')}<input type="color" data-color="hiliteColor" value="#fff08a" aria-label="Autre couleur de surlignage"></div><button type="button" data-table title="Insérer un tableau">▦ Tableau</button><button type="button" data-video title="Insérer une vidéo YouTube ou Vimeo">▶ Vidéo</button></div>`;
   }
+  function floatingToolbar(){
+    return toolbar(mode==='manual'?'course':'td')
+      .replace('class="manual-toolbar"','class="manual-toolbar manual-floating-toolbar"')
+      .replace(' disabled>','>').replace(' disabled>','>')
+      .replace(/<\/div>$/,'<span class="manual-floating-hint" data-block-hint>Choisissez un bloc de texte</span></div>');
+  }
   function selected() {
     return {theme:themes.find(row=>row.id===themeId), chapter:chapters.find(row=>row.id===chapterId), lesson:lessons.find(row=>row.id===lessonId)};
   }
@@ -203,7 +210,7 @@
     const actions=`<div class="manual-block-actions"><button type="button" data-move-block="up" title="Monter ce bloc">↑ Monter</button><button type="button" data-move-block="down" title="Descendre ce bloc">↓ Descendre</button><button type="button" data-remove-block class="warn" title="Supprimer ce bloc">Supprimer</button></div>`;
     if(block.type==='image')return `<div class="manual-content-block" data-block-type="image" data-asset-id="${esc(block.id)}" data-align="${esc(block.align)}" data-width="${window.MelecManualBlocks.clamp(block.width)}"><div class="manual-block-head"><strong>Image · ${esc(title)}</strong>${actions}</div><div class="manual-block-image manual-block-align-${esc(block.align)}"><img data-block-image alt="${esc(title)}"></div><div class="manual-block-options"><label>Alignement <select data-block-align><option value="left" ${block.align==='left'?'selected':''}>Gauche</option><option value="center" ${block.align==='center'?'selected':''}>Centre</option><option value="right" ${block.align==='right'?'selected':''}>Droite</option></select></label><label>Largeur <input type="range" data-block-width min="1" max="100" value="${window.MelecManualBlocks.clamp(block.width)}"><output>${window.MelecManualBlocks.clamp(block.width)} %</output></label></div></div>`;
     if(block.type==='pdf')return `<div class="manual-content-block" data-block-type="pdf" data-asset-id="${esc(block.id)}"><div class="manual-block-head"><strong>PDF · ${esc(title)}</strong>${actions}</div><p>Le document sera consultable dans la leçon, sans bouton de téléchargement.</p><button type="button" data-preview-pdf>Voir le PDF</button><div class="manual-block-pdf-preview" hidden></div></div>`;
-    return `<div class="manual-content-block" data-block-type="text"><div class="manual-block-head"><strong>Texte</strong>${actions}</div><div class="manual-block-format"><button type="button" data-block-format="bold" title="Gras">G</button><button type="button" data-block-format="italic" title="Italique">I</button><button type="button" data-block-format="insertUnorderedList" title="Liste">• Liste</button><button type="button" data-block-format="formatBlock" data-value="h3" title="Titre">Titre</button></div><div class="manual-block-text" data-block-text contenteditable="true" role="textbox" aria-multiline="true" aria-label="Texte du cours">${safe(block.html||'<p><br></p>')}</div></div>`;
+    return `<div class="manual-content-block" data-block-type="text"><div class="manual-block-head"><strong>Texte</strong>${actions}</div><div class="manual-block-text" data-block-text contenteditable="true" role="textbox" aria-multiline="true" aria-label="Texte du cours">${safe(block.html||'<p><br></p>')}</div></div>`;
   }
   function blockData(editor){
     return [...editor.querySelectorAll(':scope > [data-block-type]')].map(node=>{
@@ -262,10 +269,12 @@
   function setupBlockEditors(){
     body.querySelectorAll('.manual-section').forEach(section=>{
       const editor=section.querySelector('[data-block-editor]');
+      editor.addEventListener('focusin',event=>{const text=event.target.closest('[data-block-text]');if(text){activeBlockText=text;body.querySelector('[data-block-hint]').textContent='Texte sélectionné : '+label(section.dataset.kind);}});
       editor.querySelectorAll('[data-block-type="image"]').forEach(block=>{styleBlockImage(block);loadBlockImage(block);});
       editor.addEventListener('input',event=>{if(event.target.closest('[data-block-text]'))dirty=true;});
       editor.addEventListener('keyup',event=>{const text=event.target.closest('[data-block-text]');if(text)rememberSelection(text);});
       editor.addEventListener('mouseup',event=>{const text=event.target.closest('[data-block-text]');if(text)rememberSelection(text);});
+      editor.addEventListener('focusout',event=>{const text=event.target.closest('[data-block-text]');if(text)rememberSelection(text);});
       editor.addEventListener('paste',event=>{
         const text=event.target.closest('[data-block-text]');if(!text)return;
         const file=[...(event.clipboardData?.items||[])].find(item=>item.type.startsWith('image/'))?.getAsFile();
@@ -300,6 +309,50 @@
     const selection=window.getSelection();
     if(selection?.rangeCount&&editor.contains(selection.getRangeAt(0).commonAncestorContainer))
       selections.set(editor,selection.getRangeAt(0).cloneRange());
+  }
+  function blockRange(){
+    const editor=activeBlockText;
+    if(!editor?.isConnected||editor.closest('.manual-section')?.hidden){notify('Cliquez d’abord dans un bloc de texte.',true);return null;}
+    let range=selections.get(editor);
+    if(!range||!editor.contains(range.commonAncestorContainer)){
+      range=document.createRange();range.selectNodeContents(editor);range.collapse(false);
+    }
+    editor.focus();const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+    return{editor,range};
+  }
+  function blockCommand(command,value){
+    const target=blockRange();if(!target)return;
+    document.execCommand(command,false,value??null);
+    rememberSelection(target.editor);dirty=true;
+  }
+  function blockSpacing(property,value){
+    if(!value)return;
+    const target=blockRange();if(!target)return;
+    const nodes=[...target.editor.querySelectorAll('p,div,li,h2,h3,h4,blockquote')].filter(node=>target.range.intersectsNode(node));
+    const paragraphs=nodes.filter(node=>!nodes.some(other=>other!==node&&node.contains(other)));
+    if(!paragraphs.length){notify('Sélectionnez un paragraphe.',true);return;}
+    paragraphs.forEach(node=>node.style[property]=value);dirty=true;
+  }
+  function setupFloatingToolbar(){
+    const tools=body.querySelector('.manual-floating-toolbar');if(!tools)return;
+    tools.addEventListener('mousedown',event=>{if(event.target.closest('button'))event.preventDefault();});
+    tools.querySelectorAll('[data-format]').forEach(button=>button.onclick=()=>blockCommand(button.dataset.format));
+    tools.querySelectorAll('[data-format-select]').forEach(select=>select.onchange=()=>{if(select.value)blockCommand(select.dataset.formatSelect,select.value);select.value='';});
+    tools.querySelectorAll('[data-spacing]').forEach(select=>select.onchange=()=>{blockSpacing(select.dataset.spacing,select.value);select.value='';});
+    tools.querySelectorAll('[data-swatch]').forEach(button=>button.onclick=()=>blockCommand(button.dataset.swatch,button.dataset.value));
+    tools.querySelectorAll('[data-color]').forEach(input=>input.oninput=()=>blockCommand(input.dataset.color,input.value));
+    tools.querySelectorAll('[data-history]').forEach(button=>button.onclick=()=>blockCommand(button.dataset.history));
+    tools.querySelector('[data-table]').onclick=()=>{
+      const rows=Number(prompt('Nombre de lignes (1 à 30) :','3'));if(!Number.isInteger(rows)||rows<1||rows>30)return;
+      const columns=Number(prompt('Nombre de colonnes (1 à 12) :','3'));if(!Number.isInteger(columns)||columns<1||columns>12)return;
+      const cells='<td>Cellule</td>'.repeat(columns);
+      blockCommand('insertHTML',`<table><tbody>${`<tr>${cells}</tr>`.repeat(rows)}</tbody></table><p><br></p>`);
+    };
+    tools.querySelector('[data-video]').onclick=()=>{
+      const url=prompt('Adresse HTTPS de la vidéo YouTube ou Vimeo :','');if(!url)return;
+      if(!window.MelecContent.videoUrl(url))return notify('Utilisez une adresse HTTPS YouTube ou Vimeo valide.',true);
+      const safeUrl=esc(url.trim());blockCommand('insertHTML',`<p><a href="${safeUrl}">▶ Vidéo : ${safeUrl}</a></p><p><br></p>`);
+    };
   }
   function formatSelection(control,command,value) {
     const editor=control.closest('.manual-section').querySelector('[data-editor]');
@@ -456,7 +509,7 @@
   }
   function draw() {
     teacherUrls.forEach(URL.revokeObjectURL);teacherUrls=[];
-    dirty=false;removedBlockAssets.clear();blockUploadError='';
+    dirty=false;removedBlockAssets.clear();blockUploadError='';activeBlockText=null;
     const {theme,chapter,lesson}=selected();
     const chapterChoices=theme?chapters.filter(x=>x.theme_id===theme.id):[];
     const lessonChoices=chapter?lessons.filter(x=>x.chapter_id===chapter.id):[];
@@ -467,6 +520,7 @@
       ${chapter?`<div class="manual-level-actions"><label>Nom du chapitre<input id="manualChapterTitle" maxlength="180" value="${esc(chapter.title)}"></label><button type="button" id="manualRenameChapter" class="subtle">Renommer</button><button type="button" id="manualToggleChapter" class="subtle">${chapter.published?'Masquer le chapitre':'Publier le chapitre'}</button><button type="button" id="manualDeleteChapter" class="warn">Supprimer le chapitre</button></div>`:''}
       ${chapter?`<div class="manual-pickers"><label>Leçon<select id="manualLesson"><option value="">Choisir une leçon…</option>${lessonChoices.map(x=>`<option value="${x.id}" ${x.id===lessonId?'selected':''}>${esc(x.title)}${x.published?' ✓':''}</option>`).join('')}</select></label><label>Nouvelle leçon<input id="manualNewLesson" maxlength="180" placeholder="Ex. Le disjoncteur différentiel"></label><button type="button" id="manualAddLesson">Créer la leçon</button></div>`:''}
       ${lesson?`<div class="manual-lesson"><label>Titre de la leçon<input id="manualLessonTitle" maxlength="180" value="${esc(lesson.title)}"></label>${mode==='manual-td'?`<nav class="manual-td-submenu" aria-label="Édition des travaux dirigés"><button type="button" data-teacher-part="td" class="${tdEditorView==='td'?'active':''}">Travaux dirigés</button><button type="button" data-teacher-part="corrections" class="${tdEditorView==='corrections'?'active':''}">Correction des TD</button></nav>`:''}<div class="manual-sections">${visibleKinds().map(([kind])=>sectionCard(kind,lesson)).join('')}</div><div class="manual-actions"><button type="button" id="manualPreview" class="subtle">Prévisualiser</button><button type="button" id="manualSave">Enregistrer</button><button type="button" id="manualPublishLesson">Publier le thème, chapitre et la leçon</button><button type="button" id="manualPublish" class="subtle">${mode==='manual'?'Publier le cours':'Publier les TD et leurs corrections'}</button><button type="button" id="manualHide" class="warn" ${lesson.published?'':'hidden'}>Masquer la leçon</button><button type="button" id="manualDeleteLesson" class="warn">Supprimer la leçon entière</button></div><p class="teach-help">La suppression d’une leçon entière efface aussi son cours, ses TD, ses corrections et leurs fichiers. Pour ne retirer qu’une partie, utilisez le bouton de suppression dans sa section.</p></div>`:''}</div>`;
+    body.querySelector('.manual-lesson')?.insertAdjacentHTML('beforeend',floatingToolbar());
     body.querySelector('#manualTheme').onchange=e=>{if(dirty&&!confirm('Quitter cette leçon sans enregistrer vos modifications ?')){e.target.value=themeId;return;}themeId=e.target.value;chapterId='';lessonId='';load('theme');};
     body.querySelector('#manualAddTheme').onclick=()=>create('theme');
     body.querySelector('#manualRenameTheme')?.addEventListener('click',()=>rename('manual_themes',theme.id,body.querySelector('#manualThemeTitle').value));
@@ -489,6 +543,7 @@
     });
     body.querySelector('#manualLessonTitle').addEventListener('input',()=>{dirty=true;});
     setupBlockEditors();
+    setupFloatingToolbar();
     body.querySelectorAll('[data-editor],#manualLessonTitle').forEach(node=>node.addEventListener('input',()=>{dirty=true;node.querySelectorAll?.('.manual-write-below').forEach(p=>{if(p.textContent.trim())p.classList.remove('manual-write-below');});if(node.matches('[data-editor]')){reserveEditorImageSpace(node);recordEdit(node,true);}}));
     body.querySelectorAll('[data-editor]').forEach(editor=>{
       ['keyup','pointerup','touchend','focusout'].forEach(name=>editor.addEventListener(name,()=>rememberSelection(editor)));
@@ -567,18 +622,6 @@
         dirty=true;recordEdit(editor);editor.focus();
       };
     });
-    body.querySelectorAll('[data-history]').forEach(button=>button.onclick=()=>{
-      const editor=button.closest('.manual-section').querySelector('[data-editor]');
-      travelHistory(editor,button.dataset.history==='undo'?-1:1);
-    });
-    body.querySelectorAll('[data-format],[data-swatch],[data-table],[data-video]').forEach(button=>button.onmousedown=event=>event.preventDefault());
-    body.querySelectorAll('[data-format]').forEach(button=>button.onclick=()=>formatSelection(button,button.dataset.format));
-    body.querySelectorAll('[data-format-select]').forEach(select=>select.onchange=()=>{if(select.value)formatSelection(select,select.dataset.formatSelect,select.value);select.value='';});
-    body.querySelectorAll('[data-spacing]').forEach(select=>select.onchange=()=>formatSpacing(select,select.dataset.spacing,select.value));
-    body.querySelectorAll('[data-color]').forEach(input=>input.oninput=()=>formatSelection(input,input.dataset.color,input.value));
-    body.querySelectorAll('[data-swatch]').forEach(button=>button.onclick=()=>formatSelection(button,button.dataset.swatch,button.dataset.value));
-    body.querySelectorAll('[data-table]').forEach(button=>button.onclick=()=>insertTable(button));
-    body.querySelectorAll('[data-video]').forEach(button=>button.onclick=()=>insertVideo(button));
     body.querySelector('#manualPreview').onclick=preview;
     body.querySelector('#manualSave').onclick=saveAll;
     body.querySelector('#manualPublishLesson').onclick=publishLessonOnly;
