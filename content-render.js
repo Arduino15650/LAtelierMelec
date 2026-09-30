@@ -74,6 +74,10 @@
       if (color) output.style.color = color;
       if (background) output.style.backgroundColor = background;
       if (['left','center','right','justify'].includes(style.textAlign) && ['P','DIV','H2','H3','H4'].includes(node.tagName)) output.style.textAlign = style.textAlign;
+      if (['P','DIV','LI','H2','H3','H4','BLOCKQUOTE'].includes(node.tagName)) {
+        if (['1','1.15','1.3','1.5','1.8','2'].includes(style.lineHeight)) output.style.lineHeight = style.lineHeight;
+        if (['0px','4px','8px','12px','18px'].includes(style.marginBottom)) output.style.marginBottom = style.marginBottom;
+      }
       if (node.tagName === 'A') {
         try {
           const url = new URL(node.getAttribute('href') || '', location.href);

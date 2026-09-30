@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v140-alignement';
+const CACHE_NAME = 'bac-pro-melec-v141-pictogrammes';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
 const CORE_FILES = ['./logo-bac-pro-melec-v3.webp'];
 

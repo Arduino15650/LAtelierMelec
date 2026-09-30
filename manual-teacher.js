@@ -14,6 +14,7 @@
   let loadedClassId='', loadedAt=0;
   const selections=new WeakMap();
   let teacherUrls=[];
+  let inlineCaptureInFlight=null;
   function label(kind) { return kinds.find(entry => entry[0] === kind)?.[1] || kind; }
   function visibleKinds() { return kinds.filter(([kind])=>mode==='manual'?kind==='course':kind==='td'||kind==='corrections'); }
   function safe(html) { return window.MelecContent.sanitize(html); }
@@ -21,7 +22,7 @@
     const commands=[['bold','Gras','G'],['italic','Italique','I'],['underline','Souligné','S'],['strikeThrough','Barré','S̶'],['subscript','Indice','x₂'],['superscript','Exposant','x²'],['insertUnorderedList','Puces','• Liste'],['insertOrderedList','Numérotation','1. Liste'],['outdent','Réduire le retrait','⇤'],['indent','Augmenter le retrait','⇥'],['justifyLeft','Aligner à gauche','☷'],['justifyCenter','Centrer','☰'],['justifyRight','Aligner à droite','☷'],['justifyFull','Justifier','▤']];
     const colors=['#173450','#d12d32','#e47713','#147a45','#1669b3','#7b4bad'];
     const highlights=['#fff08a','#ffb8bb','#c2f0ce','#bfe6ff','#e5d7ff'];
-    return `<div class="manual-toolbar" role="toolbar" aria-label="Mise en forme ${label(kind)}"><label>Police<select data-format-select="fontName" aria-label="Police"><option value="">Police</option>${['Arial','Aptos','Calibri','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS'].map(font=>`<option value="${font}">${font}</option>`).join('')}</select></label><label>Taille<select data-format-select="fontSize" aria-label="Taille"><option value="">Taille</option>${[['1','10'],['2','12'],['3','14'],['4','16'],['5','18'],['6','24'],['7','32']].map(([value,size])=>`<option value="${value}">${size} pt</option>`).join('')}</select></label>${commands.map(([command,name,symbol])=>`<button type="button" data-format="${command}" title="${name}" aria-label="${name}">${symbol}</button>`).join('')}<div class="manual-color-group"><span>Texte</span>${colors.map(color=>`<button type="button" class="manual-swatch" data-swatch="foreColor" data-value="${color}" style="--swatch:${color}" aria-label="Texte ${color}"></button>`).join('')}<input type="color" data-color="foreColor" value="#173450" aria-label="Autre couleur du texte"></div><div class="manual-color-group"><span>Surlignage</span>${highlights.map(color=>`<button type="button" class="manual-swatch" data-swatch="hiliteColor" data-value="${color}" style="--swatch:${color}" aria-label="Surlignage ${color}"></button>`).join('')}<input type="color" data-color="hiliteColor" value="#fff08a" aria-label="Autre couleur de surlignage"></div><button type="button" data-table title="Insérer un tableau">▦ Tableau</button><button type="button" data-video title="Insérer une vidéo YouTube ou Vimeo">▶ Vidéo</button></div>`;
+    return `<div class="manual-toolbar" role="toolbar" aria-label="Mise en forme ${label(kind)}"><label>Police<select data-format-select="fontName" aria-label="Police"><option value="">Police</option>${['Arial','Aptos','Calibri','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS'].map(font=>`<option value="${font}">${font}</option>`).join('')}</select></label><label>Taille<select data-format-select="fontSize" aria-label="Taille"><option value="">Taille</option>${[['1','10'],['2','12'],['3','14'],['4','16'],['5','18'],['6','24'],['7','32']].map(([value,size])=>`<option value="${value}">${size} pt</option>`).join('')}</select></label>${commands.map(([command,name,symbol])=>`<button type="button" data-format="${command}" title="${name}" aria-label="${name}">${symbol}</button>`).join('')}<label>Interligne<select data-spacing="lineHeight" aria-label="Interligne du paragraphe"><option value="">Interligne</option>${[['1','Serré 1'],['1.15','1,15'],['1.3','1,3'],['1.5','1,5'],['1.8','1,8'],['2','Double 2']].map(([value,text])=>`<option value="${value}">${text}</option>`).join('')}</select></label><label>Après paragraphe<select data-spacing="marginBottom" aria-label="Espace après le paragraphe"><option value="">Espacement</option>${[['0px','Aucun'],['4px','Petit'],['8px','Moyen'],['12px','Grand'],['18px','Très grand']].map(([value,text])=>`<option value="${value}">${text}</option>`).join('')}</select></label><div class="manual-color-group"><span>Texte</span>${colors.map(color=>`<button type="button" class="manual-swatch" data-swatch="foreColor" data-value="${color}" style="--swatch:${color}" aria-label="Texte ${color}"></button>`).join('')}<input type="color" data-color="foreColor" value="#173450" aria-label="Autre couleur du texte"></div><div class="manual-color-group"><span>Surlignage</span>${highlights.map(color=>`<button type="button" class="manual-swatch" data-swatch="hiliteColor" data-value="${color}" style="--swatch:${color}" aria-label="Surlignage ${color}"></button>`).join('')}<input type="color" data-color="hiliteColor" value="#fff08a" aria-label="Autre couleur de surlignage"></div><button type="button" data-table title="Insérer un tableau">▦ Tableau</button><button type="button" data-video title="Insérer une vidéo YouTube ou Vimeo">▶ Vidéo</button></div>`;
   }
   function selected() {
     return {theme:themes.find(row=>row.id===themeId), chapter:chapters.find(row=>row.id===chapterId), lesson:lessons.find(row=>row.id===lessonId)};
@@ -74,6 +75,63 @@
     const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
     document.execCommand(command,false,value??null);
     rememberSelection(editor);dirty=true;
+  }
+  function formatSpacing(control,property,value){
+    if(!value)return;
+    const editor=control.closest('.manual-section').querySelector('[data-editor]');
+    const range=selections.get(editor);
+    if(!range||!editor.contains(range.commonAncestorContainer)){
+      notify('Placez le curseur dans un paragraphe ou sélectionnez plusieurs paragraphes.',true);
+      control.value='';return;
+    }
+    const candidates=[...editor.querySelectorAll('p,div,li,h2,h3,h4,blockquote')].filter(node=>range.intersectsNode(node));
+    const blocks=candidates.filter(node=>!candidates.some(other=>other!==node&&node.contains(other)));
+    if(!blocks.length){notify('Sélectionnez un paragraphe pour régler son espacement.',true);control.value='';return;}
+    blocks.forEach(node=>{node.style[property]=value;});
+    dirty=true;control.value='';
+  }
+  async function prepareInlineImages(){
+    if(inlineCaptureInFlight)return inlineCaptureInFlight;
+    inlineCaptureInFlight=(async()=>{
+      for(const [kind] of visibleKinds()){
+        const editor=body.querySelector(`.manual-section[data-kind="${kind}"] [data-editor]`);
+        if(!editor)continue;
+        for(const image of [...editor.querySelectorAll('img')]){
+          if(image.closest('[data-manual-image]'))continue;
+          const section=sections.find(row=>row.lesson_id===lessonId&&row.kind===kind);
+          if(!section)throw new Error('Enregistrez d’abord la leçon avant d’intégrer un pictogramme collé.');
+          const src=image.getAttribute('src')||'';
+          if(!/^(data:image\/(?:png|jpeg|webp|gif);base64,|blob:|https:\/\/)/i.test(src))
+            throw new Error('Ce pictogramme externe ne peut pas être intégré automatiquement. Déposez son fichier PNG, JPG ou WebP dans la section, puis utilisez « Insérer l’image dans le texte ».');
+          if(src.length>15_000_000)throw new Error('Pictogramme trop volumineux : utilisez un fichier de moins de 10 Mo.');
+          const response=await fetch(src,{credentials:'omit'}).catch(()=>null);
+          if(!response?.ok)throw new Error('Lecture du pictogramme impossible. Déposez son fichier dans la section, puis insérez-le dans le texte.');
+          const blob=await response.blob();
+          const mime=blob.type.toLowerCase();
+          if(!['image/png','image/jpeg','image/webp','image/gif'].includes(mime)||blob.size>10*1024*1024)
+            throw new Error('Pictogramme non accepté ou supérieur à 10 Mo.');
+          const ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/gif':'gif'}[mime];
+          const name='pictogramme-'+crypto.randomUUID()+'.'+ext;
+          const path='manual/'+lessonId+'/'+name;
+          await api.upload(path,new File([blob],name,{type:mime}));
+          let asset;
+          try{
+            const rows=await api.rest('manual_assets?select=id,section_id,object_path,file_name,mime_type,created_at',{
+              method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},
+              body:JSON.stringify({section_id:section.id,object_path:path,file_name:name,mime_type:mime})
+            });
+            asset=rows?.[0];
+            if(!asset?.id)throw new Error('Pièce jointe non confirmée.');
+          }catch(error){await api.removeFiles([path]).catch(()=>{});throw error;}
+          assets.push(asset);
+          const frame=document.createElement('span');
+          frame.contentEditable='false';frame.dataset.manualImage=asset.id;frame.className='manual-editor-image';
+          image.alt=image.alt||name;image.replaceWith(frame);frame.append(image);
+          dirty=true;
+        }
+      }
+    })().finally(()=>{inlineCaptureInFlight=null;});
+    return inlineCaptureInFlight;
   }
   function insertTable(control) {
     const rows=Number(prompt('Nombre de lignes (1 à 30) :','3'));
@@ -157,6 +215,7 @@
     body.querySelectorAll('[data-format],[data-swatch],[data-table],[data-video],[data-insert-image]').forEach(button=>button.onmousedown=event=>event.preventDefault());
     body.querySelectorAll('[data-format]').forEach(button=>button.onclick=()=>formatSelection(button,button.dataset.format));
     body.querySelectorAll('[data-format-select]').forEach(select=>select.onchange=()=>{if(select.value)formatSelection(select,select.dataset.formatSelect,select.value);select.value='';});
+    body.querySelectorAll('[data-spacing]').forEach(select=>select.onchange=()=>formatSpacing(select,select.dataset.spacing,select.value));
     body.querySelectorAll('[data-color]').forEach(input=>input.oninput=()=>formatSelection(input,input.dataset.color,input.value));
     body.querySelectorAll('[data-swatch]').forEach(button=>button.onclick=()=>formatSelection(button,button.dataset.swatch,button.dataset.value));
     body.querySelectorAll('[data-table]').forEach(button=>button.onclick=()=>insertTable(button));
@@ -277,6 +336,7 @@
   }
   async function persistEditor(){
     const title=body.querySelector('#manualLessonTitle').value.trim();if(!title)throw new Error('Donnez un titre à la leçon.');
+    await prepareInlineImages();
     const current=selected().lesson;
     await api.rest('manual_lessons?id=eq.'+current.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,updated_at:new Date().toISOString()})});
     for(const [kind] of visibleKinds()){
@@ -328,7 +388,9 @@
     try{const blob=await api.download(asset.object_path),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=asset.file_name;link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}
     catch(error){notify(error.message,true);}
   }
-  function preview(){
+  async function preview(){
+    try{await prepareInlineImages();}
+    catch(error){notify(error.message,true);return;}
     const lesson=selected().lesson, title=body.querySelector('#manualLessonTitle').value.trim()||lesson.title;
     const dialog=document.createElement('dialog');dialog.className='manual-preview';
     dialog.innerHTML=`<div class="manual-preview-head"><h2>${esc(title)}</h2><button type="button" data-close>Fermer</button></div>${visibleKinds().map(([kind,name])=>{const sec=sections.find(x=>x.lesson_id===lesson.id&&x.kind===kind),html=editorHtml(kind),attached=assets.filter(x=>x.section_id===sec?.id);return `<section data-preview-section="${sec?.id||''}"><h3>${name}</h3><div class="manual-preview-content">${html||'<p>Section vide.</p>'}</div>${attached.filter(x=>x.mime_type.startsWith('image/')&&!html.includes('[[image:'+x.id+']]')).map(x=>`<img class="manual-inline-image" data-preview-image="${x.id}" alt="${esc(x.file_name)}">`).join('')}${attached.filter(x=>!x.mime_type.startsWith('image/')).map(x=>`<button type="button" data-preview-file="${x.id}" class="subtle">📎 ${esc(x.file_name)}</button>`).join('')}</section>`}).join('')}`;
