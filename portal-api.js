@@ -118,19 +118,21 @@
   }
   async function download(path, options = {}) {
     const url = URL + '/storage/v1/object/authenticated/melec-private/' + path.split('/').map(encodeURIComponent).join('/');
-    const attempts = options.retryTransient ? 2 : 1;
+    const attempts = options.retryTransient ? 3 : 1;
+    // Le renouvellement de session ne doit pas consommer le délai réservé au fichier.
+    const accessToken = await token();
     for (let attempt = 0; attempt < attempts; attempt++) {
       let response;
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8000);
+      const timer = setTimeout(() => controller.abort(), 15000);
       try {
         response = await fetch(url, {
-          headers: { apikey: KEY, Authorization: 'Bearer ' + await token() },
+          headers: { apikey: KEY, Authorization: 'Bearer ' + accessToken },
           cache: attempt ? 'reload' : 'default', signal: controller.signal
         });
         if (response.ok) return await response.blob();
       } catch (error) {
-        if (attempt === attempts - 1) throw controller.signal.aborted ? new Error('Image indisponible : le serveur ne répond pas après 8 secondes.') : error;
+        if (attempt === attempts - 1) throw controller.signal.aborted ? new Error('Image indisponible : le serveur ne répond pas. Réessayez dans un instant.') : error;
         await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
         continue;
       } finally { clearTimeout(timer); }
@@ -168,3 +170,4 @@
   }
   window.MelecPortal = { URL, KEY, signIn, signUp, token, user, rest, invoke, upload, download, removeFiles, signOut, escapeHtml };
 })();
+
