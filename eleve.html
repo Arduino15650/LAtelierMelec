@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#071b34"><title>BAC PRO MELEC — Élève</title>
   <script>try{if(sessionStorage.getItem('melec-cloud-session-v1'))document.documentElement.classList.add('student-resuming')}catch{}</script>
-  <style>html.student-resuming #studentAuth{visibility:hidden}</style>
+  <style>html.student-resuming #studentAuth > :not(#studentAuthStatus){display:none}html.student-resuming #studentAuthStatus:empty::before{content:'Reconnexion en cours…'}</style>
   <link rel="stylesheet" href="portal.css?v=20260926-apercu-pdf2">
   <link rel="stylesheet" href="manual.css?v=20260930-blocks1">
   <style>
@@ -104,14 +104,14 @@
       </section>
     </main>
   </div>
-  <script src="portal-api.js?v=20260930-images11"></script>
+  <script src="portal-api.js?v=20260930-timeout2"></script>
   <script src="content-render.js?v=20260930-continuation1"></script>
   <script src="manual-blocks.js?v=20260930-blocks1"></script>
   <script src="portal-contact.js?v=20260925-1"></script>
   <script src="student-pdf-forms.js?v=20260927-4"></script>
   <script src="student-pdf-viewer.js?v=20260927-2"></script>
-  <script src="manual-student.js?v=20260930-images2"></script>
-  <script src="student-space.js?v=20260930-images11"></script>
+  <script src="manual-student.js?v=20260930-timeout2"></script>
+  <script src="student-space.js?v=20260930-timeout2"></script>
   <script src="referential.js?v=20260928-1"></script>
   <script src="student-referential-ccf.js?v=20260929-tp-lock6"></script>
   <script>

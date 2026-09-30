@@ -342,6 +342,11 @@
   window.addEventListener('pageshow', event => {
     if (event.persisted) refreshStudentAccess();
   });
-  openDashboard().catch(() => { authPane.hidden = false; dashboard.hidden = true; document.documentElement.classList.remove('student-resuming'); });
+  openDashboard().catch(error => {
+    authPane.hidden = false; dashboard.hidden = true;
+    document.documentElement.classList.remove('student-resuming');
+    if (sessionStorage.getItem('melec-cloud-session-v1'))
+      message(authStatus, 'Le serveur ne répond pas correctement : ' + error.message + ' Votre session est conservée ; actualisez pour réessayer.', true);
+  });
 })();
 

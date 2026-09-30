@@ -1,9 +1,9 @@
 (function () {
   'use strict';
 
-  const PROJECT = 'https://bcvhuziwdwaorkxqsrch.supabase.co';
-  const PUBLIC_KEY = 'sb_publishable_B95li1RB6XAlzRY7KvmyiA_kgpD1FcW';
   const DATA_KEY = 'melec-evaluation-v1';
+  const DATA_OWNER_KEY = 'melec-evaluation-owner-v1';
+  const REVISION_PREFIX = 'melec-evaluation-revision-v1-';
   const SESSION_KEY = 'melec-cloud-session-v1';
   const ORIGINAL_KEY = 'melec-original-before-cloud-v1';
   const PENDING_PREFIX = 'melec-cloud-pending-v1-';
@@ -70,6 +70,8 @@
   function installData(data) {
     preserveOriginal();
     localStorage.setItem(DATA_KEY, JSON.stringify(data));
+    localStorage.setItem(DATA_OWNER_KEY, userId);
+    localStorage.setItem(REVISION_PREFIX + userId, String(revision));
     state = load();
     if (typeof renderHome === 'function') renderHome();
     show('home');
@@ -82,53 +84,14 @@
     session = null;
     sessionStorage.removeItem(SESSION_KEY);
   }
-  async function authRequest(path, body) {
-    const response = await fetch(PROJECT + path, {
-      method: 'POST',
-      headers: { apikey: PUBLIC_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.msg || data.error_description || data.message || 'Connexion refusée.');
-    return data;
-  }
-  async function validAccessToken() {
-    // Le portail et le manuel partagent un unique renouvellement de jeton.
-    const token = await window.MelecPortal.token();
-    session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
-    return token;
-  }
   async function api(path, options = {}) {
-    const token = await validAccessToken();
-    const response = await fetch(PROJECT + '/rest/v1/' + path, {
-      ...options,
-      headers: {
-        apikey: PUBLIC_KEY,
-        Authorization: 'Bearer ' + token,
-        ...(options.headers || {})
-      }
-    });
-    if (!response.ok) {
-      const payload = await response.json().catch(() => ({}));
-      const error = new Error(payload.message || payload.hint || 'Erreur de synchronisation (' + response.status + ').');
-      error.status = response.status;
-      throw error;
-    }
-    return response.status === 204 ? null : response.json();
+    return window.MelecPortal.rest(path, options);
   }
   async function identify() {
-    const token = await validAccessToken();
-    const response = await fetch(PROJECT + '/auth/v1/user', {
-      headers: { apikey: PUBLIC_KEY, Authorization: 'Bearer ' + token }
-    });
-    if (!response.ok) {
-      const error = new Error(response.status === 401 ? 'Session expirée. Connectez-vous à nouveau.' : 'Vérification momentanément indisponible (HTTP ' + response.status + ').');
-      error.status = response.status;
-      throw error;
-    }
-    const user = await response.json();
+    const user = await window.MelecPortal.user();
     if (!user.id) throw new Error('Compte non reconnu.');
     userId = user.id;
+    session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
   }
   async function cloudRow() {
     const rows = await api('melec_state?user_id=eq.' + encodeURIComponent(userId) + '&select=data,revision');
@@ -155,13 +118,13 @@
     lock();
     gateMessage('Connexion et vérification des données…');
     await identify();
-    // Ces deux lectures sont indépendantes : les attendre ensemble évite un aller-retour réseau.
-    const [, row] = await Promise.all([ensureTeacher(), cloudRow()]);
-    if (!row) {
+    // Lire d'abord la petite révision ; la sauvegarde complète n'est nécessaire que si elle a changé.
+    const [, remote] = await Promise.all([ensureTeacher(), cloudRevision()]);
+    if (!remote) {
       showImport();
       return;
     }
-    revision = Number(row.revision);
+    revision = Number(remote.revision);
     const pending = readPending();
     if (pending) {
       if (pending.revision !== revision) {
@@ -177,6 +140,16 @@
       scheduleUpload();
       return;
     }
+    if (localStorage.getItem(DATA_OWNER_KEY) === userId &&
+        localStorage.getItem(REVISION_PREFIX + userId) === String(revision)) {
+      try {
+        const cached = localStorage.getItem(DATA_KEY);
+        if (cached) { installData(parseState(cached)); unlock(); return; }
+      } catch { /* cache absent ou invalide : relire la sauvegarde cloud */ }
+    }
+    gateMessage('Chargement des données actualisées…');
+    const row = await cloudRow();
+    if (!row) throw new Error('Sauvegarde cloud introuvable.');
     installData(row.data);
     unlock();
   }
@@ -230,6 +203,7 @@
         return;
       }
       revision = Number(rows[0].revision);
+      try { localStorage.setItem(REVISION_PREFIX + userId, String(revision)); } catch { /* la copie cloud reste la référence */ }
       if (serial === startedSerial) {
         localStorage.removeItem(pendingKey());
         status('Synchronisé');
@@ -268,6 +242,7 @@
     finally { refreshing = false; }
   }
   save = function () {
+    try { if (userId) localStorage.removeItem(REVISION_PREFIX + userId); } catch { /* ne pas bloquer la sauvegarde */ }
     originalSave();
     if (!ready || !userId) return;
     try {
@@ -286,9 +261,7 @@
     button.disabled = true;
     gateMessage('Connexion…');
     try {
-      const value = await authRequest('/auth/v1/token?grant_type=password', {
-        email: byId('cloudEmail').value.trim(), password: byId('cloudPassword').value
-      });
+      const value = await window.MelecPortal.signIn(byId('cloudEmail').value.trim(), byId('cloudPassword').value);
       byId('cloudPassword').value = '';
       saveSession(value);
       await begin();

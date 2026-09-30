@@ -202,7 +202,7 @@
       if(image.isConnected){
         const root=image.closest('.manual-reading-html');
         const retry=document.createElement('button');retry.type='button';retry.className='manual-image-retry';
-        retry.textContent='Image momentanément indisponible · Réessayer';
+        retry.textContent=(error?.message||'Image momentanément indisponible')+' · Réessayer';
         retry.onclick=()=>{image.removeAttribute('src');image.alt='';image.classList.add('manual-image-loading');retry.replaceWith(image);image.closest('.manual-reading-image-frame')?.prepend(imagePlaceholder());queueImage(asset,image);};
         image.closest('.manual-reading-image-frame')?.querySelector('.manual-image-placeholder')?.remove();
         image.replaceWith(retry);reserveReadingImages(root);

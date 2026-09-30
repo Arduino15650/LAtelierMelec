@@ -248,7 +248,7 @@
   function blockCard(block,files=[]){
     const asset=files.find(file=>file.id===block.id),title=asset?.file_name||'Fichier introuvable';
     const actions=`<div class="manual-block-actions"><button type="button" data-move-block="up" title="Monter ce bloc">↑ Monter</button><button type="button" data-move-block="down" title="Descendre ce bloc">↓ Descendre</button><button type="button" data-remove-block class="warn" title="Supprimer ce bloc">Supprimer</button></div>`;
-    if(block.type==='image')return `<div class="manual-content-block" data-block-type="image" data-asset-id="${esc(block.id)}" data-align="${esc(block.align)}" data-width="${window.MelecManualBlocks.clamp(block.width)}"><div class="manual-block-head"><strong>Image · ${esc(title)}</strong>${actions}</div><div class="manual-block-image manual-block-align-${esc(block.align)}"><img data-block-image alt="${esc(title)}"></div><div class="manual-block-options"><label>Alignement <select data-block-align><option value="left" ${block.align==='left'?'selected':''}>Gauche</option><option value="center" ${block.align==='center'?'selected':''}>Centre</option><option value="right" ${block.align==='right'?'selected':''}>Droite</option></select></label><label>Largeur <input type="range" data-block-width min="1" max="100" value="${window.MelecManualBlocks.clamp(block.width)}"><output>${window.MelecManualBlocks.clamp(block.width)} %</output></label></div></div>`;
+    if(block.type==='image')return `<div class="manual-content-block" data-block-type="image" data-asset-id="${esc(block.id)}" data-align="${esc(block.align)}" data-width="${window.MelecManualBlocks.clamp(block.width)}"><div class="manual-block-head"><strong>Image · ${esc(title)}</strong>${actions}</div><div class="manual-block-image manual-block-align-${esc(block.align)}"><img data-block-image alt="${esc(title)}"><button type="button" class="manual-image-retry" data-retry-block-image style="display:none">Image indisponible · Réessayer</button></div><div class="manual-block-options"><label>Alignement <select data-block-align><option value="left" ${block.align==='left'?'selected':''}>Gauche</option><option value="center" ${block.align==='center'?'selected':''}>Centre</option><option value="right" ${block.align==='right'?'selected':''}>Droite</option></select></label><label>Largeur <input type="range" data-block-width min="1" max="100" value="${window.MelecManualBlocks.clamp(block.width)}"><output>${window.MelecManualBlocks.clamp(block.width)} %</output></label></div></div>`;
     if(block.type==='pdf')return `<div class="manual-content-block" data-block-type="pdf" data-asset-id="${esc(block.id)}"><div class="manual-block-head"><strong>PDF · ${esc(title)}</strong>${actions}</div><p>Le document sera consultable dans la leçon, sans bouton de téléchargement.</p><button type="button" data-preview-pdf>Voir le PDF</button><div class="manual-block-pdf-preview" hidden></div></div>`;
     return `<div class="manual-content-block" data-block-type="text"><div class="manual-block-head"><strong>Texte</strong>${actions}</div><div class="manual-block-text" data-block-text contenteditable="true" role="textbox" aria-multiline="true" aria-label="Texte du cours">${safe(block.html||'<p><br></p>')}</div></div>`;
   }
@@ -263,13 +263,15 @@
   async function loadBlockImage(block){
     const asset=assets.find(row=>row.id===block.dataset.assetId),image=block.querySelector('[data-block-image]');
     if(!asset||!image)return;
+    const retry=block.querySelector('[data-retry-block-image]');
+    if(retry){retry.style.display='none';retry.onclick=()=>loadBlockImage(block);}
     image.alt='Chargement de l’image…';
     try{
       let url=imageUrls.get(asset.object_path);
       if(!url){const blob=await teacherImageBlob(asset.object_path);if(!image.isConnected)return;url=URL.createObjectURL(blob);imageUrls.set(asset.object_path,url);}
       image.src=url;await image.decode();if(image.isConnected)image.alt=asset.file_name;
     }
-    catch{const url=imageUrls.get(asset.object_path);if(url){URL.revokeObjectURL(url);imageUrls.delete(asset.object_path);}if(image.isConnected)image.alt='Image momentanément indisponible';}
+    catch(error){const url=imageUrls.get(asset.object_path);if(url){URL.revokeObjectURL(url);imageUrls.delete(asset.object_path);}if(image.isConnected){image.removeAttribute('src');image.alt='Image momentanément indisponible';if(retry){retry.textContent=(error?.message||'Image indisponible')+' · Réessayer';retry.style.display='inline-block';}}}
   }
   function styleBlockImage(block){
     const image=block.querySelector('.manual-block-image');if(!image)return;
