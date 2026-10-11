@@ -28,7 +28,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Installer Codeflash
+        run: pip install codeflash
       - name: Vérifier les tests
         run: npm test
       - name: Lancer Codeflash
-        run: npx --yes codeflash
+        run: codeflash
