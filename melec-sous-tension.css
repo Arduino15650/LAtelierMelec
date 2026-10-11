@@ -612,3 +612,9 @@ html body:not(#st-a):not(#st-b) .content .view .student-group-item :is(p,.group-
 html body:not(#st-a):not(#st-b) .content .view .student-group-chip:not(#st-z){background:transparent!important;border:1px solid var(--st-arc)!important;color:#bfe2ff!important;font-family:var(--st-f-mono)!important;border-radius:3px!important}
 html body:not(#st-a):not(#st-b) .content .view td .ccf-pill:is(.darkgreen,.red):not(#st-z),
 html body:not(#st-a):not(#st-b) .content .view td .ccf-pill:is(.darkgreen,.red):not(#st-z) *{color:#fff!important}
+
+/* Pastilles CCF de l'espace élève : texte d'origine conservé (N3 vert, N4 vert foncé) */
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .student-ccf-pill:not(#st-z),
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .student-ccf-pill:not(#st-z) *{color:#102435!important}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .student-ccf-pill.darkgreen:not(#st-z),
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .student-ccf-pill.darkgreen:not(#st-z) *{color:#fff!important}
