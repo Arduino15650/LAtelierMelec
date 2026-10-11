@@ -178,11 +178,12 @@ section.row-sec{padding-block:clamp(64px,9vw,120px);border-bottom:1px solid colo
 .levels button{appearance:none;cursor:pointer;font-family:var(--f-mono);font-size:.74rem;font-weight:600;min-width:40px;padding:8px 6px;border-radius:3px;border:1px solid var(--wire);background:#061325;color:var(--muted);transition:background .15s,color .15s,border-color .15s}
 .levels button:hover{border-color:var(--muted);color:var(--ink)}
 .levels button[aria-checked="true"]{color:#061325;border-color:transparent}
-.levels button[data-v="ne"][aria-checked="true"]{background:#8a97a8}
-.levels button[data-v="0"][aria-checked="true"]{background:var(--fault)}
-.levels button[data-v="1"][aria-checked="true"]{background:var(--amber)}
-.levels button[data-v="2"][aria-checked="true"]{background:var(--arc)}
-.levels button[data-v="3"][aria-checked="true"]{background:var(--live)}
+/* Couleurs des niveaux identiques à l'application : N1 rouge, N2 orange, N3 vert, N4 vert foncé */
+.levels button[data-v="ne"][aria-checked="true"]{background:#6f7c8f;color:#fff}
+.levels button[data-v="0"][aria-checked="true"]{background:#e43d30;color:#fff}
+.levels button[data-v="1"][aria-checked="true"]{background:#f39c35;color:#1a0d00}
+.levels button[data-v="2"][aria-checked="true"]{background:#5e8a1f;color:#fff}
+.levels button[data-v="3"][aria-checked="true"]{background:#24713a;color:#fff}
 @media (max-width:620px){.crit{grid-template-columns:1fr}.levels button{flex:1;min-width:0}}
 .meter{position:sticky;top:96px;border-radius:12px;padding:22px;background:linear-gradient(180deg,#1b2b40,#0c1726);border:1px solid #2b4566;box-shadow:0 30px 60px rgba(0,0,0,.45)}
 .meter .face{border-radius:8px;background:#e9eef3;padding:14px 12px 4px;color:#14263d}
