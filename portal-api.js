@@ -96,6 +96,22 @@
       headers: { apikey: KEY, Authorization: 'Bearer ' + await token() }
     });
   }
+  // Identifiant du compte connecté, lu dans la session (réponse de connexion ou jeton)
+  // sans requête supplémentaire. Le jeton est d'abord validé ou renouvelé par token() ;
+  // les droits restent contrôlés côté Supabase à chaque lecture.
+  function tokenSubject(accessToken) {
+    try {
+      const part = String(accessToken).split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = part + '='.repeat((4 - part.length % 4) % 4);
+      return JSON.parse(atob(padded)).sub || '';
+    } catch { return ''; }
+  }
+  async function userId() {
+    const accessToken = await token();
+    const id = (current && current.access_token === accessToken && current.user && current.user.id) || tokenSubject(accessToken);
+    if (id) return id;
+    return (await user()).id;
+  }
   async function rest(path, options = {}) {
     return boundedDecode(URL + '/rest/v1/' + path, {
       ...options,
@@ -168,6 +184,6 @@
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   }
-  window.MelecPortal = { URL, KEY, signIn, signUp, token, user, rest, invoke, upload, download, removeFiles, signOut, escapeHtml };
+  window.MelecPortal = { URL, KEY, signIn, signUp, token, user, userId, rest, invoke, upload, download, removeFiles, signOut, escapeHtml };
 })();
 

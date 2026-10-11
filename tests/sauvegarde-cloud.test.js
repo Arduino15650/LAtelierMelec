@@ -36,6 +36,7 @@ async function monter({ revisionDistante = 4, cache = true } = {}) {
       addEventListener() {}, location: { replace() {} },
       MelecPortal: {
         user: async () => ({ id: 'u1' }),
+        userId: async () => 'u1',
         rest: async (chemin, options = {}) => {
           appels.push({ chemin, methode: options.method || 'GET', corps: options.body });
           if (chemin.startsWith('teacher_accounts')) return [{ user_id: 'u1' }];

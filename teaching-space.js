@@ -74,11 +74,11 @@
     const key = sessionKey();
     loadInFlight = (async () => {
       // La base applique les règles d'accès : aucune donnée n'est affichée avant contrôle du compte.
-      const [user, nextClasses] = await Promise.all([
-        api.user(),
+      const userId = await api.userId();
+      const [teachers, nextClasses] = await Promise.all([
+        api.rest('teacher_accounts?user_id=eq.' + encodeURIComponent(userId) + '&select=user_id'),
         api.rest('teaching_classes?select=id,name&order=name.asc')
       ]);
-      const teachers = await api.rest('teacher_accounts?user_id=eq.' + encodeURIComponent(user.id) + '&select=user_id');
       if (!teachers.length) throw new Error('Accès réservé à l’enseignant.');
       if (sessionKey() !== key) return;
       classes = nextClasses;
