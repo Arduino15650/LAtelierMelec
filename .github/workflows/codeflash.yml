@@ -35,5 +35,12 @@ jobs:
         run: pip install codeflash
       - name: Vérifier les tests
         run: npm test
+      # Sur une proposition : seulement le code modifié.
+      # Lancement manuel (onglet Actions → Codeflash → Run workflow) : tout le code.
       - name: Lancer Codeflash
-        run: codeflash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            codeflash --all
+          else
+            codeflash
+          fi
