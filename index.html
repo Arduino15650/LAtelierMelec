@@ -1,66 +1,914 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#071b34">
-  <title>BAC PRO MELEC — Accueil</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="icon-180.png">
-  <link rel="stylesheet" href="portal.css?v=20260926-alignement2">
-  <link rel="stylesheet" href="melec-color-refresh.css?v=20260927-1">
-  <link rel="stylesheet" href="melec-responsive-performance.css?v=20260927-1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>L’Atelier MELEC</title>
+<meta name="description" content="L’Atelier MELEC : la plateforme pédagogique du Bac Pro MELEC pour créer les activités d’atelier, évaluer par compétences, publier le manuel numérique et encadrer les TP.">
+<meta name="theme-color" content="#050f1e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: un tableau de répartition — chaque section est une rangée repérée (Q0…Q6) sur rail DIN, documentée comme un dossier technique (schéma, nomenclature, cartouche). */
+:root{
+  --night:#050f1e;      /* fond : armoire la nuit */
+  --panel:#0a1c33;      /* plastron */
+  --panel-2:#0f2846;
+  --wire:#1e4569;       /* conducteurs au repos */
+  --ink:#e9f1fb;        /* texte */
+  --muted:#93abc7;
+  --volt:#ff8a1e;       /* l’éclair du logo */
+  --arc:#4fb3ff;        /* bleu électrique */
+  --live:#3fe08a;       /* voyant vert */
+  --fault:#ff5a5f;      /* voyant défaut */
+  --amber:#f6b93b;
+  --module:#e4ebf3;     /* boîtier de disjoncteur */
+  --module-ink:#14263d;
+  --b1:#4fb3ff; --b2:#ff8a1e; --b3:#3ad1bf;
+  --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --f-body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --gutter:clamp(16px,4vw,48px);
+  --maxw:1220px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--night);color:var(--ink);font-family:var(--f-body);font-size:1rem;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--volt);outline-offset:3px;border-radius:4px}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
+h1,h2,h3{text-wrap:balance;margin:0}
+p{margin:0}
+.mono{font-family:var(--f-mono)}
+.eyebrow{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.tag{display:inline-flex;align-items:center;gap:.4em;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;padding:.2em .55em;border:1px solid var(--wire);border-radius:3px;color:var(--muted);white-space:nowrap}
+
+/* ───────── Barre haute ───────── */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:color-mix(in srgb,var(--night) 86%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid color-mix(in srgb,var(--wire) 70%,transparent)}
+.top .wrap{display:flex;align-items:center;gap:20px;min-height:66px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;flex:none}
+.brand img{width:40px;height:40px}
+.brand b{font-family:var(--f-display);font-weight:800;font-size:1.35rem;letter-spacing:.04em;text-transform:uppercase;line-height:1}
+.brand small{display:block;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-top:3px}
+.nav{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+.nav a{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;text-decoration:none;color:var(--muted);padding:8px 10px;border-radius:4px;transition:color .2s,background .2s}
+.nav a span{color:var(--volt);margin-right:4px}
+.nav a:hover{color:var(--ink);background:var(--panel)}
+.cta-top{flex:none;font-weight:600;font-size:.86rem;text-decoration:none;padding:10px 16px;border-radius:4px;background:var(--volt);color:#1a0d00}
+.cta-top:hover{background:#ffa04a}
+.nav a{white-space:nowrap}
+@media (max-width:1180px){.nav{display:none}.cta-top{margin-left:auto}}
+@media (max-width:520px){.brand small{display:none}.brand b{font-size:1.1rem}.cta-top{padding:9px 12px;font-size:.8rem}.cta-top .lg{display:none}}
+
+/* ───────── Hero ───────── */
+.hero{position:relative;isolation:isolate;overflow:hidden;border-bottom:1px solid var(--wire)}
+.hero::before{content:"";position:absolute;inset:0;z-index:-2;background:url("background-melec-tools.webp") center/cover no-repeat;opacity:.34;-webkit-mask-image:radial-gradient(ellipse 85% 90% at 50% 50%,transparent 30%,#000 80%);mask-image:radial-gradient(ellipse 85% 90% at 50% 50%,transparent 30%,#000 80%)}
+#circuit{position:absolute;inset:0;z-index:-1;width:100%;height:100%;display:block}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:clamp(28px,5vw,72px);align-items:center;padding-block:clamp(56px,9vw,112px) clamp(48px,7vw,88px)}
+.hero-copy{min-width:0}
+.hero h1{font-family:var(--f-display);font-weight:900;text-transform:uppercase;line-height:.82;letter-spacing:.01em;margin-top:18px}
+.hero h1 .l1{display:block;font-size:clamp(2.2rem,6vw,4.4rem);color:var(--ink);letter-spacing:.06em}
+.hero h1 .l2{display:block;white-space:nowrap;font-size:clamp(5rem,19vw,13.5rem);color:color-mix(in srgb,var(--ink) 14%,transparent);-webkit-text-stroke:2px var(--muted);transition:color .5s ease,-webkit-text-stroke-color .5s ease,text-shadow .5s ease;position:relative}
+.live .hero h1 .l2{color:var(--ink);-webkit-text-stroke-color:var(--ink);text-shadow:0 0 28px color-mix(in srgb,var(--arc) 55%,transparent),0 0 2px #fff}
+.hero h1 .bolt{display:inline-block;width:.42em;height:.62em;vertical-align:.02em;margin-left:.04em}
+.hero h1 .bolt path{fill:color-mix(in srgb,var(--volt) 25%,transparent);stroke:var(--volt);stroke-width:1.2;transition:fill .4s}
+.live .hero h1 .bolt path{fill:var(--volt);filter:drop-shadow(0 0 10px var(--volt))}
+.lead{font-size:clamp(1.05rem,1.6vw,1.24rem);max-width:58ch;margin-top:26px;color:color-mix(in srgb,var(--ink) 88%,var(--muted))}
+.entries{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:34px;max-width:640px}
+.entry{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:16px 18px;border-radius:6px;text-decoration:none;border:1px solid var(--wire);background:color-mix(in srgb,var(--panel) 88%,transparent);transition:border-color .2s,transform .2s,background .2s}
+.entry:hover{border-color:var(--volt);transform:translateY(-2px)}
+.entry .ic{width:40px;height:40px;border-radius:5px;display:grid;place-items:center;background:var(--panel-2);border:1px solid var(--wire)}
+.entry .ic svg{width:22px;height:22px}
+.entry strong{display:block;font-size:1.02rem}
+.entry small{display:block;color:var(--muted);font-size:.82rem;line-height:1.35}
+.entry .arr{font-family:var(--f-mono);color:var(--volt)}
+.entry.teacher{background:var(--volt);border-color:var(--volt);color:#1a0d00}
+.entry.teacher small{color:#4a2700}
+.entry.teacher .ic{background:#1a0d00;border-color:#1a0d00}
+.entry.teacher .arr{color:#1a0d00}
+@media (max-width:560px){.entries{grid-template-columns:1fr}}
+
+/* Disjoncteur général */
+.board{display:flex;gap:18px;align-items:stretch}
+.rail-plate{display:flex;flex-direction:column;gap:10px;align-items:center}
+.rail-plate .rep{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.breaker{appearance:none;border:0;cursor:pointer;width:96px;height:216px;border-radius:7px;padding:0;position:relative;background:linear-gradient(180deg,#f2f6fa,var(--module) 40%,#c8d3df);box-shadow:0 18px 40px rgba(0,0,0,.55),inset 0 1px 0 #fff,inset 0 -3px 0 rgba(0,0,0,.18);color:var(--module-ink);font-family:var(--f-mono)}
+.breaker .brand-l{position:absolute;top:12px;left:0;right:0;text-align:center;font-size:.62rem;font-weight:600;letter-spacing:.1em}
+.breaker .rating{position:absolute;top:28px;left:0;right:0;text-align:center;font-family:var(--f-display);font-weight:900;font-size:1.6rem;line-height:1}
+.breaker .slot{position:absolute;left:24px;right:24px;top:66px;height:82px;border-radius:5px;background:#1a2b40;box-shadow:inset 0 3px 8px rgba(0,0,0,.7)}
+.breaker .lever{position:absolute;left:4px;right:4px;height:40px;border-radius:4px;top:38px;background:linear-gradient(180deg,#22364f,#0d1a2b);box-shadow:0 3px 6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15);transition:top .32s cubic-bezier(.6,-0.4,.3,1.4)}
+.breaker .lever::after{content:"";position:absolute;left:8px;right:8px;top:50%;height:3px;margin-top:-1.5px;background:var(--volt);border-radius:2px}
+.breaker[aria-pressed="true"] .lever{top:4px}
+.breaker .io{position:absolute;left:0;right:0;font-size:.7rem;font-weight:600;text-align:center}
+.breaker .io.i{top:52px}.breaker .io.o{top:150px}
+.breaker .window{position:absolute;left:30px;right:30px;bottom:30px;height:12px;border-radius:2px;background:#2a8b3f;transition:background .3s}
+.breaker[aria-pressed="false"] .window{background:#c8322f}
+.breaker .spec{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:.56rem;letter-spacing:.04em}
+.breaker:focus-visible{outline:3px solid var(--volt);outline-offset:4px}
+.readout{min-width:200px;display:flex;flex-direction:column;gap:2px;padding:14px;border-radius:7px;background:#020812;border:1px solid var(--wire);font-family:var(--f-mono);align-self:center}
+.readout .row{display:flex;justify-content:space-between;gap:16px;font-size:.78rem;color:var(--muted);padding:7px 2px;border-bottom:1px dashed color-mix(in srgb,var(--wire) 80%,transparent)}
+.readout .row:last-of-type{border-bottom:0}
+.readout .row b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.live .readout .row b.u{color:var(--live);text-shadow:0 0 8px color-mix(in srgb,var(--live) 70%,transparent)}
+.state{display:flex;align-items:center;gap:10px;margin-top:8px;padding:10px;border-radius:4px;background:var(--panel);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
+.lamp{width:12px;height:12px;border-radius:50%;flex:none;background:#3a1416;box-shadow:inset 0 1px 2px rgba(0,0,0,.6)}
+.lamp.on{background:var(--live);box-shadow:0 0 10px var(--live),0 0 2px #fff inset}
+.lamp.off{background:var(--fault);box-shadow:0 0 10px color-mix(in srgb,var(--fault) 70%,transparent)}
+.lamp.wait{background:var(--amber);box-shadow:0 0 10px color-mix(in srgb,var(--amber) 70%,transparent)}
+.hint{font-family:var(--f-mono);font-size:.68rem;color:var(--muted);text-align:center;max-width:120px;line-height:1.4}
+@media (max-width:900px){.hero .wrap{grid-template-columns:1fr}.board{justify-content:flex-start}}
+@media (max-width:420px){.board{gap:12px}.readout{min-width:0;flex:1}}
+
+/* ───────── Sections / rangées ───────── */
+section.row-sec{padding-block:clamp(64px,9vw,120px);border-bottom:1px solid color-mix(in srgb,var(--wire) 60%,transparent);position:relative}
+.sec-head{display:grid;grid-template-columns:120px minmax(0,1fr);gap:24px;align-items:start;margin-bottom:clamp(32px,4vw,52px)}
+.sec-head .rep{font-family:var(--f-mono);font-size:.78rem;color:var(--volt);letter-spacing:.1em;padding-top:10px;border-top:2px solid var(--volt);text-transform:uppercase}
+.sec-head .rep small{display:block;color:var(--muted);letter-spacing:.06em;margin-top:4px;text-transform:none}
+.sec-head h2{font-family:var(--f-display);font-weight:800;text-transform:uppercase;font-size:clamp(2.2rem,5.4vw,4rem);line-height:.92;letter-spacing:.01em}
+.sec-head h2 em{font-style:normal;color:var(--volt)}
+.sec-head p{margin-top:16px;max-width:64ch;color:color-mix(in srgb,var(--ink) 84%,var(--muted));font-size:1.05rem}
+@media (max-width:700px){.sec-head{grid-template-columns:1fr;gap:14px}.sec-head .rep{width:max-content;padding-right:18px}}
+
+/* ───────── Q1 : le tableau ───────── */
+.din{position:relative;padding:26px 18px 22px;border-radius:8px;background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--wire)}
+.din::before{content:"";position:absolute;left:10px;right:10px;top:50%;height:34px;margin-top:-17px;background:repeating-linear-gradient(90deg,#8796a8 0 22px,#6b7a8d 22px 26px);border-radius:2px;opacity:.55}
+.modules{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.mod{appearance:none;border:0;cursor:pointer;position:relative;min-height:188px;border-radius:5px;padding:10px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;background:linear-gradient(180deg,#f2f6fa,var(--module) 40%,#c6d1dd);color:var(--module-ink);box-shadow:0 10px 22px rgba(0,0,0,.45),inset 0 1px 0 #fff;font-family:var(--f-mono);transition:transform .15s}
+.mod:hover{transform:translateY(-2px)}
+.mod .q{font-size:.66rem;font-weight:600;letter-spacing:.12em}
+.mod .sw{width:30px;height:58px;border-radius:4px;background:#1a2b40;position:relative;box-shadow:inset 0 2px 6px rgba(0,0,0,.7)}
+.mod .sw::after{content:"";position:absolute;left:3px;right:3px;height:24px;top:31px;border-radius:3px;background:linear-gradient(180deg,#2b4361,#0f1d30);transition:top .25s cubic-bezier(.6,-0.4,.3,1.4)}
+.mod[aria-pressed="true"] .sw::after{top:3px;background:linear-gradient(180deg,#ffb15f,var(--volt))}
+.mod .nm{font-family:var(--f-body);font-weight:700;font-size:.86rem;line-height:1.15;text-align:center;font-stretch:88%}
+.mod .ref{font-size:.6rem;color:#4b5f77;text-align:center;line-height:1.3}
+.mod .led{width:8px;height:8px;border-radius:50%;background:#7b8796;margin-top:auto}
+.mod[aria-pressed="true"] .led{background:var(--live);box-shadow:0 0 8px var(--live)}
+.labelstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:12px;position:relative}
+.labelstrip span{font-family:var(--f-mono);font-size:.6rem;text-align:center;color:var(--muted);border:1px solid var(--wire);border-radius:2px;padding:3px 2px;background:#061325;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:860px){.modules,.labelstrip{grid-template-columns:repeat(4,minmax(0,1fr))}.din::before{display:none}.labelstrip{display:none}}
+@media (max-width:460px){.mod{min-height:150px;padding:8px 3px 10px}.mod .nm{font-size:.72rem}.mod .ref{font-size:.54rem}}
+.circuit-detail{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(24px,4vw,56px);margin-top:28px;padding:clamp(22px,3vw,36px);border-left:3px solid var(--volt);background:linear-gradient(90deg,color-mix(in srgb,var(--panel) 80%,transparent),transparent)}
+.circuit-detail h3{font-family:var(--f-display);font-weight:800;font-size:clamp(1.8rem,3.4vw,2.6rem);text-transform:uppercase;line-height:1}
+.circuit-detail .q-id{font-family:var(--f-mono);font-size:.74rem;color:var(--volt);letter-spacing:.12em;margin-bottom:10px;display:block}
+.circuit-detail p.d{margin-top:14px;color:color-mix(in srgb,var(--ink) 86%,var(--muted));max-width:56ch}
+.circuit-detail ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.circuit-detail li{display:grid;grid-template-columns:18px 1fr;gap:10px;font-size:.95rem;line-height:1.5}
+.circuit-detail li::before{content:"";width:9px;height:9px;margin-top:.5em;border:2px solid var(--volt);border-radius:50%}
+.who{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+@media (max-width:760px){.circuit-detail{grid-template-columns:1fr}}
+
+/* ───────── Q2 : évaluation ───────── */
+.eval{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:clamp(20px,3vw,40px);align-items:start}
+.sheet{border:1px solid var(--wire);border-radius:8px;background:var(--panel);overflow:hidden}
+.sheet-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 20px;border-bottom:1px solid var(--wire);background:var(--panel-2);flex-wrap:wrap}
+.sheet-h strong{display:block;font-size:1.05rem}
+.sheet-h small{color:var(--muted);font-size:.8rem}
+.crit{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 18px;align-items:center;padding:16px 20px;border-bottom:1px dashed color-mix(in srgb,var(--wire) 80%,transparent)}
+.crit:last-child{border-bottom:0}
+.crit .c-l{display:flex;gap:12px;align-items:baseline;min-width:0}
+.code{font-family:var(--f-mono);font-weight:600;font-size:.78rem;padding:2px 7px;border-radius:3px;background:color-mix(in srgb,var(--b2) 18%,transparent);color:#ffc28a;flex:none}
+.crit .c-l span.t{font-size:.92rem;line-height:1.35}
+.crit .w{display:block;font-family:var(--f-mono);font-size:.66rem;color:var(--muted);margin-top:4px;letter-spacing:.04em}
+.levels{display:flex;gap:3px}
+.levels button{appearance:none;cursor:pointer;font-family:var(--f-mono);font-size:.74rem;font-weight:600;min-width:40px;padding:8px 6px;border-radius:3px;border:1px solid var(--wire);background:#061325;color:var(--muted);transition:background .15s,color .15s,border-color .15s}
+.levels button:hover{border-color:var(--muted);color:var(--ink)}
+.levels button[aria-checked="true"]{color:#061325;border-color:transparent}
+.levels button[data-v="ne"][aria-checked="true"]{background:#8a97a8}
+.levels button[data-v="0"][aria-checked="true"]{background:var(--fault)}
+.levels button[data-v="1"][aria-checked="true"]{background:var(--amber)}
+.levels button[data-v="2"][aria-checked="true"]{background:var(--arc)}
+.levels button[data-v="3"][aria-checked="true"]{background:var(--live)}
+@media (max-width:620px){.crit{grid-template-columns:1fr}.levels button{flex:1;min-width:0}}
+.meter{position:sticky;top:96px;border-radius:12px;padding:22px;background:linear-gradient(180deg,#1b2b40,#0c1726);border:1px solid #2b4566;box-shadow:0 30px 60px rgba(0,0,0,.45)}
+.meter .face{border-radius:8px;background:#e9eef3;padding:14px 12px 4px;color:#14263d}
+.meter svg{display:block;width:100%;height:auto}
+.meter .lcd{margin-top:14px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 16px;border-radius:6px;background:#9fb59a;color:#13220f;font-family:var(--f-mono);box-shadow:inset 0 2px 6px rgba(0,0,0,.35)}
+.meter .lcd b{font-size:clamp(2rem,4vw,2.6rem);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.meter .lcd span{font-size:.8rem}
+.meter .formula{margin-top:14px;font-family:var(--f-mono);font-size:.72rem;color:var(--muted);line-height:1.7}
+.meter .formula b{color:var(--ink);font-weight:600}
+.meter .count{font-family:var(--f-mono);font-size:.72rem;color:#c9d6e4;margin-top:10px;display:flex;justify-content:space-between}
+@media (max-width:900px){.eval{grid-template-columns:1fr}.meter{position:static}}
+
+/* ───────── Q3 : TP ───────── */
+.tp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);align-items:center}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s;display:grid;gap:0}
+.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:14px;padding:16px 0;border-bottom:1px solid color-mix(in srgb,var(--wire) 70%,transparent);opacity:.55;transition:opacity .3s}
+.steps li.cur{opacity:1}
+.steps li::before{content:counter(s);font-family:var(--f-display);font-weight:900;font-size:1.9rem;line-height:1;color:var(--muted)}
+.steps li.cur::before{color:var(--volt)}
+.steps strong{display:block;font-size:1rem}
+.steps span{display:block;font-size:.9rem;color:var(--muted);line-height:1.5;margin-top:2px}
+.chrono{display:grid;gap:18px;padding:clamp(18px,3vw,30px);border-radius:10px;border:1px solid var(--wire);background:var(--panel)}
+.dial-wrap{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr);gap:22px;align-items:center}
+.dial{position:relative;width:100%;max-width:190px;aspect-ratio:1}
+.dial svg{width:100%;height:100%;transform:rotate(-90deg)}
+.dial .ctr{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.dial .ctr b{font-family:var(--f-mono);font-size:clamp(1.5rem,3vw,1.9rem);font-weight:600;font-variant-numeric:tabular-nums}
+.dial .ctr small{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.lamps{display:grid;gap:8px}
+.lamps div{display:flex;align-items:center;gap:10px;font-size:.88rem}
+.lamps div em{font-style:normal;margin-left:auto;font-family:var(--f-mono);font-size:.68rem;color:var(--muted);letter-spacing:.04em}
+.tp-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{appearance:none;cursor:pointer;font-family:var(--f-body);font-weight:600;font-size:.92rem;padding:12px 18px;border-radius:5px;border:1px solid var(--wire);background:var(--panel-2);color:var(--ink)}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--volt);border-color:var(--volt);color:#1a0d00}
+.btn.primary:hover{background:#ffa04a}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.tp-log{font-family:var(--f-mono);font-size:.74rem;color:var(--muted);min-height:1.6em}
+@media (max-width:900px){.tp{grid-template-columns:1fr}}
+@media (max-width:460px){.dial-wrap{grid-template-columns:1fr}.dial{margin-inline:auto}}
+
+/* ───────── Q4 : référentiel ───────── */
+.figures{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--wire);border-radius:6px;overflow:hidden;margin-bottom:22px}
+.figures div{flex:1 1 120px;padding:14px 16px;border-right:1px solid var(--wire)}
+.figures div:last-child{border-right:0}
+.figures b{display:block;font-family:var(--f-display);font-weight:900;font-size:2.2rem;line-height:1}
+.figures span{font-family:var(--f-mono);font-size:.68rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.ref-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,360px);gap:22px;align-items:start}
+.mx-wrap{overflow-x:auto;border:1px solid var(--wire);border-radius:8px;background:var(--panel)}
+table.mx{border-collapse:collapse;min-width:760px;width:100%;font-size:.8rem}
+.mx th,.mx td{border-bottom:1px solid color-mix(in srgb,var(--wire) 60%,transparent);padding:0}
+.mx thead th{position:sticky;top:0;background:var(--panel-2);z-index:1}
+.mx thead th.corner{text-align:left;padding:10px 12px;font-family:var(--f-mono);font-size:.68rem;color:var(--muted);font-weight:400}
+.mx .cbtn,.mx .tbtn{appearance:none;border:0;background:none;color:inherit;cursor:pointer;font:inherit;width:100%}
+.mx .cbtn{font-family:var(--f-mono);font-weight:600;font-size:.72rem;padding:10px 0 8px;border-bottom:3px solid var(--bc)}
+.mx .tbtn{display:grid;grid-template-columns:44px 1fr;gap:8px;text-align:left;padding:7px 12px;line-height:1.3}
+.mx .tbtn b{font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
+.mx .tbtn span{display:block;max-width:230px;font-weight:400;color:color-mix(in srgb,var(--ink) 88%,var(--muted))}
+.mx tr.grp th{text-align:left;padding:9px 12px;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;color:var(--volt);background:#071629;font-weight:600}
+.mx td.cell{text-align:center;width:38px;cursor:pointer}
+.mx td.cell i{display:inline-block;width:12px;height:12px;border-radius:50%}
+.mx td.cell i.w2{background:var(--bc)}
+.mx td.cell i.w1{border:2px solid var(--bc)}
+.mx .hl{background:color-mix(in srgb,var(--arc) 10%,transparent)}
+.mx .sel{background:color-mix(in srgb,var(--arc) 16%,transparent)!important}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-family:var(--f-mono);font-size:.7rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:50%}
+.insp{position:sticky;top:96px;border:1px solid var(--wire);border-radius:8px;background:var(--panel);padding:20px;min-width:0}
+.insp h3{font-size:1.15rem;line-height:1.3;margin-top:8px}
+.insp .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.insp h4{font-family:var(--f-mono);font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:18px 0 8px}
+.insp ul{margin:0;padding-left:18px;display:grid;gap:5px;font-size:.86rem;line-height:1.45}
+.insp .chips{display:flex;flex-wrap:wrap;gap:6px}
+.insp .chips .tag{white-space:normal}
+@media (max-width:980px){.ref-grid{grid-template-columns:1fr}.insp{position:static}}
+.sectors{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.sectors .tag{font-size:.74rem;padding:.4em .7em}
+
+/* ───────── Q5 : publication ───────── */
+.pub{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:22px;align-items:start}
+.schema{overflow-x:auto;border:1px solid var(--wire);border-radius:8px;background:
+  linear-gradient(color-mix(in srgb,var(--wire) 25%,transparent) 1px,transparent 1px) 0 0/20px 20px,
+  linear-gradient(90deg,color-mix(in srgb,var(--wire) 25%,transparent) 1px,transparent 1px) 0 0/20px 20px,#061325}
+.schema svg{display:block;min-width:700px;width:100%;height:auto}
+.schema .w{stroke:var(--wire);stroke-width:3;fill:none;transition:stroke .3s}
+.schema .w.on{stroke:var(--volt);filter:drop-shadow(0 0 4px color-mix(in srgb,var(--volt) 70%,transparent))}
+.schema .k{cursor:pointer}
+.schema .k .blade{stroke:var(--ink);stroke-width:3;stroke-linecap:round;transition:transform .25s}
+.schema .k .term{fill:#061325;stroke:var(--ink);stroke-width:2}
+.schema .k .hit{fill:transparent}
+.schema .k:hover .blade,.schema .k:focus-visible .blade{stroke:var(--volt)}
+.schema .k:focus{outline:none}
+.schema .k:focus-visible .hit{stroke:var(--volt);stroke-dasharray:4 3;stroke-width:1.5}
+.schema text{font-family:var(--f-mono);fill:var(--muted);font-size:12px}
+.schema text.lb{fill:var(--ink);font-family:var(--f-body);font-size:14px;font-weight:600}
+.schema text.st{font-size:11px}
+.schema .bulb circle{fill:#061325;stroke:var(--muted);stroke-width:2;transition:fill .3s,stroke .3s}
+.schema .bulb path{stroke:var(--muted);stroke-width:2;transition:stroke .3s}
+.schema .bulb.on circle{fill:var(--amber);stroke:var(--amber);filter:drop-shadow(0 0 10px var(--amber))}
+.schema .bulb.on path{stroke:#3d2600}
+.view{border:1px solid var(--wire);border-radius:8px;background:var(--panel);overflow:hidden}
+.view-h{padding:12px 16px;background:var(--panel-2);border-bottom:1px solid var(--wire);display:flex;justify-content:space-between;gap:8px;align-items:center}
+.view-h b{font-size:.92rem}
+.view-b{padding:14px 16px;display:grid;gap:10px}
+.capsule{border:1px solid var(--wire);border-radius:6px;padding:12px 14px;display:grid;gap:4px;transition:border-color .3s,background .3s}
+.capsule.on{border-color:color-mix(in srgb,var(--amber) 60%,transparent);background:color-mix(in srgb,var(--amber) 7%,transparent)}
+.capsule strong{font-size:.9rem;display:flex;align-items:center;gap:8px}
+.capsule span{font-size:.82rem;color:var(--muted)}
+.pub-note{font-size:.86rem;color:var(--muted);margin-top:14px;line-height:1.55}
+@media (max-width:980px){.pub{grid-template-columns:1fr}}
+
+/* ───────── Q6 : nomenclature ───────── */
+.nomen-wrap{overflow-x:auto;border:1px solid var(--wire);border-radius:8px}
+table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
+.nomen th{font-family:var(--f-mono);font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:12px 16px;background:var(--panel-2);border-bottom:1px solid var(--wire)}
+.nomen td{padding:14px 16px;border-bottom:1px solid color-mix(in srgb,var(--wire) 60%,transparent);vertical-align:top;line-height:1.45}
+.nomen tr:last-child td{border-bottom:0}
+.nomen td:first-child{font-family:var(--f-mono);font-weight:600;color:var(--volt);white-space:nowrap}
+.nomen td:nth-child(2){font-weight:600}
+.nomen td:last-child{font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+.guards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;margin-top:22px;background:var(--wire);border:1px solid var(--wire);border-radius:8px;overflow:hidden}
+.guards div{background:var(--night);padding:20px}
+.guards strong{display:block;font-size:1rem;margin-bottom:6px}
+.guards p{font-size:.88rem;color:var(--muted);line-height:1.55}
+@media (max-width:820px){.guards{grid-template-columns:1fr}}
+
+/* ───────── Final + cartouche ───────── */
+.final{padding-block:clamp(72px,10vw,130px);text-align:left}
+.final h2{font-family:var(--f-display);font-weight:900;text-transform:uppercase;font-size:clamp(2.6rem,8vw,6.2rem);line-height:.88;max-width:14ch}
+.final h2 em{font-style:normal;color:var(--volt)}
+.final .entries{margin-top:36px}
+.cartouche{margin-block:0 clamp(28px,4vw,48px);display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));border:2px solid var(--muted);font-family:var(--f-mono);font-size:.72rem}
+.cartouche>div{padding:10px 12px;border-left:1px solid var(--muted);min-width:0}
+.cartouche>div:first-child{border-left:0;display:flex;align-items:center;gap:10px}
+.cartouche img{width:42px;height:42px}
+.cartouche small{display:block;color:var(--muted);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase}
+.cartouche b{display:block;font-weight:600;color:var(--ink);margin-top:3px;overflow-wrap:anywhere}
+@media (max-width:760px){.cartouche{grid-template-columns:repeat(2,minmax(0,1fr))}.cartouche>div{border-left:0;border-top:1px solid var(--muted)}.cartouche>div:first-child{grid-column:1/-1;border-top:0}}
+
+
+/* ───────── Contact ───────── */
+.cform{display:grid;gap:16px;max-width:860px;padding:clamp(20px,3vw,32px);border:1px solid var(--wire);border-radius:8px;background:var(--panel)}
+.cgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.cform label{display:grid;gap:6px;font-size:.86rem;font-weight:600}
+.cform input,.cform textarea{font:inherit;font-weight:400;color:var(--ink);background:#061325;border:1px solid var(--wire);border-radius:5px;padding:11px 12px;width:100%}
+.cform input:focus,.cform textarea:focus{outline:2px solid var(--volt);outline-offset:1px;border-color:transparent}
+.cform textarea{resize:vertical;min-height:120px}
+.chelp{font-family:var(--f-mono);font-size:.72rem;color:var(--muted);margin-top:-8px}
+.honeypot{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.cactions{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.cstatus{font-size:.9rem;color:var(--live)}
+.cstatus.error{color:var(--fault)}
+@media (max-width:620px){.cgrid{grid-template-columns:1fr}}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+</style>
+
 </head>
-<body class="portal-page">
-  <div class="portal-shell">
-    <header class="portal-header">
-      <img src="logo-bac-pro-melec-v3.webp" alt="Logo BAC PRO MELEC" width="102" height="102">
-      <div><p class="eyebrow">Espace pédagogique</p><h1>BAC PRO MELEC</h1><p>Baccalauréat professionnel Métiers de l’Électricité et de ses Environnements Connectés</p></div>
-    </header>
-    <main>
-      <section class="portal-hero" aria-labelledby="welcomeTitle">
-        <p class="eyebrow">Bienvenue à L’Atelier MELEC</p>
-        <h2 id="welcomeTitle">Choisissez votre espace</h2>
-        <p>Cours, travaux dirigés et travaux pratiques sont accessibles selon votre profil.</p>
-        <div class="portal-cards">
-          <a class="portal-card teacher-card" href="./enseignant.html"><span class="portal-card-icon"><svg viewBox="0 0 32 38" aria-hidden="true" focusable="false"><path d="M18 1 5 21h9l-2 16 15-23h-9l3-13z"/></svg></span><span><strong>Espace enseignant</strong><small>Activités, évaluations, contenus pédagogiques et suivi des élèves.</small></span><span aria-hidden="true">›</span></a>
-          <a class="portal-card student-card" href="./eleve.html"><span class="portal-card-icon">▣</span><span><strong>Espace élève</strong><small>Consulter les cours, TD et TP de votre classe après validation.</small></span><span aria-hidden="true">›</span></a>
-          <button id="homeContactButton" class="portal-card contact-card" type="button" aria-expanded="false" aria-controls="homeContactPanel"><span class="portal-card-icon">✉</span><span><strong>Contacter l’enseignant</strong><small>Envoyer une question ou demander de l’aide.</small></span><span aria-hidden="true">›</span></button>
-        </div>
-      </section>
-      <section id="homeContactPanel" class="portal-panel contact-panel" aria-labelledby="contactTitle" hidden>
-        <div><p class="eyebrow">Une question ?</p><h2 id="contactTitle">Contacter l’enseignant</h2><p>Décrivez votre demande. Les champs marqués * sont obligatoires.</p></div>
-        <form id="contactForm" class="portal-form" autocomplete="off">
-          <div class="portal-form-grid">
-            <label>Nom *<input name="lastName" maxlength="80" autocomplete="family-name" required></label>
-            <label>Prénom *<input name="firstName" maxlength="80" autocomplete="given-name" required></label>
-            <label>Adresse e-mail *<input name="email" type="email" maxlength="254" autocomplete="email" required></label>
-            <label>Classe *<input name="className" maxlength="80" required placeholder="Ex. 1MELEC"></label>
-          </div>
-          <label>Commentaire *<textarea name="comment" maxlength="500" rows="5" required aria-describedby="contactCount"></textarea></label>
-          <span id="contactCount" class="field-help">0 / 500 caractères</span>
-          <div class="honeypot" aria-hidden="true"><label>Ne pas remplir ce champ<input name="website" tabindex="-1" autocomplete="off"></label></div>
-          <button class="portal-button" type="submit">Envoyer le message</button>
-          <p id="contactStatus" class="form-status" role="status" aria-live="polite"></p>
-        </form>
-      </section>
-    </main>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="L’Atelier MELEC, retour en haut">
+      <img src="logo-bac-pro-melec-v3.webp" alt="" width="40" height="40">
+      <span><b>L’Atelier MELEC</b><small>Bac Pro MELEC</small></span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#tableau"><span>Q1</span>Plateforme</a>
+      <a href="#evaluer"><span>Q2</span>Évaluer</a>
+      <a href="#tp"><span>Q3</span>TP 3 h 30</a>
+      <a href="#referentiel"><span>Q4</span>Référentiel</a>
+      <a href="#manuel"><span>Q5</span>Publier</a>
+      <a href="#architecture"><span>Q6</span>Architecture</a>
+    </nav>
+    <a class="cta-top" href="#contact">Contacter<span class="lg"> l’enseignant</span></a>
   </div>
-  <script src="portal-api.js?v=20260930-storage-retry3"></script>
-  <script src="portal-contact.js?v=20260925-1"></script>
-  <script>
-    const contactButton=document.getElementById('homeContactButton');
-    const contactPanel=document.getElementById('homeContactPanel');
-    contactButton.addEventListener('click',()=>{
-      contactPanel.hidden=!contactPanel.hidden;
-      contactButton.setAttribute('aria-expanded',String(!contactPanel.hidden));
-      if(!contactPanel.hidden){document.getElementById('contactForm').reset();contactPanel.scrollIntoView({block:'nearest'});}
-    });
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const version='153';
-      window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v='+version,{updateViaCache:'none'}).then(reg=>reg.update()).catch(console.error));
+</header>
+
+<main id="top">
+<!-- ═════ Q0 HERO ═════ -->
+<section class="hero" aria-labelledby="h-title">
+  <canvas id="circuit" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="hero-copy">
+      <p class="eyebrow">Baccalauréat professionnel · Métiers de l’Électricité et de ses Environnements Connectés</p>
+      <h1 id="h-title"><span class="l1">L’Atelier</span><span class="l2">MELEC<svg class="bolt" viewBox="0 0 32 46" aria-hidden="true"><path d="M20 1 4 26h10l-3 19 17-27H17l3-17z"/></svg></span></h1>
+      <p class="lead">La plateforme de l’atelier d’électricité. L’enseignant y crée les activités, évalue chaque élève compétence par compétence, publie le manuel et les TD, et lance les TP chronométrés. L’élève y retrouve ses cours, ses travaux et ses propres résultats de CCF.</p>
+      <div class="entries">
+        <a class="entry teacher" href="./enseignant.html">
+          <span class="ic"><svg viewBox="0 0 32 38" aria-hidden="true"><path fill="#ff8a1e" d="M18 1 5 21h9l-2 16 15-23h-9l3-13z"/></svg></span>
+          <span><strong>Espace enseignant</strong><small>Activités, évaluations, contenus et suivi</small></span><span class="arr" aria-hidden="true">→</span>
+        </a>
+        <a class="entry" href="./eleve.html">
+          <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#4fb3ff" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+          <span><strong>Espace élève</strong><small>Cours, TD, TP et résultats de ma classe</small></span><span class="arr" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+    <div class="board">
+      <div class="rail-plate">
+        <span class="rep">Q0 · Général</span>
+        <button class="breaker" id="mainBreaker" type="button" aria-pressed="false" aria-label="Disjoncteur général : mettre la page sous tension">
+          <span class="brand-l">MELEC</span>
+          <span class="rating">C16</span>
+          <span class="slot"><span class="lever"></span></span>
+          <span class="io i">I</span><span class="io o">O</span>
+          <span class="window"></span>
+          <span class="spec">230/400V~ 6000</span>
+        </button>
+        <span class="hint" id="hint">Basculez le levier</span>
+      </div>
+      <div class="readout" aria-live="polite">
+        <div class="row"><span>U</span><b class="u" id="uVal">0 V</b></div>
+        <div class="row"><span>f</span><b>50 Hz</b></div>
+        <div class="row"><span>IΔn</span><b>30 mA</b></div>
+        <div class="row"><span>Circuits</span><b id="cVal">0 / 6</b></div>
+        <div class="state"><span class="lamp off" id="stLamp"></span><span id="stTxt">Hors tension</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ Q1 TABLEAU ═════ -->
+<section class="row-sec" id="tableau" aria-labelledby="t1">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="rep">Q1<small>Plateforme</small></div>
+      <div>
+        <h2 id="t1">Sept circuits,<br><em>un seul tableau</em></h2>
+        <p>Chaque rubrique de L’Atelier MELEC est un départ du tableau. Enclenchez un module pour voir ce qu’il alimente, côté enseignant et côté élève.</p>
+      </div>
+    </div>
+    <div class="din">
+      <div class="modules" id="modules" role="group" aria-label="Rubriques de la plateforme"></div>
+      <div class="labelstrip" id="labelstrip" aria-hidden="true"></div>
+    </div>
+    <div class="circuit-detail" id="circuitDetail" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- ═════ Q2 ÉVALUER ═════ -->
+<section class="row-sec" id="evaluer" aria-labelledby="t2">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="rep">Q2<small>Évaluation</small></div>
+      <div>
+        <h2 id="t2">Évaluer par compétences,<br><em>la note suit</em></h2>
+        <p>L’enseignant positionne chaque compétence sur quatre niveaux. La note sur 20 se calcule seule, pondérée par le poids de chaque compétence. NE (non évalué) ne pèse pas dans le calcul. Essayez sur cette fiche d’exemple.</p>
+      </div>
+    </div>
+    <div class="eval">
+      <div class="sheet">
+        <div class="sheet-h">
+          <div><strong>Mise en service d’un tableau divisionnaire</strong><small>Fiche d’exemple · tâche T3-1 · CCF formatif</small></div>
+          <span class="tag">Élève de démonstration</span>
+        </div>
+        <div id="critList"></div>
+      </div>
+      <aside class="meter" aria-label="Note calculée">
+        <div class="face">
+          <svg viewBox="0 0 240 146" role="img" aria-labelledby="gTitle">
+            <title id="gTitle">Cadran de la note sur 20</title>
+            <g id="gScale"></g>
+            <g id="needle"><line x1="120" y1="128" x2="28" y2="128" stroke="#c8322f" stroke-width="2.5" stroke-linecap="round"/></g>
+            <circle cx="120" cy="128" r="7" fill="#14263d"/>
+            <text x="120" y="98" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#4b5f77">NOTE / 20</text>
+          </svg>
+        </div>
+        <div class="lcd"><b id="noteVal">—</b><span>/ 20</span></div>
+        <div class="count"><span id="evalCount">—</span><span id="evalSum">—</span></div>
+        <p class="formula">N1 = 0 % · N2 = 33 % · N3 = 67 % · N4 = 100 %<br><b>Note = 20 × Σ(niveau × poids) ÷ Σ(poids)</b><br>Poids 2 : compétence essentielle · Poids 1 : secondaire</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ Q3 TP ═════ -->
+<section class="row-sec" id="tp" aria-labelledby="t3">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="rep">Q3<small>Atelier</small></div>
+      <div>
+        <h2 id="t3">TP en atelier :<br><em>3 h 30, pas une minute de plus</em></h2>
+        <p>Ouvrir la rubrique TP ne déclenche rien. Le chronomètre part seulement quand l’élève clique sur le bouton de démarrage. Pendant l’épreuve, le reste de son espace se ferme. À l’échéance, le TP se verrouille et l’enseignant peut accorder une prolongation.</p>
+      </div>
+    </div>
+    <div class="tp">
+      <ol class="steps" id="tpSteps">
+        <li class="cur"><div><strong>Le TP est attribué</strong><span>L’enseignant joint le PDF du sujet et le dossier technique, publie le TP et l’associe aux comptes élèves.</span></div></li>
+        <li><div><strong>L’élève démarre</strong><span>Le bouton « Ouvrir le TP et démarrer 3 h 30 » enregistre l’heure de début.</span></div></li>
+        <li><div><strong>L’épreuve est en cours</strong><span>L’élève consulte le PDF et répond avec les outils d’annotation. Manuel, TD, référentiel et CCF sont indisponibles.</span></div></li>
+        <li><div><strong>Le TP se verrouille</strong><span>Après 210 minutes, plus aucune réponse n’est possible. Le verrou s’applique dans l’interface et dans les règles d’accès aux données.</span></div></li>
+      </ol>
+      <div class="chrono">
+        <div class="dial-wrap">
+          <div class="dial">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              <circle cx="100" cy="100" r="88" fill="none" stroke="#1e4569" stroke-width="10"/>
+              <g id="dialTicks"></g>
+              <circle id="dialArc" cx="100" cy="100" r="88" fill="none" stroke="#ff8a1e" stroke-width="10" stroke-linecap="butt" stroke-dasharray="552.92" stroke-dashoffset="0"/>
+            </svg>
+            <div class="ctr"><b id="tpTime">3:30</b><small id="tpLabel">restant</small></div>
+          </div>
+          <div class="lamps" id="tpLamps" aria-live="polite"></div>
+        </div>
+        <div class="tp-actions">
+          <button class="btn primary" id="tpStart" type="button">Ouvrir le TP et démarrer 3 h 30</button>
+          <button class="btn" id="tpReset" type="button" hidden>Recommencer</button>
+        </div>
+        <p class="tp-log" id="tpLog">Démonstration accélérée : 210 minutes défilent en 14 secondes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ Q4 RÉFÉRENTIEL ═════ -->
+<section class="row-sec" id="referentiel" aria-labelledby="t4">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="rep">Q4<small>Référentiel</small></div>
+      <div>
+        <h2 id="t4">Le référentiel 2024,<br><em>câblé dans l’outil</em></h2>
+        <p>Tâches, compétences et critères de l’arrêté du 1er mars 2024 sont intégrés. Quand l’enseignant choisit une tâche, la plateforme sait quelles compétences elle mobilise et avec quel poids. Touchez une compétence ou une tâche pour l’ouvrir.</p>
+      </div>
+    </div>
+    <div class="figures" id="figures"></div>
+    <div class="ref-grid">
+      <div style="min-width:0">
+        <div class="mx-wrap"><table class="mx" id="matrix"></table></div>
+        <div class="legend">
+          <span><i style="background:var(--b1)"></i>Bloc B1 · U2 Préparation</span>
+          <span><i style="background:var(--b2)"></i>Bloc B2 · U31 Réalisation et mise en service</span>
+          <span><i style="background:var(--b3)"></i>Bloc B3 · U32 Maintenance</span>
+          <span><i style="background:var(--muted)"></i>Plein : poids 2</span>
+          <span><i style="border:2px solid var(--muted)"></i>Anneau : poids 1</span>
+        </div>
+      </div>
+      <aside class="insp" id="inspector" aria-live="polite"></aside>
+    </div>
+    <div class="sectors" id="sectors"></div>
+  </div>
+</section>
+
+<!-- ═════ Q5 PUBLIER ═════ -->
+<section class="row-sec" id="manuel" aria-labelledby="t5">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="rep">Q5<small>Manuel · TD</small></div>
+      <div>
+        <h2 id="t5">Publier, c’est<br><em>fermer le circuit</em></h2>
+        <p>Le manuel s’organise par classe, thème, chapitre et leçon. Chaque leçon porte trois sections : le cours, les TD et leur correction. Un contenu n’apparaît chez l’élève que si toute la chaîne est publiée, comme une lampe qui ne s’allume qu’avec tous les interrupteurs en série fermés. Cliquez sur les interrupteurs.</p>
+      </div>
+    </div>
+    <div class="pub">
+      <div class="schema">
+        <svg id="pubSvg" viewBox="0 0 900 340" role="group" aria-label="Schéma de publication d’une leçon"></svg>
+      </div>
+      <div>
+        <div class="view">
+          <div class="view-h"><b>Ce que voit l’élève</b><span class="tag">Classe autorisée</span></div>
+          <div class="view-b" id="studentView"></div>
+        </div>
+        <p class="pub-note">Une section en brouillon reste invisible. Publier le cours ne publie ni le TD ni sa correction. Côté élève, le manuel et les TD sont deux capsules séparées, avec un sommaire permanent et une lecture sans bouton de téléchargement.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ Q6 ARCHITECTURE ═════ -->
+<section class="row-sec" id="architecture" aria-labelledby="t6">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="rep">Q6<small>Architecture</small></div>
+      <div>
+        <h2 id="t6">Nomenclature<br><em>de l’installation</em></h2>
+        <p>Un site statique rapide pour l’interface, Supabase pour les comptes, les données et les fichiers privés. Les droits se vérifient côté base de données, pas seulement dans l’interface.</p>
+      </div>
+    </div>
+    <div class="nomen-wrap">
+      <table class="nomen">
+        <thead><tr><th>Repère</th><th>Désignation</th><th>Fonction</th><th>Technologie</th></tr></thead>
+        <tbody>
+          <tr><td>F1</td><td>Interface web</td><td>Espaces enseignant et élève, portail d’accueil, adaptés au PC, à la tablette et au smartphone. Installable comme une application.</td><td>HTML · CSS · JS<br>GitHub Pages</td></tr>
+          <tr><td>A1</td><td>Comptes</td><td>Connexion enseignant, inscription élève avec confirmation de l’adresse e-mail, puis validation et attribution de classe par l’enseignant.</td><td>Supabase Auth</td></tr>
+          <tr><td>B1</td><td>Base de données</td><td>Classes, profils, activités, évaluations, manuel, TP et messages. Chaque table est protégée par des règles d’accès ligne par ligne.</td><td>PostgreSQL · RLS</td></tr>
+          <tr><td>S1</td><td>Stockage privé</td><td>PDF des TP, dossiers techniques et images du manuel, servis uniquement aux comptes autorisés.</td><td>Storage · melec-private</td></tr>
+          <tr><td>E1</td><td>Gestion des accès</td><td>Valider, bloquer, débloquer ou révoquer un compte élève, renvoyer une confirmation.</td><td>Edge · melec-access</td></tr>
+          <tr><td>E2</td><td>Contact</td><td>Formulaire « Contacter l’enseignant » depuis l’accueil et l’espace élève, avec protection anti-robot.</td><td>Edge · melec-contact</td></tr>
+          <tr><td>W1</td><td>Cache hors ligne</td><td>Chargement rapide des ressources statiques, versionné à chaque livraison.</td><td>Service worker</td></tr>
+          <tr><td>X1</td><td>Documents</td><td>Lecture des PDF de TP, fiches d’activité, exports des notes en CSV.</td><td>PDF.js · jsPDF · SheetJS</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="guards">
+      <div><strong>Chacun ses résultats</strong><p>Un élève ne voit que ses propres évaluations de CCF formatif et certificatif. Le récapitulatif CCF de la classe reste réservé à l’enseignant.</p></div>
+      <div><strong>Aucun secret côté navigateur</strong><p>Seule la clé publique figure dans le site. Les clés de service et les identifiants d’envoi d’e-mails restent dans Supabase.</p></div>
+      <div><strong>Suppressions confirmées</strong><p>Supprimer un thème, un chapitre ou une leçon affiche ses conséquences et exige la saisie de SUPPRIMER avant d’agir.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ FINAL ═════ -->
+<section class="final" aria-labelledby="t7">
+  <div class="wrap">
+    <p class="eyebrow">Mise en service</p>
+    <h2 id="t7">L’atelier est <em>sous tension.</em> À vous.</h2>
+    <div class="entries">
+      <a class="entry teacher" href="./enseignant.html">
+        <span class="ic"><svg viewBox="0 0 32 38" aria-hidden="true"><path fill="#ff8a1e" d="M18 1 5 21h9l-2 16 15-23h-9l3-13z"/></svg></span>
+        <span><strong>Espace enseignant</strong><small>Se connecter avec le compte autorisé</small></span><span class="arr" aria-hidden="true">→</span>
+      </a>
+      <a class="entry" href="./eleve.html">
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#4fb3ff" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+        <span><strong>Espace élève</strong><small>S’inscrire ou se connecter</small></span><span class="arr" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ CONTACT (formulaire existant, même identifiants) ═════ -->
+<section class="row-sec" id="contact" aria-labelledby="contactTitle">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="rep">Q8<small>Contact</small></div>
+      <div>
+        <h2 id="contactTitle">Une question ?<br><em>Écrivez à l’enseignant</em></h2>
+        <p>Décrivez votre demande. Les champs marqués * sont obligatoires.</p>
+      </div>
+    </div>
+    <form id="contactForm" class="cform" autocomplete="off">
+      <div class="cgrid">
+        <label>Nom *<input name="lastName" maxlength="80" autocomplete="family-name" required></label>
+        <label>Prénom *<input name="firstName" maxlength="80" autocomplete="given-name" required></label>
+        <label>Adresse e-mail *<input name="email" type="email" maxlength="254" autocomplete="email" required></label>
+        <label>Classe *<input name="className" maxlength="80" required placeholder="Ex. 1MELEC"></label>
+      </div>
+      <label>Commentaire *<textarea name="comment" maxlength="500" rows="5" required aria-describedby="contactCount"></textarea></label>
+      <span id="contactCount" class="chelp">0 / 500 caractères</span>
+      <div class="honeypot" aria-hidden="true"><label>Ne pas remplir ce champ<input name="website" tabindex="-1" autocomplete="off"></label></div>
+      <div class="cactions"><button class="btn primary" type="submit">Envoyer le message</button><p id="contactStatus" class="cstatus" role="status" aria-live="polite"></p></div>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer class="wrap">
+  <div class="cartouche">
+    <div><img src="logo-bac-pro-melec-v3.webp" alt="Logo BAC PRO MELEC" width="42" height="42"><div><small>Ouvrage</small><b>L’Atelier MELEC</b></div></div>
+    <div><small>Diplôme</small><b>Bac Pro MELEC</b></div>
+    <div><small>Référentiel</small><b>Arrêté du 1er mars 2024 · JORF n°57</b></div>
+    <div><small>Hébergement</small><b>GitHub Pages · Supabase</b></div>
+    <div><small>Folio</small><b>1 / 1 · Indice 2026-10</b></div>
+  </div>
+</footer>
+
+<script src="referential.js?v=20260930"></script>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fr=(n,d=2)=>n.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+/* ───── Q0 : réseau de conducteurs (canvas) ───── */
+const cv=$('#circuit'),ctx=cv.getContext('2d');
+let W=0,H=0,paths=[],pulses=[],live=false,raf=0,visible=true,dpr=1;
+function rnd(a,b){return a+Math.random()*(b-a)}
+function build(){
+  const r=cv.getBoundingClientRect();dpr=Math.min(2,window.devicePixelRatio||1);
+  W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+  const g=24,cols=Math.floor(W/g),rows=Math.floor(H/g);paths=[];
+  const n=Math.round(Math.min(42,Math.max(14,W*H/26000)));
+  for(let i=0;i<n;i++){
+    let x,y,dir;const e=i%4;
+    if(e===0){x=0;y=Math.floor(rnd(1,rows-1));dir=0}
+    else if(e===1){x=cols;y=Math.floor(rnd(1,rows-1));dir=2}
+    else if(e===2){x=Math.floor(rnd(1,cols-1));y=0;dir=1}
+    else{x=Math.floor(rnd(1,cols-1));y=rows;dir=3}
+    const pts=[[x*g,y*g]];let len=0;
+    const segs=Math.floor(rnd(4,10));
+    for(let s=0;s<segs;s++){
+      const L=Math.floor(rnd(2,8));
+      const dx=[1,0,-1,0][dir],dy=[0,1,0,-1][dir];
+      const nx=Math.max(0,Math.min(cols,x+dx*L)),ny=Math.max(0,Math.min(rows,y+dy*L));
+      if(nx===x&&ny===y)break;
+      len+=Math.hypot(nx-x,ny-y)*g;x=nx;y=ny;pts.push([x*g,y*g]);
+      dir=(dir+(Math.random()<.5?1:3))%4;
     }
-  </script>
+    if(pts.length>1)paths.push({pts,len,hue:Math.random()<.28?'v':'a'});
+  }
+  pulses=paths.map(p=>({p,t:rnd(0,p.len),v:rnd(70,170)}));
+  draw(0);
+}
+function pointAt(p,d){
+  let acc=0;const P=p.pts;
+  for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i],s=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    if(acc+s>=d){const k=(d-acc)/s;return[a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k,i]}acc+=s}
+  const l=P[P.length-1];return[l[0],l[1],P.length-1];
+}
+function draw(dt){
+  ctx.clearRect(0,0,W,H);
+  ctx.lineWidth=1.4;ctx.lineJoin='round';
+  for(const p of paths){
+    ctx.strokeStyle=live?'rgba(79,179,255,.22)':'rgba(79,179,255,.10)';
+    ctx.beginPath();p.pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.stroke();
+    const e=p.pts[p.pts.length-1];
+    ctx.fillStyle=live?'rgba(79,179,255,.5)':'rgba(79,179,255,.18)';
+    ctx.beginPath();ctx.arc(e[0],e[1],2.6,0,6.3);ctx.fill();
+  }
+  if(!live)return;
+  for(const u of pulses){
+    u.t+=u.v*dt;if(u.t>u.p.len+60)u.t=-rnd(0,300);
+    if(u.t<0)continue;
+    const tail=56,col=u.p.hue==='v'?'255,138,30':'120,200,255';
+    ctx.lineWidth=2.2;
+    for(let k=0;k<6;k++){
+      const d0=Math.max(0,u.t-tail*(k+1)/6),d1=Math.max(0,u.t-tail*k/6);
+      if(d1<=0||d0>u.p.len)continue;
+      const a=pointAt(u.p,Math.min(d0,u.p.len)),b=pointAt(u.p,Math.min(d1,u.p.len));
+      ctx.strokeStyle=`rgba(${col},${(1-k/6)*.85})`;
+      ctx.beginPath();ctx.moveTo(a[0],a[1]);
+      for(let i=a[2];i<b[2];i++)ctx.lineTo(u.p.pts[i][0],u.p.pts[i][1]);
+      ctx.lineTo(b[0],b[1]);ctx.stroke();
+    }
+    if(u.t<=u.p.len){const h=pointAt(u.p,u.t);ctx.fillStyle=`rgba(${col},1)`;ctx.shadowColor=`rgba(${col},1)`;ctx.shadowBlur=12;ctx.beginPath();ctx.arc(h[0],h[1],2.4,0,6.3);ctx.fill();ctx.shadowBlur=0}
+  }
+}
+let last=0;
+function loop(ts){const dt=last?Math.min(.05,(ts-last)/1000):0;last=ts;draw(dt);raf=(live&&visible&&!reduce)?requestAnimationFrame(loop):0;if(!raf)last=0}
+function kick(){if(!raf&&live&&visible&&!reduce)raf=requestAnimationFrame(loop);else draw(0)}
+new IntersectionObserver(es=>{visible=es[0].isIntersecting;kick()}).observe(cv);
+let rT;window.addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(build,150)});
+build();
+
+/* ───── Disjoncteur général ───── */
+const br=$('#mainBreaker');
+function setLive(on){
+  live=on;document.body.classList.toggle('live',on);
+  br.setAttribute('aria-pressed',String(on));
+  br.setAttribute('aria-label','Disjoncteur général : '+(on?'couper':'remettre')+' la tension');
+  $('#uVal').textContent=on?'230 V':'0 V';
+  $('#stLamp').className='lamp '+(on?'on':'off');
+  $('#stTxt').textContent=on?'Sous tension':'Hors tension';
+  $('#hint').textContent=on?'Installation alimentée':'Basculez le levier';
+  updateCount();kick();
+}
+br.addEventListener('click',()=>setLive(!live));
+setTimeout(()=>setLive(true),reduce?0:900);
+
+/* ───── Q1 : modules ───── */
+const circuits=[
+ {q:'Q1',nm:'Activités',ref:'5 étapes',strip:'Activités',t:'Activités et évaluations',
+  d:'L’enseignant construit une activité en cinq étapes : informations, compétences, tâches, critères, vérification. Il la rattache à une classe ou à un groupe, choisit les élèves, puis évalue critère par critère.',
+  pts:['Niveaux NE, N1, N2, N3, N4 et note sur 20 calculée automatiquement','Poids proposé par le référentiel : 2 pour une compétence essentielle, 1 pour une secondaire','Après verrouillage d’une évaluation, passage direct à l’élève suivant','Réutiliser une activité en changeant ses compétences, sans toucher l’original ni ses notes','Fiche d’activité imprimable et export des notes en CSV'],who:['Enseignant']},
+ {q:'Q2',nm:'Manuel numérique',ref:'cours',strip:'Manuel',t:'Manuel numérique',
+  d:'Un manuel organisé par classe, thème, chapitre et leçon, écrit directement dans la plateforme avec un éditeur complet.',
+  pts:['Titres, listes, couleurs, surlignage, tableaux dimensionnés et vidéos','Images collées ou déposées dans le texte (PNG, JPG, WebP, GIF jusqu’à 10 Mo), déplaçables et redimensionnables','PDF et fichiers bureautiques en pièces jointes','Aperçu avant publication, avertissement avant de perdre une saisie','Lecture élève avec sommaire permanent, sans bouton de téléchargement'],who:['Enseignant','Élève']},
+ {q:'Q3',nm:'Travaux dirigés',ref:'TD + corr.',strip:'TD',t:'Travaux dirigés',
+  d:'Les TD sont rattachés à la même leçon que le cours mais présentés séparément. La correction est une troisième section, publiée quand l’enseignant le décide.',
+  pts:['Capsule « Travaux dirigés » distincte du manuel côté élève','Bascule TD ↔ Correction des TD lorsque la correction est publiée','Navigation de leçon en leçon, précédente et suivante','Le cours ne se mélange jamais aux TD'],who:['Enseignant','Élève']},
+ {q:'Q4',nm:'TP en atelier',ref:'210 min',strip:'TP',t:'TP en atelier',
+  d:'Un sujet PDF et son dossier technique, attribués à des élèves précis, avec un chronomètre de 3 h 30 qui ne démarre qu’à la demande de l’élève.',
+  pts:['Création, publication, masquage et association des élèves par l’enseignant','Bouton explicite « Ouvrir le TP et démarrer 3 h 30 »','Manuel, TD, référentiel et CCF indisponibles pendant le TP','Verrouillage à l’échéance, prolongation accordée par l’enseignant','Réponses et annotations directement sur le PDF'],who:['Enseignant','Élève']},
+ {q:'Q5',nm:'Référentiel',ref:'C1 → C13',strip:'Référentiel',t:'Référentiel Bac Pro MELEC',
+  d:'Le référentiel officiel est consultable par tous et alimente la création des activités.',
+  pts:['5 activités, 17 tâches avec leur niveau d’autonomie, 13 compétences','Critères d’évaluation officiels pour chaque compétence','Savoirs associés et attitudes professionnelles AP1 à AP5','Blocs B1 (U2), B2 (U31) et B3 (U32)'],who:['Enseignant','Élève']},
+ {q:'Q6',nm:'Résultats & CCF',ref:'formatif · certif.',strip:'CCF',t:'Résultats et CCF',
+  d:'Le suivi des notes et le récapitulatif CCF de la classe pour l’enseignant, les seuls résultats personnels pour l’élève.',
+  pts:['Notes et moyennes par élève, avec le nombre d’activités réellement évaluées','Récap des CCF : activité, classe, groupe, élève, date, type et bilan','Compétences colorées par niveau, grands tableaux à défilement horizontal','Côté élève : CCF formatif et CCF certificatif, uniquement ses propres évaluations'],who:['Enseignant','Élève']},
+ {q:'Q7',nm:'Accès élèves',ref:'validation',strip:'Accès',t:'Accès élèves',
+  d:'L’élève s’inscrit lui-même. L’enseignant garde la main sur qui entre dans quelle classe.',
+  pts:['Inscription avec nom, prénom, classe demandée, e-mail et mot de passe','Confirmation de l’adresse, puis validation et attribution de classe par l’enseignant','Blocage, déblocage ou révocation d’un accès sans détruire les évaluations','Suppression définitive d’un élève distincte, avec confirmation'],who:['Enseignant','Élève']}
+];
+let onSet=new Set([0]),focusIdx=0;
+const modEl=$('#modules');
+modEl.innerHTML=circuits.map((c,i)=>`<button class="mod" type="button" data-i="${i}" aria-pressed="false"><span class="q">${c.q}</span><span class="sw"></span><span class="nm">${esc(c.nm)}</span><span class="ref">${esc(c.ref)}</span><span class="led"></span></button>`).join('');
+$('#labelstrip').innerHTML=circuits.map(c=>`<span>${c.q} ${esc(c.strip)}</span>`).join('');
+function renderModules(){
+  modEl.querySelectorAll('.mod').forEach(b=>{const i=+b.dataset.i;b.setAttribute('aria-pressed',String(onSet.has(i)));b.setAttribute('aria-label',circuits[i].q+' '+circuits[i].nm+(onSet.has(i)?' : enclenché':' : déclenché'))});
+  const c=circuits[focusIdx];
+  $('#circuitDetail').innerHTML=`<div><span class="q-id">${c.q} · départ ${onSet.has(focusIdx)?'enclenché':'déclenché'}</span><h3>${esc(c.t)}</h3><p class="d">${esc(c.d)}</p><div class="who">${c.who.map(w=>`<span class="tag">${w}</span>`).join('')}</div></div><ul>${c.pts.map(p=>`<li>${esc(p)}</li>`).join('')}</ul>`;
+  updateCount();
+}
+function updateCount(){$('#cVal').textContent=(live?onSet.size:0)+' / '+circuits.length}
+modEl.addEventListener('click',e=>{const b=e.target.closest('.mod');if(!b)return;const i=+b.dataset.i;
+  if(onSet.has(i)&&focusIdx===i){onSet.delete(i)}else{onSet.add(i);focusIdx=i}
+  if(!onSet.has(i)&&focusIdx===i){/* garde la fiche visible */}
+  focusIdx=i;renderModules()});
+renderModules();
+
+/* ───── Q2 : évaluation ───── */
+const C=id=>MELEC.competencies.find(c=>c.id===id);
+const crits=[{id:'C2',w:1,v:'2'},{id:'C5',w:2,v:'3'},{id:'C6',w:2,v:'2'},{id:'C7',w:2,v:'1'},{id:'C10',w:1,v:'ne'}];
+const levels=[['ne','NE','Non évalué'],['0','N1','Niveau 1'],['1','N2','Niveau 2'],['2','N3','Niveau 3'],['3','N4','Niveau 4']];
+$('#critList').innerHTML=crits.map((c,i)=>`<div class="crit"><div class="c-l"><span class="code">${c.id}</span><span class="t">${esc(C(c.id).label)}<span class="w">Poids ${c.w} · ${c.w===2?'essentielle':'secondaire'} · ${C(c.id).unit}</span></span></div><div class="levels" role="radiogroup" aria-label="Niveau pour ${c.id}">${levels.map(l=>`<button type="button" role="radio" data-r="${i}" data-v="${l[0]}" aria-checked="${c.v===l[0]}" title="${l[2]}">${l[1]}</button>`).join('')}</div></div>`).join('');
+$('#critList').addEventListener('click',e=>{const b=e.target.closest('button[data-r]');if(!b)return;const c=crits[+b.dataset.r];c.v=b.dataset.v;b.parentNode.querySelectorAll('button').forEach(x=>x.setAttribute('aria-checked',String(x===b)));computeNote()});
+$('#critList').addEventListener('keydown',e=>{const b=e.target.closest('button[data-r]');if(!b||!['ArrowRight','ArrowLeft'].includes(e.key))return;e.preventDefault();const sib=[...b.parentNode.children];let k=sib.indexOf(b)+(e.key==='ArrowRight'?1:-1);k=(k+sib.length)%sib.length;sib[k].focus();sib[k].click()});
+(function scale(){
+  const g=$('#gScale');let h='';const cx=120,cy=128,R=100;
+  const P=(a,r)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+  const arc=(n0,n1,r,col,w)=>{const a0=Math.PI+n0/20*Math.PI,a1=Math.PI+n1/20*Math.PI,p0=P(a0,r),p1=P(a1,r);return `<path d="M${p0[0].toFixed(1)} ${p0[1].toFixed(1)} A${r} ${r} 0 0 1 ${p1[0].toFixed(1)} ${p1[1].toFixed(1)}" fill="none" stroke="${col}" stroke-width="${w}"/>`};
+  h+=arc(0,10,R+5,'#e7a7a5',6)+arc(10,20,R+5,'#a6d9b5',6);
+  for(let i=0;i<=40;i++){const n=i/2,a=Math.PI+n/20*Math.PI,big=i%10===0,mid=i%2===0,o=P(a,R),inn=P(a,big?R-14:mid?R-9:R-5);
+    h+=`<line x1="${o[0].toFixed(1)}" y1="${o[1].toFixed(1)}" x2="${inn[0].toFixed(1)}" y2="${inn[1].toFixed(1)}" stroke="#14263d" stroke-width="${big?2:1}"/>`;
+    if(big){const t=P(a,R-26);h+=`<text x="${t[0].toFixed(1)}" y="${(t[1]+4).toFixed(1)}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600" fill="#14263d">${n}</text>`}}
+  g.innerHTML=h;
+})();
+function computeNote(){
+  let s=0,w=0,n=0;crits.forEach(c=>{if(c.v==='ne')return;s+=(+c.v/3)*c.w;w+=c.w;n++});
+  const note=w?20*s/w:null;
+  $('#noteVal').textContent=note===null?'—':fr(note);
+  $('#evalCount').textContent=n+' / '+crits.length+' compétences évaluées';
+  $('#evalSum').textContent='Σ poids = '+w;
+  const deg=note===null?0:note/20*180;
+  $('#needle').style.transition=reduce?'none':'transform .7s cubic-bezier(.3,1.5,.5,1)';
+  $('#needle').style.transformOrigin='120px 128px';
+  $('#needle').style.transform=`rotate(${deg}deg)`;
+}
+computeNote();
+
+/* ───── Q3 : TP ───── */
+const TOTAL=210,SPEED=15;let tpState='idle',elapsed=0,tpRaf=0,tpLast=0;
+const arcLen=2*Math.PI*88;
+$('#dialTicks').innerHTML=Array.from({length:22},(_,i)=>{const m=i*10;if(m>TOTAL)return'';const a=m/TOTAL*2*Math.PI,big=m%30===0,r0=big?72:76;return `<line x1="${100+r0*Math.cos(a)}" y1="${100+r0*Math.sin(a)}" x2="${100+80*Math.cos(a)}" y2="${100+80*Math.sin(a)}" stroke="${big?'#93abc7':'#1e4569'}" stroke-width="${big?2:1.5}"/>`}).join('');
+const rubs=['Manuel numérique','Travaux dirigés','Référentiel','CCF formatif','CCF certificatif'];
+function hm(m){m=Math.max(0,Math.ceil(m));return Math.floor(m/60)+':'+String(m%60).padStart(2,'0')}
+function renderTP(){
+  const rem=TOTAL-elapsed;
+  $('#dialArc').setAttribute('stroke-dashoffset',String(arcLen*(elapsed/TOTAL)));
+  $('#dialArc').setAttribute('stroke',tpState==='locked'?'#ff5a5f':rem<30&&tpState==='running'?'#f6b93b':'#ff8a1e');
+  $('#tpTime').textContent=tpState==='locked'?'0:00':hm(rem);
+  $('#tpLabel').textContent=tpState==='idle'?'non démarré':tpState==='running'?'restant':'verrouillé';
+  const tpLamp=tpState==='idle'?['wait','prêt à démarrer']:tpState==='running'?['on','ouvert']:['off','verrouillé'];
+  $('#tpLamps').innerHTML=`<div><span class="lamp ${tpLamp[0]}"></span>TP en atelier<em>${tpLamp[1]}</em></div>`+rubs.map(r=>{const blocked=tpState==='running';return `<div><span class="lamp ${blocked?'off':'on'}"></span>${r}<em>${blocked?'indisponible':'accessible'}</em></div>`}).join('');
+  const cur=tpState==='idle'?0:tpState==='running'?(elapsed<4?1:2):3;
+  document.querySelectorAll('#tpSteps li').forEach((li,i)=>li.classList.toggle('cur',i===cur));
+}
+function tpTick(ts){const dt=tpLast?(ts-tpLast)/1000:0;tpLast=ts;elapsed=Math.min(TOTAL,elapsed+dt*SPEED);
+  if(elapsed>=TOTAL){tpState='locked';renderTP();$('#tpLog').textContent='Échéance atteinte : TP verrouillé. Les autres rubriques sont de nouveau accessibles. L’enseignant peut accorder une prolongation.';$('#tpStart').hidden=true;$('#tpReset').hidden=false;tpRaf=0;return}
+  renderTP();tpRaf=requestAnimationFrame(tpTick)}
+$('#tpStart').addEventListener('click',()=>{if(tpState!=='idle')return;tpState='running';elapsed=0;tpLast=0;
+  const d=new Date();$('#tpLog').textContent='Heure de début enregistrée : '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'. Fin prévue à '+new Date(d.getTime()+TOTAL*60000).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'.';
+  $('#tpStart').disabled=true;$('#tpStart').textContent='TP en cours…';tpRaf=requestAnimationFrame(tpTick)});
+$('#tpReset').addEventListener('click',()=>{cancelAnimationFrame(tpRaf);tpState='idle';elapsed=0;$('#tpStart').hidden=false;$('#tpStart').disabled=false;$('#tpStart').textContent='Ouvrir le TP et démarrer 3 h 30';$('#tpReset').hidden=true;$('#tpLog').textContent='Démonstration accélérée : 210 minutes défilent en 14 secondes.';renderTP()});
+renderTP();
+
+/* ───── Q4 : référentiel ───── */
+const blockColor={B1:'var(--b1)',B2:'var(--b2)',B3:'var(--b3)'};
+const comps=MELEC.competencies;
+$('#figures').innerHTML=[[MELEC.activities.length,'activités'],[MELEC.tasks.length,'tâches'],[comps.length,'compétences'],[comps.reduce((s,c)=>s+c.criteria.length,0),'critères'],[MELEC.blocks.length,'blocs de certification'],[MELEC.sectors.length,'secteurs']].map(([n,l])=>`<div><b>${n}</b><span>${l}</span></div>`).join('');
+let mx=`<thead><tr><th class="corner">Tâche \\ Compétence</th>${comps.map(c=>`<th style="--bc:${blockColor[c.block]}"><button class="cbtn" type="button" data-c="${c.id}" title="${esc(c.label)}">${c.id}</button></th>`).join('')}</tr></thead><tbody>`;
+MELEC.activities.forEach(a=>{
+  mx+=`<tr class="grp"><th colspan="${comps.length+1}">${a.id} · ${esc(a.label)}</th></tr>`;
+  MELEC.tasks.filter(t=>t.activity===a.id).forEach(t=>{
+    mx+=`<tr data-t="${t.id}"><th scope="row"><button class="tbtn" type="button" data-t="${t.id}"><b>${t.id}</b><span>${esc(t.label)}</span></button></th>${comps.map(c=>{const w=(MELEC.links[t.id]||{})[c.id];return `<td class="cell" data-c="${c.id}" data-t="${t.id}" style="--bc:${blockColor[c.block]}">${w?`<i class="w${w}" title="${t.id} · ${c.id} · poids ${w}"></i>`:''}</td>`}).join('')}</tr>`;
+  });
+});
+$('#matrix').innerHTML=mx+'</tbody>';
+const mxEl=$('#matrix');
+function mark(cls,c,t){mxEl.querySelectorAll('.'+cls).forEach(e=>e.classList.remove(cls));
+  if(c)mxEl.querySelectorAll(`[data-c="${c}"]`).forEach(e=>(e.tagName==='BUTTON'?e.parentNode:e).classList.add(cls));
+  if(t)mxEl.querySelectorAll(`tr[data-t="${t}"] > *`).forEach(e=>e.classList.add(cls));}
+function showComp(id){const c=C(id);mark('sel',id,null);
+  const tasks=MELEC.tasks.filter(t=>(MELEC.links[t.id]||{})[id]);
+  $('#inspector').innerHTML=`<span class="eyebrow">Compétence</span><h3><span class="code" style="background:color-mix(in srgb,${blockColor[c.block]} 22%,transparent);color:var(--ink)">${c.id}</span> ${esc(c.label)}</h3><div class="meta"><span class="tag">Bloc ${c.block}</span><span class="tag">Unité ${c.unit}</span><span class="tag">${c.criteria.length} critères</span></div><h4>Critères d’évaluation</h4><ul>${c.criteria.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><h4>Savoirs associés</h4><div class="chips">${c.knowledge.map(k=>`<span class="tag">${esc(MELEC.knowledge[k])}</span>`).join('')}</div><h4>Attitudes professionnelles</h4><div class="chips">${c.attitudes.map(a=>`<span class="tag">${a} · ${esc(MELEC.attitudes[a])}</span>`).join('')}</div><h4>Mobilisée par ${tasks.length} tâches</h4><div class="chips">${tasks.map(t=>`<span class="tag">${t.id} · poids ${MELEC.links[t.id][id]}</span>`).join('')}</div>`}
+function showTask(id){const t=MELEC.tasks.find(x=>x.id===id),a=MELEC.activities.find(x=>x.id===t.activity),l=MELEC.links[id]||{};mark('sel',null,id);
+  $('#inspector').innerHTML=`<span class="eyebrow">Tâche · ${a.id} ${esc(a.label)}</span><h3><span class="code">${t.id}</span> ${esc(t.label)}</h3><div class="meta"><span class="tag">Autonomie ${t.autonomy.toLowerCase()}</span><span class="tag">${Object.keys(l).length} compétences</span></div><h4>Compétences mobilisées</h4><ul>${Object.entries(l).sort((x,y)=>y[1]-x[1]).map(([cid,w])=>`<li><b>${cid}</b> · ${esc(C(cid).label)} <span class="mono" style="color:var(--muted);font-size:.75rem">(poids ${w}, ${w===2?'essentielle':'secondaire'})</span></li>`).join('')}</ul>`}
+mxEl.addEventListener('click',e=>{const b=e.target.closest('[data-c],[data-t]');if(!b)return;
+  if(b.classList.contains('cbtn'))showComp(b.dataset.c);else if(b.classList.contains('tbtn'))showTask(b.dataset.t);else if(b.classList.contains('cell'))showComp(b.dataset.c)});
+mxEl.addEventListener('mouseover',e=>{const td=e.target.closest('td.cell');if(td)mark('hl',td.dataset.c,td.dataset.t)});
+mxEl.addEventListener('mouseleave',()=>mark('hl',null,null));
+showComp('C4');
+$('#sectors').innerHTML='<span class="eyebrow" style="align-self:center;margin-right:6px">Secteurs d’activité</span>'+MELEC.sectors.map(s=>`<span class="tag">${esc(s)}</span>`).join('');
+
+/* ───── Q5 : schéma de publication ───── */
+const sw={theme:true,chap:true,lecon:true,cours:true,td:true,corr:false};
+const svg=$('#pubSvg');
+function kSym(id,x,y,label){ // interrupteur unipolaire, borne gauche à x
+  return `<g class="k" data-k="${id}" tabindex="0" role="switch" aria-label="${label}">
+    <rect class="hit" x="${x-10}" y="${y-42}" width="80" height="76" rx="6"/>
+    <line class="blade" x1="${x}" y1="${y}" x2="${x+56}" y2="${y}" style="transform-origin:${x}px ${y}px"/>
+    <circle class="term" cx="${x}" cy="${y}" r="5"/><circle class="term" cx="${x+60}" cy="${y}" r="5"/>
+    <text class="lb" x="${x+30}" y="${y+30}" text-anchor="middle">${label}</text>
+    <text class="st" x="${x+30}" y="${y-38}" text-anchor="middle" data-st="${id}"></text></g>`}
+function bulb(id,x,y,label){return `<g class="bulb" data-b="${id}"><circle cx="${x}" cy="${y}" r="15"/><path d="M${x-10.6} ${y-10.6}L${x+10.6} ${y+10.6}M${x+10.6} ${y-10.6}L${x-10.6} ${y+10.6}"/><text class="lb" x="${x+26}" y="${y+5}">${label}</text></g>`}
+const Y0=70,BUS=520,BR=[{k:'cours',y:70,l:'Manuel numérique'},{k:'td',y:170,l:'Travaux dirigés'},{k:'corr',y:270,l:'Correction des TD'}];
+svg.innerHTML=`
+ <text x="20" y="32">ENSEIGNANT</text>
+ <circle cx="30" cy="${Y0}" r="7" fill="none" stroke="var(--volt)" stroke-width="2"/>
+ <path class="w on" id="w0" d="M37 ${Y0} H120"/>
+ ${kSym('theme',120,Y0,'Thème')}
+ <path class="w" id="w1" d="M180 ${Y0} H250"/>
+ ${kSym('chap',250,Y0,'Chapitre')}
+ <path class="w" id="w2" d="M310 ${Y0} H380"/>
+ ${kSym('lecon',380,Y0,'Leçon')}
+ <path class="w" id="w3" d="M440 ${Y0} H${BUS} V${BR[2].y}"/>
+ <circle cx="${BUS}" cy="${BR[1].y}" r="4" fill="var(--muted)"/>
+ ${BR.map((b,i)=>`<path class="w" id="wa${i}" d="M${BUS} ${b.y} H580"/>${kSym(b.k,580,b.y,b.k==='cours'?'Cours':b.k==='td'?'TD':'Correction')}<path class="w" id="wb${i}" d="M640 ${b.y} H${b.k==='cours'?700:700}"/>${bulb(b.k,715,b.y,b.l)}`).join('')}
+ <text x="${BUS-6}" y="${BR[2].y+46}" text-anchor="end">Leçon · 3 sections</text>`;
+function renderPub(){
+  svg.querySelectorAll('.k').forEach(g=>{const id=g.dataset.k,on=sw[id];g.setAttribute('aria-checked',String(on));
+    g.querySelector('.blade').style.transform=on?'rotate(0deg)':'rotate(-32deg)';
+    const st=g.querySelector('[data-st]');st.textContent=on?'PUBLIÉ':'BROUILLON';st.style.fill=on?'var(--live)':'var(--muted)'});
+  const a=sw.theme,b=a&&sw.chap,c=b&&sw.lecon;
+  $('#w1').classList.toggle('on',a);$('#w2').classList.toggle('on',b);$('#w3').classList.toggle('on',c);
+  const vis={};BR.forEach((r,i)=>{$('#wa'+i).classList.toggle('on',c);vis[r.k]=c&&sw[r.k];$('#wb'+i).classList.toggle('on',vis[r.k]);svg.querySelector(`[data-b="${r.k}"]`).classList.toggle('on',vis[r.k])});
+  const why=!a?'Le thème est en brouillon':!b?'Le chapitre est en brouillon':!c?'La leçon est en brouillon':'';
+  $('#studentView').innerHTML=`
+   <div class="capsule ${vis.cours?'on':''}"><strong><span class="lamp ${vis.cours?'on':'off'}"></span>Manuel numérique</strong><span>${vis.cours?'Leçon visible : le cours s’affiche avec son sommaire.':why||'Cours en brouillon : rien n’apparaît.'}</span></div>
+   <div class="capsule ${vis.td?'on':''}"><strong><span class="lamp ${vis.td?'on':'off'}"></span>Travaux dirigés</strong><span>${vis.td?'Le TD est consultable.':why||'TD en brouillon : rien n’apparaît.'}</span></div>
+   <div class="capsule ${vis.corr?'on':''}"><strong><span class="lamp ${vis.corr?'on':'off'}"></span>Correction des TD</strong><span>${vis.corr?'L’élève peut basculer du TD vers sa correction.':why||'Correction gardée en brouillon : l’onglet reste caché.'}</span></div>`;
+}
+function toggleK(g){const id=g.dataset.k;sw[id]=!sw[id];renderPub()}
+svg.addEventListener('click',e=>{const g=e.target.closest('.k');if(g)toggleK(g)});
+svg.addEventListener('keydown',e=>{const g=e.target.closest('.k');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toggleK(g)}});
+renderPub();
+})();
+</script>
+<script src="portal-api.js?v=20260930-storage-retry3"></script>
+<script src="portal-contact.js?v=20260925-1"></script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  const version='153';
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v='+version,{updateViaCache:'none'}).then(reg=>reg.update()).catch(console.error));
+}
+</script>
 </body>
 </html>
-
