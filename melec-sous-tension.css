@@ -547,8 +547,8 @@ html body:not(#st-a):not(#st-b) .content .view :is(.task-line>div>strong){
 html body:not(#st-a):not(#st-b) .content .view .referential-section>summary span,
 html body:not(#st-a):not(#st-b) .content .view .referential-activity>summary span{color:var(--st-muted)!important}
 /* Pastilles CCF : texte foncé sur couleur */
-html body:not(#st-a):not(#st-b) .content .view td .ccf-pill,
-html body:not(#st-a):not(#st-b) .content .view td .ccf-pill *{color:#0b1a2c!important}
+html body:not(#st-a):not(#st-b) .content .view td .ccf-pill:not(#st-z),
+html body:not(#st-a):not(#st-b) .content .view td .ccf-pill:not(#st-z) *{color:#0b1a2c!important}
 /* Petits compteurs et étapes */
 html body:not(#st-a):not(#st-b) .content .view .stat span{color:var(--st-muted)!important}
 html body:not(#st-a):not(#st-b) .content .view .stat strong{color:var(--st-ink)!important;font-family:var(--st-f-display)!important;font-size:2rem}
@@ -606,3 +606,9 @@ html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(
 }
 html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .lesson-block *{-webkit-text-fill-color:initial!important}
 html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .lesson-block :is(h1,h2,h3,h4,h5,strong,b,label,p,li,td,th,span,em){color:revert-layer}
+/* Groupes d'élèves */
+html body:not(#st-a):not(#st-b) .content .view .student-group-item{background:var(--st-lv2)!important;background-image:none!important;border-color:var(--st-wire)!important;color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .content .view .student-group-item :is(p,.group-edit-hint){color:var(--st-muted)!important}
+html body:not(#st-a):not(#st-b) .content .view .student-group-chip:not(#st-z){background:transparent!important;border:1px solid var(--st-arc)!important;color:#bfe2ff!important;font-family:var(--st-f-mono)!important;border-radius:3px!important}
+html body:not(#st-a):not(#st-b) .content .view td .ccf-pill:is(.darkgreen,.red):not(#st-z),
+html body:not(#st-a):not(#st-b) .content .view td .ccf-pill:is(.darkgreen,.red):not(#st-z) *{color:#fff!important}
