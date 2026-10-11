@@ -313,7 +313,7 @@
     try {
       const newRows = [...selected].filter(id => !existing.some(row => row.student_id === id)).map(student_id => ({tp_id:tpId,student_id}));
       if (newRows.length) await api.rest('tp_assignments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newRows)});
-      for (const row of removed) await api.rest('tp_assignments?id=eq.' + encodeURIComponent(row.id),{method:'DELETE'});
+      if (removed.length) await api.rest('tp_assignments?id=in.(' + removed.map(row => encodeURIComponent(row.id)).join(',') + ')',{method:'DELETE'});
       const item = items.find(candidate => candidate.id === tpId);
       if (selected.size && item && !item.published) {
         const chapter = chapters.find(candidate => candidate.id === item.chapter_id);

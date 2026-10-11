@@ -243,11 +243,14 @@
   }
   save = function () {
     try { if (userId) localStorage.removeItem(REVISION_PREFIX + userId); } catch { /* ne pas bloquer la sauvegarde */ }
-    originalSave();
-    if (!ready || !userId) return;
+    if (!ready || !userId) { originalSave(); return; }
+    // Une seule sérialisation de l'état : même contenu que originalSave() puis
+    // JSON.stringify({ data: state, revision }), deux fois moins de calcul à chaque clic.
+    const json = JSON.stringify(state);
+    localStorage.setItem(DATA_KEY, json);
     try {
       serial++;
-      localStorage.setItem(pendingKey(), JSON.stringify({ data: state, revision }));
+      localStorage.setItem(pendingKey(), '{"data":' + json + ',"revision":' + JSON.stringify(revision) + '}');
       status(conflicted ? 'Conflit : données locales préservées.' : 'Modifications en attente…', conflicted);
       if (!conflicted) scheduleUpload();
     } catch (error) {
