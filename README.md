@@ -15,3 +15,13 @@ Les fichiers de listes d'élèves, documents de travail et données temporaires 
 ## Évaluation
 
 Les niveaux NE, N1, N2, N3 et N4 permettent d'évaluer la maîtrise globale des compétences, les tâches et les critères. NE est exclu du calcul. La note sur 20 est calculée automatiquement à partir des niveaux renseignés et des poids des compétences.
+
+## Tests automatiques
+
+Les tests utilisent l’outil intégré à Node.js (version 20 ou plus), sans aucune dépendance à installer :
+
+```
+npm test
+```
+
+Ils vérifient la syntaxe de chaque script, la présence des fichiers appelés par les pages, la cohérence du référentiel, le calcul de la note pondérée, l’enregistrement des appréciations, la reprise de session enseignant et la file d’envoi vers Supabase, la fin d’évaluation, la réutilisation d’activité et le téléchargement des fichiers privés. Ils s’exécutent aussi automatiquement sur GitHub à chaque proposition de modification (onglet « Actions »).

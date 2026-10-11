@@ -1,0 +1,13 @@
+{
+  "name": "latelier-melec",
+  "version": "1.0.0",
+  "private": true,
+  "description": "L’Atelier MELEC — plateforme pédagogique Bac Pro MELEC (site statique GitHub Pages + Supabase).",
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
