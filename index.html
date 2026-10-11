@@ -43,10 +43,12 @@ a{color:inherit}
 :focus-visible{outline:2px solid var(--volt);outline-offset:3px;border-radius:4px}
 .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
 h1,h2,h3{text-wrap:balance;margin:0}
+body,body *{hyphens:manual;-webkit-hyphens:manual;word-break:normal;overflow-wrap:break-word}
+p,li,small,span,figcaption{text-wrap:pretty}
 p{margin:0}
 .mono{font-family:var(--f-mono)}
 .eyebrow{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.tag{display:inline-flex;align-items:center;gap:.4em;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;padding:.2em .55em;border:1px solid var(--wire);border-radius:3px;color:var(--muted);white-space:nowrap}
+.tag{display:inline-flex;align-items:center;gap:.4em;max-width:100%;white-space:normal!important;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;padding:.2em .55em;border:1px solid var(--wire);border-radius:3px;color:var(--muted);white-space:nowrap}
 
 /* ───────── Barre haute ───────── */
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:color-mix(in srgb,var(--night) 86%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid color-mix(in srgb,var(--wire) 70%,transparent)}
@@ -231,9 +233,15 @@ section.row-sec{padding-block:clamp(64px,9vw,120px);border-bottom:1px solid colo
 .figures div:last-child{border-right:0}
 .figures b{display:block;font-family:var(--f-display);font-weight:900;font-size:2.2rem;line-height:1}
 .figures span{font-family:var(--f-mono);font-size:.68rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
-.ref-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,360px);gap:22px;align-items:start}
+.ref-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;align-items:start}
 .mx-wrap{overflow-x:auto;border:1px solid var(--wire);border-radius:8px;background:var(--panel)}
-table.mx{border-collapse:collapse;min-width:760px;width:100%;font-size:.8rem}
+table.mx{border-collapse:separate;border-spacing:0;min-width:720px;width:100%;font-size:.8rem}
+.mx tbody th[scope=row],.mx thead th.corner{position:sticky;left:0;z-index:2;background:var(--panel)}
+.mx thead th.corner{z-index:3;background:var(--panel-2)}
+.mx-hint{display:none;font-family:var(--f-mono);font-size:.72rem;color:var(--volt);margin:0 0 8px}
+.mx-wrap.scrolls+.legend{margin-top:12px}
+.ref-scroll .mx-hint{display:block}
+@media (max-width:700px){.schema-hint{display:block}}
 .mx th,.mx td{border-bottom:1px solid color-mix(in srgb,var(--wire) 60%,transparent);padding:0}
 .mx thead th{position:sticky;top:0;background:var(--panel-2);z-index:1}
 .mx thead th.corner{text-align:left;padding:10px 12px;font-family:var(--f-mono);font-size:.68rem;color:var(--muted);font-weight:400}
@@ -241,7 +249,7 @@ table.mx{border-collapse:collapse;min-width:760px;width:100%;font-size:.8rem}
 .mx .cbtn{font-family:var(--f-mono);font-weight:600;font-size:.72rem;padding:10px 0 8px;border-bottom:3px solid var(--bc)}
 .mx .tbtn{display:grid;grid-template-columns:44px 1fr;gap:8px;text-align:left;padding:7px 12px;line-height:1.3}
 .mx .tbtn b{font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
-.mx .tbtn span{display:block;max-width:230px;font-weight:400;color:color-mix(in srgb,var(--ink) 88%,var(--muted))}
+.mx .tbtn span{display:block;min-width:150px;max-width:260px;font-weight:400;color:color-mix(in srgb,var(--ink) 88%,var(--muted))}
 .mx tr.grp th{text-align:left;padding:9px 12px;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;color:var(--volt);background:#071629;font-weight:600}
 .mx td.cell{text-align:center;width:38px;cursor:pointer}
 .mx td.cell i{display:inline-block;width:12px;height:12px;border-radius:50%}
@@ -252,14 +260,14 @@ table.mx{border-collapse:collapse;min-width:760px;width:100%;font-size:.8rem}
 .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-family:var(--f-mono);font-size:.7rem;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{display:inline-block;width:11px;height:11px;border-radius:50%}
-.insp{position:sticky;top:96px;border:1px solid var(--wire);border-radius:8px;background:var(--panel);padding:20px;min-width:0}
+.insp{position:static;border:1px solid var(--wire);border-radius:8px;background:var(--panel);padding:20px;min-width:0}
 .insp h3{font-size:1.15rem;line-height:1.3;margin-top:8px}
 .insp .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .insp h4{font-family:var(--f-mono);font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:18px 0 8px}
 .insp ul{margin:0;padding-left:18px;display:grid;gap:5px;font-size:.86rem;line-height:1.45}
 .insp .chips{display:flex;flex-wrap:wrap;gap:6px}
 .insp .chips .tag{white-space:normal}
-@media (max-width:980px){.ref-grid{grid-template-columns:1fr}.insp{position:static}}
+@media (min-width:900px){.insp ul{columns:2 300px;column-gap:32px}.insp ul li{break-inside:avoid}}
 .sectors{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
 .sectors .tag{font-size:.74rem;padding:.4em .7em}
 
@@ -268,7 +276,7 @@ table.mx{border-collapse:collapse;min-width:760px;width:100%;font-size:.8rem}
 .schema{overflow-x:auto;border:1px solid var(--wire);border-radius:8px;background:
   linear-gradient(color-mix(in srgb,var(--wire) 25%,transparent) 1px,transparent 1px) 0 0/20px 20px,
   linear-gradient(90deg,color-mix(in srgb,var(--wire) 25%,transparent) 1px,transparent 1px) 0 0/20px 20px,#061325}
-.schema svg{display:block;min-width:700px;width:100%;height:auto}
+.schema svg{display:block;min-width:620px;width:100%;height:auto}
 .schema .w{stroke:var(--wire);stroke-width:3;fill:none;transition:stroke .3s}
 .schema .w.on{stroke:var(--volt);filter:drop-shadow(0 0 4px color-mix(in srgb,var(--volt) 70%,transparent))}
 .schema .k{cursor:pointer}
@@ -294,7 +302,7 @@ table.mx{border-collapse:collapse;min-width:760px;width:100%;font-size:.8rem}
 .capsule strong{font-size:.9rem;display:flex;align-items:center;gap:8px}
 .capsule span{font-size:.82rem;color:var(--muted)}
 .pub-note{font-size:.86rem;color:var(--muted);margin-top:14px;line-height:1.55}
-@media (max-width:980px){.pub{grid-template-columns:1fr}}
+@media (max-width:1100px){.pub{grid-template-columns:1fr}}
 
 /* ───────── Q6 : nomenclature ───────── */
 .nomen-wrap{overflow-x:auto;border:1px solid var(--wire);border-radius:8px}
@@ -316,7 +324,7 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
 .final h2{font-family:var(--f-display);font-weight:900;text-transform:uppercase;font-size:clamp(2.6rem,8vw,6.2rem);line-height:.88;max-width:14ch}
 .final h2 em{font-style:normal;color:var(--volt)}
 .final .entries{margin-top:36px}
-.cartouche{margin-block:0 clamp(28px,4vw,48px);display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));border:2px solid var(--muted);font-family:var(--f-mono);font-size:.72rem}
+.cartouche{margin-block:0 clamp(28px,4vw,48px);display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));border:2px solid var(--muted);font-family:var(--f-mono);font-size:.72rem}
 .cartouche>div{padding:10px 12px;border-left:1px solid var(--muted);min-width:0}
 .cartouche>div:first-child{border-left:0;display:flex;align-items:center;gap:10px}
 .cartouche img{width:42px;height:42px}
@@ -356,7 +364,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
       <a href="#tp"><span>Q3</span>TP 3 h 30</a>
       <a href="#referentiel"><span>Q4</span>Référentiel</a>
       <a href="#manuel"><span>Q5</span>Publier</a>
-      <a href="#architecture"><span>Q6</span>Architecture</a>
     </nav>
     <a class="cta-top" href="#contact">Contacter<span class="lg"> l’enseignant</span></a>
   </div>
@@ -468,10 +475,10 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
     </div>
     <div class="tp">
       <ol class="steps" id="tpSteps">
-        <li class="cur"><div><strong>Le TP est attribué</strong><span>L’enseignant joint le PDF du sujet et le dossier technique, publie le TP et l’associe aux comptes élèves.</span></div></li>
-        <li><div><strong>L’élève démarre</strong><span>Le bouton « Ouvrir le TP et démarrer 3 h 30 » enregistre l’heure de début.</span></div></li>
-        <li><div><strong>L’épreuve est en cours</strong><span>L’élève consulte le PDF et répond avec les outils d’annotation. Manuel, TD, référentiel et CCF sont indisponibles.</span></div></li>
-        <li><div><strong>Le TP se verrouille</strong><span>Après 210 minutes, plus aucune réponse n’est possible. Le verrou s’applique dans l’interface et dans les règles d’accès aux données.</span></div></li>
+        <li class="cur"><div><strong>Le TP est attribué</strong><span>Sujet et dossier technique sont prêts pour les élèves choisis.</span></div></li>
+        <li><div><strong>L’élève démarre</strong><span>Un clic lance le chronomètre de 3 h 30.</span></div></li>
+        <li><div><strong>L’épreuve est en cours</strong><span>Le reste de l’espace élève est fermé.</span></div></li>
+        <li><div><strong>Le TP se verrouille</strong><span>Une prolongation reste possible.</span></div></li>
       </ol>
       <div class="chrono">
         <div class="dial-wrap">
@@ -507,6 +514,7 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
     <div class="figures" id="figures"></div>
     <div class="ref-grid">
       <div style="min-width:0">
+        <p class="mx-hint" id="mxHint">Faites glisser le tableau pour voir les 13 compétences →</p>
         <div class="mx-wrap"><table class="mx" id="matrix"></table></div>
         <div class="legend">
           <span><i style="background:var(--b1)"></i>Bloc B1 · U2 Préparation</span>
@@ -532,6 +540,7 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
       </div>
     </div>
     <div class="pub">
+      <p class="mx-hint schema-hint">Faites glisser le schéma pour le voir en entier →</p>
       <div class="schema">
         <svg id="pubSvg" viewBox="0 0 900 340" role="group" aria-label="Schéma de publication d’une leçon"></svg>
       </div>
@@ -541,38 +550,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
           <div class="view-b" id="studentView"></div>
         </div>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═════ Q6 ARCHITECTURE ═════ -->
-<section class="row-sec" id="architecture" aria-labelledby="t6">
-  <div class="wrap">
-    <div class="sec-head">
-      <div class="rep">Q6<small>Architecture</small></div>
-      <div>
-        <h2 id="t6">Nomenclature<br><em>de l’installation</em></h2>
-      </div>
-    </div>
-    <div class="nomen-wrap">
-      <table class="nomen">
-        <thead><tr><th>Repère</th><th>Désignation</th><th>Fonction</th><th>Technologie</th></tr></thead>
-        <tbody>
-          <tr><td>F1</td><td>Interface web</td><td>Espaces enseignant et élève, portail d’accueil, adaptés au PC, à la tablette et au smartphone. Installable comme une application.</td><td>HTML · CSS · JS<br>GitHub Pages</td></tr>
-          <tr><td>A1</td><td>Comptes</td><td>Connexion enseignant, inscription élève avec confirmation de l’adresse e-mail, puis validation et attribution de classe par l’enseignant.</td><td>Supabase Auth</td></tr>
-          <tr><td>B1</td><td>Base de données</td><td>Classes, profils, activités, évaluations, manuel, TP et messages. Chaque table est protégée par des règles d’accès ligne par ligne.</td><td>PostgreSQL · RLS</td></tr>
-          <tr><td>S1</td><td>Stockage privé</td><td>PDF des TP, dossiers techniques et images du manuel, servis uniquement aux comptes autorisés.</td><td>Storage · melec-private</td></tr>
-          <tr><td>E1</td><td>Gestion des accès</td><td>Valider, bloquer, débloquer ou révoquer un compte élève, renvoyer une confirmation.</td><td>Edge · melec-access</td></tr>
-          <tr><td>E2</td><td>Contact</td><td>Formulaire « Contacter l’enseignant » depuis l’accueil et l’espace élève, avec protection anti-robot.</td><td>Edge · melec-contact</td></tr>
-          <tr><td>W1</td><td>Cache hors ligne</td><td>Chargement rapide des ressources statiques, versionné à chaque livraison.</td><td>Service worker</td></tr>
-          <tr><td>X1</td><td>Documents</td><td>Lecture des PDF de TP, fiches d’activité, exports des notes en CSV.</td><td>PDF.js · jsPDF · SheetJS</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="guards">
-      <div><strong>Chacun ses résultats</strong><p>Un élève ne voit que ses propres évaluations de CCF formatif et certificatif. Le récapitulatif CCF de la classe reste réservé à l’enseignant.</p></div>
-      <div><strong>Aucun secret côté navigateur</strong><p>Seule la clé publique figure dans le site. Les clés de service et les identifiants d’envoi d’e-mails restent dans Supabase.</p></div>
-      <div><strong>Suppressions confirmées</strong><p>Supprimer un thème, un chapitre ou une leçon affiche ses conséquences et exige la saisie de SUPPRIMER avant d’agir.</p></div>
     </div>
   </div>
 </section>
@@ -599,7 +576,7 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
 <section class="row-sec" id="contact" aria-labelledby="contactTitle">
   <div class="wrap">
     <div class="sec-head">
-      <div class="rep">Q8<small>Contact</small></div>
+      <div class="rep">Q6<small>Contact</small></div>
       <div>
         <h2 id="contactTitle">Une question ?<br><em>Écrivez à l’enseignant</em></h2>
       </div>
@@ -625,7 +602,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
     <div><img src="logo-bac-pro-melec-v3.webp" alt="Logo BAC PRO MELEC" width="42" height="42"><div><small>Ouvrage</small><b>L’Atelier MELEC</b></div></div>
     <div><small>Diplôme</small><b>Bac Pro MELEC</b></div>
     <div><small>Référentiel</small><b>Arrêté du 1er mars 2024 · JORF n°57</b></div>
-    <div><small>Hébergement</small><b>GitHub Pages · Supabase</b></div>
     <div><small>Folio</small><b>1 / 1 · Indice 2026-10</b></div>
   </div>
 </footer>
@@ -729,25 +705,25 @@ setTimeout(()=>setLive(true),reduce?0:900);
 const circuits=[
  {q:'Q1',nm:'Activités',ref:'5 étapes',strip:'Activités',t:'Activités et évaluations',
   d:'L’enseignant construit une activité en cinq étapes : informations, compétences, tâches, critères, vérification. Il la rattache à une classe ou à un groupe, choisit les élèves, puis évalue critère par critère.',
-  pts:['Niveaux NE, N1, N2, N3, N4 et note sur 20 calculée automatiquement','Poids proposé par le référentiel : 2 pour une compétence essentielle, 1 pour une secondaire','Après verrouillage d’une évaluation, passage direct à l’élève suivant','Réutiliser une activité en changeant ses compétences, sans toucher l’original ni ses notes','Fiche d’activité imprimable et export des notes en CSV'],who:['Enseignant']},
+  pts:['Évaluation N1 à N4, note sur 20 automatique','Fiches d’activité imprimables','Export des notes'],who:['Enseignant']},
  {q:'Q2',nm:'Manuel numérique',ref:'cours',strip:'Manuel',t:'Manuel numérique',
   d:'Un manuel organisé par classe, thème, chapitre et leçon, écrit directement dans la plateforme avec un éditeur complet.',
-  pts:['Titres, listes, couleurs, surlignage, tableaux dimensionnés et vidéos','Images collées ou déposées dans le texte (PNG, JPG, WebP, GIF jusqu’à 10 Mo), déplaçables et redimensionnables','PDF et fichiers bureautiques en pièces jointes','Aperçu avant publication, avertissement avant de perdre une saisie','Lecture élève avec sommaire permanent, sans bouton de téléchargement'],who:['Enseignant','Élève']},
+  pts:['Cours par thème, chapitre et leçon','Textes, tableaux, images et vidéos','Lecture claire sur tous les écrans'],who:['Enseignant','Élève']},
  {q:'Q3',nm:'Travaux dirigés',ref:'TD + corr.',strip:'TD',t:'Travaux dirigés',
   d:'Les TD sont rattachés à la même leçon que le cours mais présentés séparément. La correction est une troisième section, publiée quand l’enseignant le décide.',
-  pts:['Capsule « Travaux dirigés » distincte du manuel côté élève','Bascule TD ↔ Correction des TD lorsque la correction est publiée','Navigation de leçon en leçon, précédente et suivante','Le cours ne se mélange jamais aux TD'],who:['Enseignant','Élève']},
+  pts:['TD séparés du cours','Correction publiée au bon moment','Navigation de leçon en leçon'],who:['Enseignant','Élève']},
  {q:'Q4',nm:'TP en atelier',ref:'210 min',strip:'TP',t:'TP en atelier',
   d:'Un sujet PDF et son dossier technique, attribués à des élèves précis, avec un chronomètre de 3 h 30 qui ne démarre qu’à la demande de l’élève.',
-  pts:['Création, publication, masquage et association des élèves par l’enseignant','Bouton explicite « Ouvrir le TP et démarrer 3 h 30 »','Manuel, TD, référentiel et CCF indisponibles pendant le TP','Verrouillage à l’échéance, prolongation accordée par l’enseignant','Réponses et annotations directement sur le PDF'],who:['Enseignant','Élève']},
+  pts:['Sujet PDF et dossier technique','Chronomètre de 3 h 30','Réponses directement sur le PDF'],who:['Enseignant','Élève']},
  {q:'Q5',nm:'Référentiel',ref:'C1 → C13',strip:'Référentiel',t:'Référentiel Bac Pro MELEC',
   d:'Le référentiel officiel est consultable par tous et alimente la création des activités.',
-  pts:['5 activités, 17 tâches avec leur niveau d’autonomie, 13 compétences','Critères d’évaluation officiels pour chaque compétence','Savoirs associés et attitudes professionnelles AP1 à AP5','Blocs B1 (U2), B2 (U31) et B3 (U32)'],who:['Enseignant','Élève']},
+  pts:['13 compétences, 17 tâches','Critères officiels','Savoirs et attitudes professionnelles'],who:['Enseignant','Élève']},
  {q:'Q6',nm:'Résultats & CCF',ref:'formatif · certif.',strip:'CCF',t:'Résultats et CCF',
   d:'Le suivi des notes et le récapitulatif CCF de la classe pour l’enseignant, les seuls résultats personnels pour l’élève.',
-  pts:['Notes et moyennes par élève, avec le nombre d’activités réellement évaluées','Récap des CCF : activité, classe, groupe, élève, date, type et bilan','Compétences colorées par niveau, grands tableaux à défilement horizontal','Côté élève : CCF formatif et CCF certificatif, uniquement ses propres évaluations'],who:['Enseignant','Élève']},
+  pts:['Notes et moyennes par élève','Récapitulatif CCF de la classe','Chaque élève voit ses propres résultats'],who:['Enseignant','Élève']},
  {q:'Q7',nm:'Accès élèves',ref:'validation',strip:'Accès',t:'Accès élèves',
   d:'L’élève s’inscrit lui-même. L’enseignant garde la main sur qui entre dans quelle classe.',
-  pts:['Inscription avec nom, prénom, classe demandée, e-mail et mot de passe','Confirmation de l’adresse, puis validation et attribution de classe par l’enseignant','Blocage, déblocage ou révocation d’un accès sans détruire les évaluations','Suppression définitive d’un élève distincte, avec confirmation'],who:['Enseignant','Élève']}
+  pts:['Inscription en ligne','Validation par l’enseignant','Accès suspendu en un clic'],who:['Enseignant','Élève']}
 ];
 let onSet=new Set([0]),focusIdx=0;
 const modEl=$('#modules');
@@ -848,6 +824,7 @@ mxEl.addEventListener('click',e=>{const b=e.target.closest('[data-c],[data-t]');
 mxEl.addEventListener('mouseover',e=>{const td=e.target.closest('td.cell');if(td)mark('hl',td.dataset.c,td.dataset.t)});
 mxEl.addEventListener('mouseleave',()=>mark('hl',null,null));
 showComp('C4');
+const mxWrap=document.querySelector('.mx-wrap');const syncHint=()=>document.getElementById('referentiel').classList.toggle('ref-scroll',mxWrap.scrollWidth>mxWrap.clientWidth+2);syncHint();window.addEventListener('resize',syncHint);
 $('#sectors').innerHTML='<span class="eyebrow" style="align-self:center;margin-right:6px">Secteurs d’activité</span>'+MELEC.sectors.map(s=>`<span class="tag">${esc(s)}</span>`).join('');
 
 /* ───── Q5 : schéma de publication ───── */

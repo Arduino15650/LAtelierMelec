@@ -618,3 +618,23 @@ html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .stu
 html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .student-ccf-pill:not(#st-z) *{color:#102435!important}
 html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .student-ccf-pill.darkgreen:not(#st-z),
 html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .student-ccf-pill.darkgreen:not(#st-z) *{color:#fff!important}
+
+/* ==========================================================================
+   RETOURS À LA LIGNE MAÎTRISÉS (PC, tablette, smartphone)
+   Pas de césure automatique ni de mot coupé : un mot ne passe à la ligne
+   qu'entier ; seule une chaîne sans espace plus large que l'écran
+   (adresse, lien) peut être coupée.
+   ========================================================================== */
+html body *,html body *::before,html body *::after{
+  hyphens:manual!important;-webkit-hyphens:manual!important;
+  word-break:normal!important;overflow-wrap:break-word!important;
+}
+html body :is(h1,h2,h3,h4,legend,summary){text-wrap:balance}
+html body :is(p,li,small,label,td,dd){text-wrap:pretty}
+/* Le texte justifié du référentiel créait des trous et des coupures : aligné à gauche. */
+html body [style*="justify"],html body #referentialView :is(p,li,.bo-note,.task-line>div,.competence-body *){text-align:left!important;text-justify:auto!important}
+/* Sous-titre de la barre haute : affiché en entier, jamais tronqué en milieu de phrase. */
+html body .topbar .brand-copy p{display:block!important;-webkit-line-clamp:unset!important;overflow:visible!important;white-space:normal!important}
+/* Étapes du constructeur d'activité : elles passent à la ligne au lieu d'être masquées. */
+html body .view .stepper{flex-wrap:wrap!important;overflow:visible!important;row-gap:6px}
+html body .view .stepper>*{flex:1 1 140px!important;min-width:0!important}
