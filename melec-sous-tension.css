@@ -391,3 +391,224 @@ html body.portal-page #studentDashboard .portal-message{border-radius:5px!import
 @media (prefers-reduced-motion:reduce){
   html body #homeView .home-access .home-access-card{transition:none}
 }
+
+/* ==========================================================================
+   RUBRIQUES EN PANNEAUX SOMBRES (enseignant et élève)
+   Les deux :not(#…) ajoutent du poids aux sélecteurs pour passer devant
+   les feuilles existantes sans les modifier. Les documents (leçons, éditeur,
+   PDF) et les champs de saisie restent blancs pour la lecture et l'impression.
+   ========================================================================== */
+html body:not(#st-a):not(#st-b) .content :is(#homeView,#activitiesView,#activity-listView,#studentsView,#resultsView,#ccfView,#referentialView,#editorView,#teachingView){
+  color:var(--st-ink)!important;
+  --st-lv1:var(--st-panel);
+  --st-lv2:var(--st-panel-2);
+  --st-lv3:#123257;
+  /* Teintes de l'espace TP / manuel ramenées sur le panneau de nuit */
+  --teach-page:var(--st-panel);--teach-page-light:var(--st-panel-2);--teach-page-deep:#123257;
+  --teach-page-border:var(--st-wire);--teach-page-ink:var(--st-ink);
+  --activity-main:var(--st-panel-2);--activity-soft:var(--st-panel);--activity-border:var(--st-wire);
+  --line:var(--st-wire);--muted:var(--st-muted);--ink:var(--st-ink);
+  --melec-ink:var(--st-ink);
+}
+
+/* ---- Panneaux (niveau 1) ---- */
+html body:not(#st-a):not(#st-b) .content .view :is(
+  .panel,.teach-card,.stat,.activity-card,.activity-class-group,.class-fold,.activity-group-fold,
+  .referential-section,.referential-activity,.block-card,.task-line,.competence,.competence-body,
+  .evaluation-student,.evaluation-competency,.period-panel,.group-assignment,.excel-import,
+  .dashboard-table-wrap,.student-groups-panel,.activity-reuse-panel,.activity-overview-picker,
+  .ccf-compact-filters,.dashboard-filters,.grade-picker,.bo-note,.editor-footer,.workplace-empty,
+  .evaluation-welcome,.teach-message,.teach-student,.teach-tp-student,.teach-tp-card details,
+  .selection-dropdown,.ccf-student-picker,.student-navigation,.activity-reuse-students,
+  .activity-reuse-competencies,.group-member-list,.cards,.empty
+){
+  background:var(--st-lv1)!important;background-image:none!important;
+  border-color:var(--st-wire)!important;color:var(--st-ink)!important;
+}
+/* ---- Niveau 2 : éléments posés dans un panneau ---- */
+html body:not(#st-a):not(#st-b) .content .view :is(.panel,.teach-card,.activity-class-group,.class-fold,.referential-section,.referential-activity,.evaluation-student,.evaluation-competency,.group-assignment,.competence) :is(
+  .activity-card,.activity-group-fold,.activity-entry-body,.task-line,.competence-body,.block-card,
+  .evaluation-competency,.mastery-evaluation,.evaluation-group,.evaluation-criterion,.evaluation-student-head,
+  .automatic-score,.teach-card,.teach-message,.teach-student,.teach-tp-student,.group-member-row,
+  .activity-reuse-student,.student-navigation,.bo-note,.evaluation-scale-note,.panel,.competence,
+  .ccf-student-picker-body,.selection-dropdown,.empty
+){
+  background:var(--st-lv2)!important;background-image:none!important;
+  border-color:var(--st-wire)!important;color:var(--st-ink)!important;
+}
+html body:not(#st-a):not(#st-b) .content .view :is(.activity-card,.evaluation-competency,.teach-card .teach-card) :is(.activity-entry-body,.evaluation-criterion,.mastery-evaluation,.evaluation-group,.teach-student,.teach-tp-student){
+  background:var(--st-lv3)!important;
+}
+/* Sommaires dépliables */
+html body:not(#st-a):not(#st-b) .content .view summary{
+  background-color:transparent!important;color:var(--st-ink)!important;border-color:var(--st-wire)!important;
+}
+html body:not(#st-a):not(#st-b) .content .view :is(details[open]>summary){border-bottom:1px solid var(--st-wire)!important}
+html body:not(#st-a):not(#st-b) .content .view summary :is(strong,span){background-color:transparent!important;color:inherit!important}
+
+/* ---- Textes ---- */
+html body:not(#st-a):not(#st-b) .content .view :is(h1,h2,h3,h4,h5,legend,label,strong,b,dt,th,summary){color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .content .view :is(p,li,dd,td,small,em,.meta,.panel-title,.teach-help,.field-help,.workplace-empty){color:inherit}
+html body:not(#st-a):not(#st-b) .content .view :is(small,.meta,.teach-help,.field-help,.evaluation-none,.activity-meta){color:var(--st-muted)!important}
+html body:not(#st-a):not(#st-b) .content .view .panel-title,
+html body:not(#st-a):not(#st-b) .content .view :is(.panel,.teach-card)>:is(h2,h3){font-family:var(--st-f-display)!important;font-weight:800!important;text-transform:uppercase;letter-spacing:.02em;font-size:1.5rem!important;line-height:1.05}
+html body:not(#st-a):not(#st-b) .content .view :is(.evaluation-kicker,.home-kicker){color:var(--st-volt)!important;font-family:var(--st-f-mono)!important;letter-spacing:.14em}
+html body:not(#st-a):not(#st-b) .content .view a:not(.button){color:var(--st-arc)!important}
+
+/* ---- Petites étiquettes ---- */
+html body:not(#st-a):not(#st-b) .content .view :is(.evaluation-code,.evaluated-count,.autonomy,.unit-inline,.selection-count){
+  background:transparent!important;border:1px solid var(--st-wire)!important;color:var(--st-ink)!important;
+  font-family:var(--st-f-mono)!important;border-radius:3px!important;
+}
+html body:not(#st-a):not(#st-b) .content .view .autonomy.total{border-color:var(--st-live)!important;color:var(--st-live)!important}
+html body:not(#st-a):not(#st-b) .content .view .autonomy.partial{border-color:var(--st-volt)!important;color:#ffc28a!important}
+
+/* ---- Tableaux (résultats, CCF, vérification) ---- */
+html body:not(#st-a):not(#st-b) .content .view table{background:transparent!important;color:var(--st-ink)!important;border-color:var(--st-wire)!important}
+html body:not(#st-a):not(#st-b) .content .view :is(th,thead th){
+  background:#061325!important;background-image:none!important;color:var(--st-muted)!important;
+  font-family:var(--st-f-mono)!important;letter-spacing:.06em;border-color:var(--st-wire)!important;
+}
+html body:not(#st-a):not(#st-b) .content .view th *{color:inherit!important}
+html body:not(#st-a):not(#st-b) .content .view td{
+  background:var(--st-lv1)!important;background-image:none!important;color:var(--st-ink)!important;border-color:var(--st-wire)!important;
+}
+html body:not(#st-a):not(#st-b) .content .view tr:nth-child(even)>td{background:#0c2240!important}
+html body:not(#st-a):not(#st-b) .content .view td:is(.dashboard-bilan,.dashboard-average){background:rgba(63,224,138,.08)!important}
+html body:not(#st-a):not(#st-b) .content .view :is(td,th) :is(span,strong,small,b):not([class*="level"]):not(.chip):not(.ref-comp-badge){color:inherit!important}
+
+/* ---- Boutons dans les rubriques ---- */
+html body:not(#st-a):not(#st-b) .content .view :is(.button,button.button,.teach-card button:not(.evaluation-level)){
+  background:var(--st-panel-2)!important;border:1px solid var(--st-wire)!important;color:var(--st-ink)!important;
+  border-radius:4px!important;box-shadow:none!important;
+}
+html body:not(#st-a):not(#st-b) .content .view :is(.button,.teach-card button:not(.evaluation-level)):hover{border-color:var(--st-muted)!important;filter:none}
+html body:not(#st-a):not(#st-b) .content .view :is(.button.primary,button.primary,.teach-card button.primary):not(#st-z){
+  background:var(--st-volt)!important;border-color:var(--st-volt)!important;color:var(--st-volt-ink)!important;
+}
+html body:not(#st-a):not(#st-b) .content .view :is(.button.primary,button.primary):not(#st-z):hover{background:var(--st-volt-hi)!important}
+html body:not(#st-a):not(#st-b) .content .view :is(.button.danger,.button.delete,button.danger,.button[onclick*="remove"],.button[onclick*="delete"],.teach-danger):not(#st-z){
+  background:transparent!important;border-color:var(--st-fault)!important;color:#ff9a9d!important;
+}
+html body:not(#st-a):not(#st-b) .content .view button:disabled{opacity:.45}
+/* Onglets internes (CCF, TP, constructeur d'activité) */
+html body:not(#st-a):not(#st-b) .content .view :is(.ccf-submenu,.teach-tabs button,.steps .step,.editor-steps button){
+  background:var(--st-panel)!important;border:1px solid var(--st-wire)!important;color:var(--st-ink)!important;border-radius:4px!important;
+}
+html body:not(#st-a):not(#st-b) .content .view :is(.ccf-submenu.active,.teach-tabs button.active,.steps .step.active,.editor-steps button.active){
+  background:var(--st-volt)!important;border-color:var(--st-volt)!important;color:var(--st-volt-ink)!important;
+}
+
+/* ---- Niveaux d'évaluation : non choisis sombres, choisis en couleur ---- */
+html body:not(#st-a):not(#st-b) .content .view .evaluation-level{
+  background:#061325!important;border:1px solid var(--st-wire)!important;color:var(--st-muted)!important;
+}
+html body:not(#st-a):not(#st-b) .content .view .evaluation-level :is(strong,span){color:inherit!important}
+html body:not(#st-a):not(#st-b) .content .view .evaluation-level:hover:not(:disabled){border-color:var(--st-muted)!important;color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .content .view .evaluation-level.selected{color:#fff!important;border-color:transparent!important}
+html body:not(#st-a):not(#st-b) .content .view .evaluation-level.level-ne.selected{background:#6f7c8f!important}
+html body:not(#st-a):not(#st-b) .content .view .evaluation-level.level-n1.selected{background:#e43d30!important}
+html body:not(#st-a):not(#st-b) .content .view .evaluation-level.level-n2.selected{background:#f39c35!important;color:#1a0d00!important}
+html body:not(#st-a):not(#st-b) .content .view .evaluation-level.level-n3.selected{background:#78a82d!important}
+html body:not(#st-a):not(#st-b) .content .view .evaluation-level.level-n4.selected{background:#24713a!important}
+html body:not(#st-a):not(#st-b) .content .view .automatic-score strong{color:var(--st-volt)!important;font-family:var(--st-f-mono)!important}
+html body:not(#st-a):not(#st-b) .content .view .competency-score{color:var(--st-volt)!important;font-family:var(--st-f-mono)!important}
+
+/* ---- Documents et champs : restent blancs ---- */
+html body:not(#st-a):not(#st-b) .content .view :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea){
+  background-color:#fff!important;color:var(--st-paper-ink)!important;border-color:#9fb3c8!important;
+}
+html body:not(#st-a):not(#st-b) .content .view :is(input,textarea)::placeholder{color:#6b7f96!important}
+html body:not(#st-a):not(#st-b) .content .view :is(input[readonly]){background-color:#e4ebf3!important}
+html body:not(#st-a):not(#st-b) .content .view :is(.teach-editable,.teach-preview-content,.student-pdf-mount,.teach-lesson-content,.manual-reader,.content-rendered){
+  background:#fff!important;color:#14263d!important;
+}
+html body:not(#st-a):not(#st-b) .content .view :is(.teach-editable,.teach-preview-content,.teach-lesson-content,.manual-reader,.content-rendered) *{border-color:revert-layer}
+html body:not(#st-a):not(#st-b) .content .view :is(.teach-editable,.teach-preview-content,.teach-lesson-content,.manual-reader,.content-rendered) :is(h1,h2,h3,h4,h5,label,strong,b,th,summary,p,li,td){color:revert-layer}
+
+/* ---- Corrections de lisibilité ---- */
+/* bo.css force -webkit-text-fill-color : on rend la main à la couleur du texte. */
+html body:not(#st-a):not(#st-b) .content .view *:not(input):not(select):not(textarea):not(option){-webkit-text-fill-color:currentColor!important}
+html body:not(#st-a):not(#st-b) .content .view :is(input,select,textarea,option){-webkit-text-fill-color:var(--st-paper-ink)!important;color:var(--st-paper-ink)!important}
+html body:not(#st-a):not(#st-b) .content .view :is(input,textarea)::placeholder{-webkit-text-fill-color:#6b7f96!important}
+/* Bandeaux de sous-titres dans l'évaluation */
+html body:not(#st-a):not(#st-b) .content .view :is(.evaluation-group,.mastery-evaluation)>h4{
+  background:transparent!important;color:var(--st-volt)!important;font-family:var(--st-f-mono)!important;
+  font-size:.72rem!important;letter-spacing:.1em;text-transform:uppercase;border-color:var(--st-wire)!important;
+}
+html body:not(#st-a):not(#st-b) .content .view .evaluation-scale-note{background:#061325!important;color:var(--st-muted)!important;border-color:var(--st-wire)!important}
+html body:not(#st-a):not(#st-b) .content .view .evaluation-scale-note strong{color:var(--st-volt)!important}
+html body:not(#st-a):not(#st-b) .content .view .automatic-score span{color:var(--st-muted)!important}
+/* Codes de tâches et étiquettes du référentiel */
+html body:not(#st-a):not(#st-b) .content .view :is(.task-line>div>strong){
+  background:transparent!important;border:1px solid var(--st-volt)!important;color:#ffc28a!important;
+  font-family:var(--st-f-mono)!important;border-radius:3px!important;
+}
+html body:not(#st-a):not(#st-b) .content .view .referential-section>summary span,
+html body:not(#st-a):not(#st-b) .content .view .referential-activity>summary span{color:var(--st-muted)!important}
+/* Pastilles CCF : texte foncé sur couleur */
+html body:not(#st-a):not(#st-b) .content .view td .ccf-pill:not(#st-z),
+html body:not(#st-a):not(#st-b) .content .view td .ccf-pill:not(#st-z) *{color:#0b1a2c!important}
+/* Petits compteurs et étapes */
+html body:not(#st-a):not(#st-b) .content .view .stat span{color:var(--st-muted)!important}
+html body:not(#st-a):not(#st-b) .content .view .stat strong{color:var(--st-ink)!important;font-family:var(--st-f-display)!important;font-size:2rem}
+html body:not(#st-a):not(#st-b) .content .view .stepper .step{background:transparent!important;color:var(--st-muted)!important;border-color:var(--st-wire)!important}
+html body:not(#st-a):not(#st-b) .content .view .stepper .step.active,
+html body:not(#st-a):not(#st-b) .content .view .stepper .step.active span{color:var(--st-volt)!important;border-color:var(--st-volt)!important}
+html body:not(#st-a):not(#st-b) .content .view .stepper .step.done{color:var(--st-ink)!important}
+/* Accueil : la première carte reste en orange avec texte foncé */
+html body:not(#st-a):not(#st-b) .content #homeView .home-access .home-access-card:first-child :is(strong,small,.home-access-arrow){color:var(--st-volt-ink)!important}
+html body:not(#st-a):not(#st-b) .content #homeView .home-access .home-access-card:first-child small{color:#4a2700!important}
+html body:not(#st-a):not(#st-b) .content #homeView .home-access .home-access-card:not(:first-child) small{color:var(--st-muted)!important}
+html body:not(#st-a):not(#st-b) .content #homeView .home-access .home-access-card:not(:first-child) strong{color:var(--st-ink)!important}
+/* Boutons secondaires clairs (« Toute la classe », etc.) */
+html body:not(#st-a):not(#st-b) .content .view :is(.ccf-group-chip,.chip-button,.group-chip,.ccf-chip,.ccf-compact-filters button:not(.button)){
+  background:var(--st-panel-2)!important;border:1px solid var(--st-wire)!important;color:var(--st-ink)!important;border-radius:4px!important;
+}
+/* Niveau N3 un peu plus sombre pour le texte blanc */
+html body:not(#st-a):not(#st-b) .content .view .evaluation-level.level-n3.selected{background:#5e8a1f!important}
+html body:not(#st-a):not(#st-b) .content .view :is(.referential-section>summary strong,.referential-activity>summary strong){
+  background:transparent!important;border:0!important;color:var(--st-ink)!important;padding-left:0!important;font-weight:700!important;
+}
+html body:not(#st-a):not(#st-b) .content .view .referential-activity>summary strong{color:#ffc28a!important;font-family:var(--st-f-mono)!important;font-size:.82rem!important}
+html body:not(#st-a):not(#st-b) .content .view .evaluation-competencies{background:transparent!important;background-image:none!important}
+
+/* ---- Espace élève : rubriques en panneaux sombres ---- */
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane{
+  background:var(--st-panel)!important;background-image:none!important;
+  border:1px solid var(--st-wire)!important;color:var(--st-ink)!important;
+  --st-lv2:var(--st-panel-2);
+}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane *:not(input):not(select):not(textarea):not(option){-webkit-text-fill-color:currentColor!important}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane h2{color:var(--st-ink)!important}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(h3,h4,h5,strong,b,label,summary,dt,th,legend){color:var(--st-ink)!important}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(p,li,td,dd,span,em){color:inherit}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(small,.portal-small){color:var(--st-muted)!important}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(section,article,details,.student-tp-card,.portal-list>*,[class*="-card"],[class*="-item"],[class*="-block"]:not(.lesson-block),[class*="-group"],[class*="competenc"],[class*="result"]):not(.student-pdf-preview-card){
+  background:var(--st-panel-2)!important;background-image:none!important;
+  border-color:var(--st-wire)!important;color:var(--st-ink)!important;
+}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(section,article,details) :is(section,article,details,[class*="-item"]){background:#123257!important}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .portal-message{
+  background:#061325!important;border:1px solid var(--st-wire)!important;color:var(--st-ink)!important;
+}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane table{background:transparent!important;color:var(--st-ink)!important}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane th{background:#061325!important;color:var(--st-muted)!important;font-family:var(--st-f-mono)!important;border-color:var(--st-wire)!important}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane td{background:transparent!important;color:var(--st-ink)!important;border-color:var(--st-wire)!important}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane button:not(.portal-button):not([class*="level"]){
+  background:var(--st-panel-2)!important;border:1px solid var(--st-wire)!important;color:var(--st-ink)!important;border-radius:4px!important;
+}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane button.active{background:var(--st-volt)!important;border-color:var(--st-volt)!important;color:var(--st-volt-ink)!important}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(input,select,textarea){background:#fff!important;color:var(--st-paper-ink)!important;-webkit-text-fill-color:var(--st-paper-ink)!important}
+/* Le contenu des leçons et les PDF restent des pages blanches */
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(.lesson-block,.student-pdf-mount,.student-pdf-page){
+  background:#fff!important;color:#14263d!important;
+}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .lesson-block *{-webkit-text-fill-color:initial!important}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .lesson-block :is(h1,h2,h3,h4,h5,strong,b,label,p,li,td,th,span,em){color:revert-layer}
+/* Groupes d'élèves */
+html body:not(#st-a):not(#st-b) .content .view .student-group-item{background:var(--st-lv2)!important;background-image:none!important;border-color:var(--st-wire)!important;color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .content .view .student-group-item :is(p,.group-edit-hint){color:var(--st-muted)!important}
+html body:not(#st-a):not(#st-b) .content .view .student-group-chip:not(#st-z){background:transparent!important;border:1px solid var(--st-arc)!important;color:#bfe2ff!important;font-family:var(--st-f-mono)!important;border-radius:3px!important}
+html body:not(#st-a):not(#st-b) .content .view td .ccf-pill:is(.darkgreen,.red):not(#st-z),
+html body:not(#st-a):not(#st-b) .content .view td .ccf-pill:is(.darkgreen,.red):not(#st-z) *{color:#fff!important}
