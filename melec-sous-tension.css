@@ -1,0 +1,393 @@
+/* ==========================================================================
+   L'Atelier MELEC — couche visuelle « sous tension »
+   Chargée en dernier dans enseignant.html et eleve.html.
+   Elle ne modifie que l'apparence : aucune règle ne masque, n'affiche
+   ou ne déplace un contrôle utilisé par la connexion, les évaluations ou les TP.
+   Principe : armoire de nuit (navigation, connexion, en-têtes) et
+   « feuilles » claires pour le travail (tableaux, fiches, leçons).
+   ========================================================================== */
+:root{
+  --st-night:#050f1e;
+  --st-panel:#0a1c33;
+  --st-panel-2:#0f2846;
+  --st-wire:#1e4569;
+  --st-ink:#e9f1fb;
+  --st-muted:#93abc7;
+  --st-volt:#ff8a1e;
+  --st-volt-hi:#ffa04a;
+  --st-volt-ink:#1a0d00;
+  --st-arc:#4fb3ff;
+  --st-live:#3fe08a;
+  --st-fault:#ff5a5f;
+  --st-paper:#eef3f8;
+  --st-paper-2:#ffffff;
+  --st-paper-ink:#14263d;
+  --st-paper-muted:#4b5f77;
+  --st-paper-line:#c6d3e1;
+  --st-f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --st-f-body:"Archivo",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --st-f-mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+
+/* ---------- Fond commun : armoire de nuit + quadrillage de schéma ---------- */
+html body:not(.portal-page),
+html body.portal-page{
+  font-family:var(--st-f-body)!important;
+  background-color:var(--st-night)!important;
+  background-image:
+    linear-gradient(rgba(30,69,105,.18) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,69,105,.18) 1px,transparent 1px),
+    linear-gradient(180deg,rgba(5,15,30,.86),rgba(5,15,30,.94)),
+    url('./background-melec-tools.webp')!important;
+  background-size:24px 24px,24px 24px,auto,cover!important;
+  background-position:0 0,0 0,0 0,center top!important;
+  background-attachment:fixed!important;
+  background-repeat:repeat,repeat,no-repeat,no-repeat!important;
+}
+/* Espace élève : l'illustration d'origine reste derrière, assombrie. */
+html body.portal-page{
+  background-image:
+    linear-gradient(rgba(30,69,105,.16) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,69,105,.16) 1px,transparent 1px),
+    linear-gradient(180deg,rgba(5,15,30,.88),rgba(5,15,30,.93)),
+    url('./fond-espace-eleve.jpg')!important;
+}
+html body ::selection{background:rgba(255,138,30,.35)}
+html body :focus-visible{outline:2px solid var(--st-volt)!important;outline-offset:3px}
+
+/* ---------- Typographie ---------- */
+html body h1,html body h2,html body h3,html body h4,
+html body button,html body input,html body select,html body textarea{font-family:var(--st-f-body)}
+html body .page-head h1,html body .page-head h2,
+html body .teach-head h1,html body .teach-head h2,
+html body .home-intro h1,
+html body .portal-header h1,
+html body #cloudGate h1{
+  font-family:var(--st-f-display)!important;
+  font-weight:800!important;
+  text-transform:uppercase;
+  letter-spacing:.01em;
+  line-height:.95!important;
+}
+html body .page-head h1,html body .page-head h2,
+html body .teach-head h1,html body .teach-head h2{
+  font-size:clamp(2rem,4.4vw,3.2rem)!important;
+  color:var(--st-ink)!important;
+  text-shadow:none!important;
+}
+html body .page-head p,html body .teach-head p{color:var(--st-muted)!important;font-size:1rem}
+html body .eyebrow,html body .home-kicker,html body .meta,
+html body .chip,html body .unit,html body .ref-comp-badge{font-family:var(--st-f-mono)!important;letter-spacing:.04em}
+html body .eyebrow,html body .home-kicker{text-transform:uppercase;letter-spacing:.14em!important;color:var(--st-volt)!important}
+html body table{font-variant-numeric:tabular-nums}
+
+/* ==========================================================================
+   ESPACE ENSEIGNANT
+   ========================================================================== */
+
+/* ---- Écran de connexion ---- */
+html body #cloudGate{
+  background-color:var(--st-night)!important;
+  background-image:
+    linear-gradient(rgba(30,69,105,.22) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,69,105,.22) 1px,transparent 1px),
+    radial-gradient(ellipse 70% 70% at 50% 50%,rgba(5,15,30,.55),rgba(5,15,30,.96)),
+    url('./background-melec-tools.webp')!important;
+  background-size:24px 24px,24px 24px,auto,cover!important;
+  background-position:0 0,0 0,0 0,center!important;
+  font-family:var(--st-f-body)!important;
+  color:var(--st-ink)!important;
+}
+html body #cloudGate .cloud-card{
+  position:relative;
+  width:min(100%,460px)!important;
+  padding:clamp(24px,5vw,36px)!important;
+  border:1px solid var(--st-wire)!important;
+  border-top:3px solid var(--st-volt)!important;
+  border-radius:8px!important;
+  background:linear-gradient(180deg,var(--st-panel-2),var(--st-panel))!important;
+  color:var(--st-ink)!important;
+  box-shadow:0 30px 80px rgba(0,0,0,.6)!important;
+}
+html body #cloudGate .cloud-card::before{
+  content:"Q0 · Accès enseignant";
+  display:block;margin-bottom:14px;
+  font:600 .7rem/1 var(--st-f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--st-volt);
+}
+html body #cloudGate .cloud-home-link{color:var(--st-muted)!important;font:500 .85rem var(--st-f-mono)!important;min-height:28px!important}
+html body #cloudGate .cloud-home-link:hover{color:var(--st-ink)!important}
+html body #cloudGate .cloud-brand strong{font-family:var(--st-f-display)!important;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--st-ink)}
+html body #cloudGate .cloud-brand img{width:56px!important;height:56px!important}
+html body #cloudGate h1{font-size:clamp(2rem,6vw,2.6rem)!important;color:var(--st-ink)!important;margin-bottom:8px!important}
+html body #cloudGate p{color:var(--st-muted)!important}
+html body #cloudGate label{color:var(--st-ink)!important;font-weight:600!important;font-size:.88rem}
+html body #cloudGate input[type=email],
+html body #cloudGate input[type=password],
+html body #cloudGate input[type=file]{
+  border:1px solid var(--st-wire)!important;border-radius:5px!important;
+  background:#061325!important;color:var(--st-ink)!important;font-family:var(--st-f-body)!important;
+}
+html body #cloudGate input:focus{outline:2px solid var(--st-volt)!important;outline-offset:1px;border-color:transparent!important}
+html body #cloudGate .cloud-card button{
+  border-radius:5px!important;background:var(--st-volt)!important;color:var(--st-volt-ink)!important;
+  font:600 .95rem var(--st-f-body)!important;border:1px solid var(--st-volt)!important;
+}
+html body #cloudGate .cloud-card button:hover{background:var(--st-volt-hi)!important}
+html body #cloudGate .cloud-card button.secondary{background:var(--st-panel-2)!important;color:var(--st-ink)!important;border-color:var(--st-wire)!important}
+html body #cloudGate .cloud-status{color:var(--st-muted)!important;font-family:var(--st-f-mono)!important;font-size:.8rem!important}
+html body #cloudGate .cloud-status.error{color:var(--st-fault)!important}
+html body #cloudGate .cloud-status.success{color:var(--st-live)!important}
+html.cloud-resuming body #cloudGate::after{color:var(--st-ink)!important;font-family:var(--st-f-mono)!important}
+
+/* ---- Barre haute ---- */
+html body .topbar{
+  background:rgba(5,15,30,.9)!important;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--st-wire)!important;
+  box-shadow:none!important;
+}
+html body .topbar .brand-copy strong,
+html body .topbar .brand-copy strong span{
+  font-family:var(--st-f-display)!important;font-weight:800!important;
+  text-transform:uppercase;letter-spacing:.04em;color:var(--st-ink)!important;
+}
+html body .topbar .brand-copy p,
+html body .topbar .mobile-brand-subtitle{
+  font-family:var(--st-f-mono)!important;font-size:.68rem!important;letter-spacing:.06em;color:var(--st-muted)!important;
+}
+html body .topbar .brand-logo{background:transparent!important;box-shadow:none!important;border:0!important}
+html body .topbar #appBackButton,
+html body .topbar #mobileExitButton,
+html body #appBackButton{
+  border:1px solid var(--st-wire)!important;border-radius:5px!important;
+  background:var(--st-panel)!important;color:var(--st-ink)!important;
+  font:600 .85rem var(--st-f-body)!important;box-shadow:none!important;
+}
+html body .topbar #appBackButton:hover,html body .topbar #mobileExitButton:hover{border-color:var(--st-volt)!important}
+
+/* ---- Navigation : modules du tableau ---- */
+html body #teacherPrimaryNav{
+  background:rgba(10,28,51,.92)!important;
+  border-bottom:1px solid var(--st-wire)!important;
+  box-shadow:none!important;
+}
+html body #teacherPrimaryNav .nav,
+html body #teacherPrimaryNav .nav:not(.active),
+html body.subpage-active #teacherPrimaryNav .nav{
+  border:1px solid var(--st-wire)!important;
+  border-radius:4px!important;
+  background:var(--st-panel)!important;
+  color:var(--st-ink)!important;
+  font:600 .84rem var(--st-f-body)!important;
+  box-shadow:none!important;
+  transition:border-color .15s,background .15s;
+}
+html body #teacherPrimaryNav .nav span{color:var(--st-volt)!important}
+html body #teacherPrimaryNav .nav:hover{border-color:var(--st-muted)!important;background:var(--st-panel-2)!important}
+html body #teacherPrimaryNav .nav.active,
+html body.subpage-active #teacherPrimaryNav .nav.active{
+  background:var(--st-volt)!important;border-color:var(--st-volt)!important;color:var(--st-volt-ink)!important;
+}
+html body #teacherPrimaryNav .nav.active span{color:var(--st-volt-ink)!important}
+html body #mobileMenuToggle,
+html body .cloud-menu>summary{
+  border:1px solid var(--st-volt)!important;border-radius:4px!important;
+  background:var(--st-panel)!important;color:var(--st-ink)!important;
+  font:600 .88rem var(--st-f-body)!important;box-shadow:none!important;
+}
+html body .cloud-menu>summary:hover{background:var(--st-panel-2)!important}
+html body .cloud-menu-panel{
+  border:1px solid var(--st-wire)!important;border-radius:6px!important;
+  background:var(--st-panel)!important;color:var(--st-ink)!important;box-shadow:0 20px 50px rgba(0,0,0,.55)!important;
+}
+html body .cloud-menu-panel #cloudSyncStatus{font-family:var(--st-f-mono);font-size:.76rem;color:var(--st-muted)}
+html body .cloud-menu-panel button{
+  border-radius:4px!important;border:1px solid var(--st-wire)!important;
+  background:var(--st-panel-2)!important;color:var(--st-ink)!important;font:600 .88rem var(--st-f-body)!important;
+}
+html body .cloud-menu-panel #cloudSignOut{border-color:var(--st-volt)!important}
+
+/* ---- Accueil enseignant ---- */
+html body .home-hero{background:transparent!important;border:0!important;box-shadow:none!important}
+html body .home-intro h1{
+  font-size:clamp(3rem,9vw,6.4rem)!important;color:var(--st-ink)!important;
+  text-shadow:0 0 28px rgba(79,179,255,.35)!important;
+}
+html body .home-intro p{color:var(--st-muted)!important;font-size:1.1rem!important}
+html body .home-values span{font-family:var(--st-f-mono)!important;color:var(--st-muted)!important;letter-spacing:.14em!important}
+html body .home-values{border-color:var(--st-volt)!important}
+html body #homeView .home-access .home-access-card,
+html body #homeView .home-access .home-access-card:nth-child(n){
+  border:1px solid var(--st-wire)!important;border-radius:6px!important;
+  background:rgba(10,28,51,.92)!important;color:var(--st-ink)!important;
+  box-shadow:none!important;transition:border-color .2s,transform .2s;
+}
+html body #homeView .home-access .home-access-card:nth-child(n):hover,
+html body #homeView .home-access .home-access-card:nth-child(n):focus-visible{border-color:var(--st-volt)!important;background:var(--st-panel-2)!important;transform:translateY(-2px)}
+html body #homeView .home-access .home-access-card .home-access-copy,
+html body #homeView .home-access .home-access-card .home-access-copy strong{color:var(--st-ink)!important}
+html body #homeView .home-access .home-access-card .home-access-copy strong{font-size:1.02rem!important}
+html body #homeView .home-access .home-access-card .home-access-copy small{color:var(--st-muted)!important}
+html body #homeView .home-access .home-access-card .home-access-icon{
+  border:1px solid var(--st-wire)!important;border-radius:5px!important;
+  background:var(--st-panel-2)!important;color:var(--st-volt)!important;box-shadow:none!important;
+}
+html body #homeView .home-access .home-access-card .home-access-arrow{color:var(--st-volt)!important;font-family:var(--st-f-mono)}
+html body #homeView .home-access .home-access-card:first-child,
+html body #homeView .home-access .home-access-card:first-child:hover{background:var(--st-volt)!important;border-color:var(--st-volt)!important}
+html body #homeView .home-access .home-access-card:first-child .home-access-copy,
+html body #homeView .home-access .home-access-card:first-child .home-access-copy strong,
+html body #homeView .home-access .home-access-card:first-child .home-access-arrow{color:var(--st-volt-ink)!important}
+html body #homeView .home-access .home-access-card:first-child .home-access-copy small{color:#4a2700!important}
+html body #homeView .home-access .home-access-card:first-child .home-access-icon{background:var(--st-volt-ink)!important;border-color:var(--st-volt-ink)!important;color:var(--st-volt)!important}
+
+/* ---- Feuilles de travail (panneaux) ----
+   Les teintes propres à chaque rubrique sont conservées (cahier des charges §8) ;
+   seules la forme et l'ombre sont harmonisées. */
+html body .view .panel,
+html body .view .teach-card,
+html body .view .block-card{
+  border-radius:6px!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.28)!important;
+}
+html body .view .panel .panel,
+html body .view .panel .block-card{box-shadow:none!important}
+
+/* ---- Boutons ---- */
+html body .view .button,
+html body .view button.button{
+  border-radius:4px!important;
+  background:var(--st-paper-ink)!important;color:#fff!important;
+  border:1px solid var(--st-paper-ink)!important;
+  font:600 .88rem var(--st-f-body)!important;box-shadow:none!important;
+}
+html body .view .button:hover{filter:brightness(1.25)}
+html body .view .button.primary{
+  background:var(--st-volt)!important;border-color:var(--st-volt)!important;color:var(--st-volt-ink)!important;
+}
+html body .view .button.primary:hover{background:var(--st-volt-hi)!important;filter:none}
+html body .view .button.danger,html body .view .button.delete{background:#b3261e!important;border-color:#b3261e!important;color:#fff!important}
+
+/* ---- Champs ---- */
+html body .view input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),
+html body .view select,
+html body .view textarea{
+  border:1px solid #9fb3c8!important;border-radius:5px!important;
+  background-color:#fff!important;color:var(--st-paper-ink)!important;
+  font-family:var(--st-f-body)!important;
+}
+html body .view input:focus,html body .view select:focus,html body .view textarea:focus{
+  outline:2px solid var(--st-volt)!important;outline-offset:1px;border-color:transparent!important;
+}
+html body .view input[type=checkbox],html body .view input[type=radio]{accent-color:var(--st-volt)}
+html body .view label{color:inherit}
+
+/* ---- Notifications ---- */
+html body .toast{
+  border:1px solid var(--st-wire)!important;border-left:3px solid var(--st-volt)!important;border-radius:5px!important;
+  background:var(--st-panel)!important;color:var(--st-ink)!important;font-family:var(--st-f-body)!important;
+}
+
+/* ==========================================================================
+   ESPACE ÉLÈVE
+   ========================================================================== */
+html body.portal-page{color:var(--st-ink)}
+html body.portal-page .portal-top-link{color:var(--st-muted)!important;font:500 .85rem var(--st-f-mono)!important;text-decoration:none}
+html body.portal-page .portal-top-link:hover{color:var(--st-ink)!important}
+html body.portal-page .portal-header h1{font-size:clamp(2.6rem,7vw,4.4rem)!important;color:var(--st-ink)!important;text-shadow:0 0 24px rgba(79,179,255,.35)!important}
+html body.portal-page .portal-header p:not(.eyebrow){color:var(--st-muted)!important}
+html body.portal-page .portal-header img{background:transparent!important;box-shadow:none!important;border-radius:0!important}
+
+/* Connexion, inscription, contact : panneau de nuit */
+html body.portal-page #studentAuth,
+html body.portal-page #studentContactPanel{
+  border:1px solid var(--st-wire)!important;border-top:3px solid var(--st-volt)!important;border-radius:8px!important;
+  background:linear-gradient(180deg,var(--st-panel-2),var(--st-panel))!important;
+  color:var(--st-ink)!important;box-shadow:0 30px 80px rgba(0,0,0,.55)!important;
+}
+html body.portal-page #studentAuth h2,
+html body.portal-page #studentContactPanel h2{
+  font-family:var(--st-f-display)!important;font-weight:800!important;text-transform:uppercase;
+  font-size:clamp(1.9rem,5vw,2.4rem)!important;line-height:1!important;color:var(--st-ink)!important;
+}
+html body.portal-page #studentAuth::before{
+  content:"Q0 · Accès élève";display:block;margin-bottom:12px;
+  font:600 .7rem/1 var(--st-f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--st-volt);
+}
+html body.portal-page #studentAuth label,
+html body.portal-page #studentContactPanel label{color:var(--st-ink)!important;font-weight:600!important}
+html body.portal-page #studentAuth input,
+html body.portal-page #studentContactPanel input,
+html body.portal-page #studentContactPanel textarea{
+  border:1px solid var(--st-wire)!important;border-radius:5px!important;
+  background:#061325!important;color:var(--st-ink)!important;font-family:var(--st-f-body)!important;
+}
+html body.portal-page #studentAuth input::placeholder,
+html body.portal-page #studentContactPanel input::placeholder{color:#5f7a98}
+html body.portal-page #studentAuth input:focus,
+html body.portal-page #studentContactPanel input:focus,
+html body.portal-page #studentContactPanel textarea:focus{outline:2px solid var(--st-volt)!important;outline-offset:1px;border-color:transparent!important}
+html body.portal-page #studentAuth .portal-small,
+html body.portal-page #studentContactPanel .field-help,
+html body.portal-page .form-status{color:var(--st-muted)!important;font-family:var(--st-f-mono);font-size:.78rem}
+html body.portal-page .form-status.error{color:var(--st-fault)!important}
+
+/* Onglets (connexion / inscription / contact, rubriques élève) */
+html body.portal-page .portal-tabs button{
+  border:1px solid var(--st-wire)!important;border-radius:4px!important;
+  background:var(--st-panel)!important;color:var(--st-ink)!important;
+  font:600 .88rem var(--st-f-body)!important;box-shadow:none!important;
+}
+html body.portal-page .portal-tabs button:hover{border-color:var(--st-muted)!important}
+html body.portal-page .portal-tabs button.active,
+html body.portal-page #studentDashboard #studentContentTabs button.active,
+html body.portal-page #studentContentTabs button:nth-child(n).active{
+  background:var(--st-volt)!important;border-color:var(--st-volt)!important;color:var(--st-volt-ink)!important;
+}
+html body.portal-page #studentDashboard #studentContentTabs{
+  border:1px solid var(--st-wire)!important;border-radius:6px!important;
+  background:rgba(10,28,51,.9)!important;box-shadow:none!important;
+}
+html body.portal-page #studentDashboard #studentContentTabs button{
+  background:var(--st-panel)!important;color:var(--st-ink)!important;border:1px solid var(--st-wire)!important;
+}
+
+/* Boutons principaux */
+html body.portal-page .portal-button,
+html body.portal-page #studentRefresh{
+  border:1px solid var(--st-volt)!important;border-radius:4px!important;
+  background:var(--st-volt)!important;color:var(--st-volt-ink)!important;
+  font:600 .95rem var(--st-f-body)!important;box-shadow:none!important;
+}
+html body.portal-page .portal-button:hover,html body.portal-page #studentRefresh:hover{background:var(--st-volt-hi)!important}
+html body.portal-page #studentDashboard .student-refresh-actions{
+  border:1px solid var(--st-wire)!important;border-radius:6px!important;background:rgba(10,28,51,.9)!important;box-shadow:none!important;
+}
+html body.portal-page #studentDashboard .student-refresh-actions .subtle{
+  border:1px solid var(--st-wire)!important;border-radius:4px!important;
+  background:var(--st-panel-2)!important;color:var(--st-ink)!important;font:600 .88rem var(--st-f-body)!important;
+}
+html body.portal-page #studentDashboard #studentClassName{
+  border:1px solid var(--st-wire)!important;border-radius:4px!important;
+  background:var(--st-panel)!important;color:var(--st-ink)!important;
+  font-family:var(--st-f-mono)!important;font-size:.82rem!important;letter-spacing:.04em;
+}
+html body.portal-page #studentDashboard #studentRefreshStatus{font-family:var(--st-f-mono);font-size:.8rem!important;color:var(--st-muted)!important;text-shadow:none!important}
+
+/* Rubriques élève : les teintes par capsule sont conservées, forme harmonisée */
+html body.portal-page #studentDashboard .student-pane{
+  border-radius:6px!important;box-shadow:0 14px 34px rgba(0,0,0,.3)!important;
+}
+html body.portal-page #studentDashboard .student-pane h2{
+  font-family:var(--st-f-display)!important;font-weight:800!important;text-transform:uppercase;
+  font-size:clamp(1.8rem,4vw,2.4rem)!important;line-height:1!important;
+}
+html body.portal-page #studentDashboard .portal-message{border-radius:5px!important}
+
+@media (max-width:600px){
+  html body.portal-page .portal-header h1{font-size:2.4rem!important}
+  html body .home-intro h1{font-size:3rem!important}
+}
+@media (prefers-reduced-motion:reduce){
+  html body #homeView .home-access .home-access-card{transition:none}
+}
