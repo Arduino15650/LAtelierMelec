@@ -88,9 +88,10 @@
     return window.MelecPortal.rest(path, options);
   }
   async function identify() {
-    const user = await window.MelecPortal.user();
-    if (!user.id) throw new Error('Compte non reconnu.');
-    userId = user.id;
+    // Identifiant lu dans la session : une requête réseau de moins à chaque connexion.
+    const id = await window.MelecPortal.userId();
+    if (!id) throw new Error('Compte non reconnu.');
+    userId = id;
     session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
   }
   async function cloudRow() {

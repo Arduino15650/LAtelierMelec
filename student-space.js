@@ -126,7 +126,7 @@
     finally { button.disabled = false; }
   };
   async function openDashboard() {
-    const user = await api.user();
+    const user = { id: await api.userId() };
     const [teacher, profiles] = await Promise.all([
       api.rest('teacher_accounts?user_id=eq.' + encodeURIComponent(user.id) + '&select=user_id'),
       api.rest('student_profiles?user_id=eq.' + encodeURIComponent(user.id) + '&select=*')
