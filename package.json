@@ -9,5 +9,21 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "codeflash": {
+    "moduleRoot": ".",
+    "testsRoot": "tests",
+    "ignorePaths": [
+      "jspdf.umd.min.js",
+      "xlsx.full.min.js",
+      "pdf.min.mjs",
+      "pdf.worker.min.mjs",
+      "service-worker.js",
+      "tests",
+      ".github"
+    ],
+    "formatterCmds": [
+      "disabled"
+    ]
   }
 }
