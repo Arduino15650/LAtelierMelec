@@ -629,7 +629,7 @@ html body *,html body *::before,html body *::after{
   hyphens:manual!important;-webkit-hyphens:manual!important;
   word-break:normal!important;overflow-wrap:break-word!important;
 }
-html body :is(h1,h2,h3,h4,legend,summary){text-wrap:balance}
+html body :is(h1,h2,h3,h4,legend,summary){text-wrap:pretty}
 html body :is(p,li,small,label,td,dd){text-wrap:pretty}
 /* Le texte justifié du référentiel créait des trous et des coupures : aligné à gauche. */
 html body [style*="justify"],html body #referentialView :is(p,li,.bo-note,.task-line>div,.competence-body *){text-align:left!important;text-justify:auto!important}
@@ -638,3 +638,6 @@ html body .topbar .brand-copy p{display:block!important;-webkit-line-clamp:unset
 /* Étapes du constructeur d'activité : elles passent à la ligne au lieu d'être masquées. */
 html body .view .stepper{flex-wrap:wrap!important;overflow:visible!important;row-gap:6px}
 html body .view .stepper>*{flex:1 1 140px!important;min-width:0!important}
+
+/* Lignes pleines : on remplit la ligne avant de passer à la suivante, sans couper les mots */
+html body:not(#st-a) :is(h1,h2,h3,h4,p,li,.button,.scope-choice,.brand-copy p,.home-intro p){text-wrap:pretty!important;overflow-wrap:break-word!important;word-break:normal!important}
