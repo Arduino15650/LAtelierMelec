@@ -369,7 +369,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
     <div class="hero-copy">
       <p class="eyebrow">Baccalauréat professionnel · Métiers de l’Électricité et de ses Environnements Connectés</p>
       <h1 id="h-title"><span class="l1">L’Atelier</span><span class="l2">MELEC<svg class="bolt" viewBox="0 0 32 46" aria-hidden="true"><path d="M20 1 4 26h10l-3 19 17-27H17l3-17z"/></svg></span></h1>
-      <p class="lead">La plateforme de l’atelier d’électricité. L’enseignant y crée les activités, évalue chaque élève compétence par compétence, publie le manuel et les TD, et lance les TP chronométrés. L’élève y retrouve ses cours, ses travaux et ses propres résultats de CCF.</p>
       <div class="entries">
         <a class="entry teacher" href="./enseignant.html">
           <span class="ic"><svg viewBox="0 0 32 38" aria-hidden="true"><path fill="#ff8a1e" d="M18 1 5 21h9l-2 16 15-23h-9l3-13z"/></svg></span>
@@ -412,7 +411,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
       <div class="rep">Q1<small>Plateforme</small></div>
       <div>
         <h2 id="t1">Sept circuits,<br><em>un seul tableau</em></h2>
-        <p>Chaque rubrique de L’Atelier MELEC est un départ du tableau. Enclenchez un module pour voir ce qu’il alimente, côté enseignant et côté élève.</p>
       </div>
     </div>
     <div class="din">
@@ -430,7 +428,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
       <div class="rep">Q2<small>Évaluation</small></div>
       <div>
         <h2 id="t2">Évaluer par compétences,<br><em>la note suit</em></h2>
-        <p>L’enseignant positionne chaque compétence sur quatre niveaux. La note sur 20 se calcule seule, pondérée par le poids de chaque compétence. NE (non évalué) ne pèse pas dans le calcul. Essayez sur cette fiche d’exemple.</p>
       </div>
     </div>
     <div class="eval">
@@ -466,7 +463,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
       <div class="rep">Q3<small>Atelier</small></div>
       <div>
         <h2 id="t3">TP en atelier :<br><em>3 h 30, pas une minute de plus</em></h2>
-        <p>Ouvrir la rubrique TP ne déclenche rien. Le chronomètre part seulement quand l’élève clique sur le bouton de démarrage. Pendant l’épreuve, le reste de son espace se ferme. À l’échéance, le TP se verrouille et l’enseignant peut accorder une prolongation.</p>
       </div>
     </div>
     <div class="tp">
@@ -505,7 +501,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
       <div class="rep">Q4<small>Référentiel</small></div>
       <div>
         <h2 id="t4">Le référentiel 2024,<br><em>câblé dans l’outil</em></h2>
-        <p>Tâches, compétences et critères de l’arrêté du 1er mars 2024 sont intégrés. Quand l’enseignant choisit une tâche, la plateforme sait quelles compétences elle mobilise et avec quel poids. Touchez une compétence ou une tâche pour l’ouvrir.</p>
       </div>
     </div>
     <div class="figures" id="figures"></div>
@@ -533,7 +528,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
       <div class="rep">Q5<small>Manuel · TD</small></div>
       <div>
         <h2 id="t5">Publier, c’est<br><em>fermer le circuit</em></h2>
-        <p>Le manuel s’organise par classe, thème, chapitre et leçon. Chaque leçon porte trois sections : le cours, les TD et leur correction. Un contenu n’apparaît chez l’élève que si toute la chaîne est publiée, comme une lampe qui ne s’allume qu’avec tous les interrupteurs en série fermés. Cliquez sur les interrupteurs.</p>
       </div>
     </div>
     <div class="pub">
@@ -545,7 +539,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
           <div class="view-h"><b>Ce que voit l’élève</b><span class="tag">Classe autorisée</span></div>
           <div class="view-b" id="studentView"></div>
         </div>
-        <p class="pub-note">Une section en brouillon reste invisible. Publier le cours ne publie ni le TD ni sa correction. Côté élève, le manuel et les TD sont deux capsules séparées, avec un sommaire permanent et une lecture sans bouton de téléchargement.</p>
       </div>
     </div>
   </div>
@@ -558,7 +551,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
       <div class="rep">Q6<small>Architecture</small></div>
       <div>
         <h2 id="t6">Nomenclature<br><em>de l’installation</em></h2>
-        <p>Un site statique rapide pour l’interface, Supabase pour les comptes, les données et les fichiers privés. Les droits se vérifient côté base de données, pas seulement dans l’interface.</p>
       </div>
     </div>
     <div class="nomen-wrap">
@@ -609,7 +601,6 @@ table.nomen{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
       <div class="rep">Q8<small>Contact</small></div>
       <div>
         <h2 id="contactTitle">Une question ?<br><em>Écrivez à l’enseignant</em></h2>
-        <p>Décrivez votre demande. Les champs marqués * sont obligatoires.</p>
       </div>
     </div>
     <form id="contactForm" class="cform" autocomplete="off">
@@ -764,7 +755,7 @@ $('#labelstrip').innerHTML=circuits.map(c=>`<span>${c.q} ${esc(c.strip)}</span>`
 function renderModules(){
   modEl.querySelectorAll('.mod').forEach(b=>{const i=+b.dataset.i;b.setAttribute('aria-pressed',String(onSet.has(i)));b.setAttribute('aria-label',circuits[i].q+' '+circuits[i].nm+(onSet.has(i)?' : enclenché':' : déclenché'))});
   const c=circuits[focusIdx];
-  $('#circuitDetail').innerHTML=`<div><span class="q-id">${c.q} · départ ${onSet.has(focusIdx)?'enclenché':'déclenché'}</span><h3>${esc(c.t)}</h3><p class="d">${esc(c.d)}</p><div class="who">${c.who.map(w=>`<span class="tag">${w}</span>`).join('')}</div></div><ul>${c.pts.map(p=>`<li>${esc(p)}</li>`).join('')}</ul>`;
+  $('#circuitDetail').innerHTML=`<div><span class="q-id">${c.q} · départ ${onSet.has(focusIdx)?'enclenché':'déclenché'}</span><h3>${esc(c.t)}</h3><div class="who">${c.who.map(w=>`<span class="tag">${w}</span>`).join('')}</div></div><ul>${c.pts.map(p=>`<li>${esc(p)}</li>`).join('')}</ul>`;
   updateCount();
 }
 function updateCount(){$('#cVal').textContent=(live?onSet.size:0)+' / '+circuits.length}
