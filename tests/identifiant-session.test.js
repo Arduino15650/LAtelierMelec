@@ -49,3 +49,16 @@ test('jeton expiré : il est renouvelé avant de lire l’identifiant', async ()
   await api.userId();
   assert.match(appels[0], /grant_type=refresh_token/);
 });
+
+test('limite de connexions atteinte : message clair en français', async () => {
+  const context = {
+    window: {}, atob: s => Buffer.from(s, 'base64').toString('binary'),
+    sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+    location: { hash: '', pathname: '/eleve.html', search: '' }, history: { replaceState() {} },
+    URLSearchParams, Date, Promise, AbortController, setTimeout, clearTimeout, JSON,
+    fetch: async () => ({ ok: false, status: 429, json: async () => ({ msg: 'Request rate limit reached' }) })
+  };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  await assert.rejects(context.window.MelecPortal.signIn('eleve@exemple.test', 'x'), (e) => /Trop de connexions/.test(e.message) && e.status === 429);
+});

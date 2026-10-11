@@ -26,7 +26,9 @@
       data = {};
     }
     if (!response.ok) {
-      const error = new Error(data.msg || data.error_description || data.message || data.error || `Erreur ${response.status}`);
+      // Limite de Supabase atteinte (connexions trop nombreuses depuis le même réseau, ex. une salle de classe).
+      const busy = response.status === 429 ? 'Trop de connexions en même temps depuis ce réseau. Patientez une à deux minutes, puis réessayez.' : '';
+      const error = new Error(busy || data.msg || data.error_description || data.message || data.error || `Erreur ${response.status}`);
       error.status = response.status;
       error.code = data.error_code || data.code || data.error || '';
       throw error;
