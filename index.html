@@ -188,7 +188,7 @@ section.row-sec{padding-block:clamp(64px,9vw,120px);border-bottom:1px solid colo
 .figures span{font-family:var(--f-mono);font-size:.68rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
 .ref-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;align-items:start}
 .mx-wrap{overflow-x:auto;border:1px solid var(--wire);border-radius:8px;background:var(--panel)}
-table.mx{border-collapse:separate;border-spacing:0;min-width:720px;width:100%;font-size:.8rem}
+table.mx{border-collapse:separate;border-spacing:0;width:100%;font-size:.8rem}
 .mx tbody th[scope=row],.mx thead th.corner{position:sticky;left:0;z-index:2;background:var(--panel)}
 .mx thead th.corner{z-index:3;background:var(--panel-2)}
 .mx-hint{display:none;font-family:var(--f-mono);font-size:.72rem;color:var(--volt);margin:0 0 8px}
@@ -221,6 +221,34 @@ table.mx{border-collapse:separate;border-spacing:0;min-width:720px;width:100%;fo
 .insp .chips{display:flex;flex-wrap:wrap;gap:6px}
 .insp .chips .tag{white-space:normal}
 @media (min-width:900px){.insp ul{columns:2 300px;column-gap:32px}.insp ul li{break-inside:avoid}}
+/* Activités en capsules : une seule ouverte à la fois */
+.act-pills{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px}
+.act-pill{appearance:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:left;padding:10px 16px 10px 10px;border:1px solid var(--wire);border-radius:999px;background:var(--panel);color:var(--ink);font:inherit;transition:background .18s,border-color .18s,box-shadow .18s,transform .18s}
+.act-pill b{grid-row:1/3;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--panel-2);border:1px solid var(--wire);font-family:var(--f-mono);font-size:.78rem;color:var(--volt)}
+.act-pill span{font-weight:700;font-size:.95rem;line-height:1.15}
+.act-pill small{font-family:var(--f-mono);font-size:.66rem;color:var(--muted)}
+.act-pill.on{background:var(--volt);border-color:var(--volt);color:#1a0d00;box-shadow:0 0 0 1px rgba(255,200,140,.8),0 0 18px rgba(255,138,30,.45)}
+.act-pill.on b{background:#1a0d00;border-color:#1a0d00}
+.act-pill.on small{color:#4a2700}
+@media (hover:hover){.act-pill:not(.on):hover{border-color:rgba(160,215,255,.75);box-shadow:0 0 14px rgba(79,179,255,.45);transform:translateY(-1px)}}
+.act-hint{margin-top:12px;font-family:var(--f-mono);font-size:.74rem;color:var(--muted)}
+.act-panel{margin-top:18px;display:grid;gap:16px;animation:act-in .25s ease}
+.act-panel[hidden]{display:none}
+@keyframes act-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.act-panel{animation:none}}
+.comp-pills{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.comp-pills .eyebrow{flex:1 0 100%;margin-bottom:2px}
+.comp-pill{appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:6px 12px 6px 6px;border:1px solid var(--wire);border-left:3px solid var(--bc);border-radius:999px;background:var(--panel);color:var(--ink);font:inherit;font-size:.82rem;text-align:left;transition:background .18s,box-shadow .18s}
+.comp-pill b{font-family:var(--f-mono);font-size:.7rem;padding:3px 7px;border-radius:999px;background:color-mix(in srgb,var(--bc) 25%,transparent)}
+.comp-pill.sel{background:color-mix(in srgb,var(--bc) 22%,var(--panel));box-shadow:0 0 0 1px var(--bc),0 0 14px color-mix(in srgb,var(--bc) 45%,transparent)}
+@media (hover:hover){.comp-pill:hover{box-shadow:0 0 12px color-mix(in srgb,var(--bc) 40%,transparent)}}
+.mx thead th:not(.corner),.mx td.cell{min-width:42px}
+@media (max-width:620px){.mx .tbtn span{min-width:140px!important}.comp-pill{font-size:.78rem}}
+.tag-btn{appearance:none;cursor:pointer;background:transparent;color:var(--ink);font-family:var(--f-mono);font-size:.72rem;line-height:1.3}
+.tag-btn:hover{border-color:var(--volt);color:var(--volt)}
+.insp-more{margin-top:14px}
+.insp-more summary{cursor:pointer;font-family:var(--f-mono);font-size:.72rem;color:var(--volt)}
+@media (min-width:1000px){.act-panel .ref-grid{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}}
 .sectors{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
 .sectors .tag{font-size:.74rem;padding:.4em .7em}
 
@@ -388,19 +416,24 @@ section.row-sec{padding-block:clamp(36px,4.5vw,56px)}
       </div>
     </div>
     <div class="figures" id="figures"></div>
-    <div class="ref-grid">
-      <div style="min-width:0">
-        <p class="mx-hint" id="mxHint">Faites glisser le tableau pour voir les 13 compétences →</p>
-        <div class="mx-wrap"><table class="mx" id="matrix"></table></div>
-        <div class="legend">
-          <span><i style="background:var(--b1)"></i>Bloc B1 · U2 Préparation</span>
-          <span><i style="background:var(--b2)"></i>Bloc B2 · U31 Réalisation et mise en service</span>
-          <span><i style="background:var(--b3)"></i>Bloc B3 · U32 Maintenance</span>
-          <span><i style="background:var(--muted)"></i>Plein : poids 2</span>
-          <span><i style="border:2px solid var(--muted)"></i>Anneau : poids 1</span>
+    <div class="act-pills" id="actPills" role="group" aria-label="Activités du référentiel"></div>
+    <p class="act-hint" id="actHint">Choisissez une activité pour afficher ses tâches et les compétences associées.</p>
+    <div class="act-panel" id="actPanel" hidden>
+      <div class="comp-pills" id="compPills" role="group" aria-label="Compétences de l’activité"></div>
+      <div class="ref-grid">
+        <div style="min-width:0">
+          <p class="mx-hint" id="mxHint">Faites glisser le tableau pour voir toutes les compétences →</p>
+          <div class="mx-wrap"><table class="mx" id="matrix"></table></div>
+          <div class="legend">
+            <span><i style="background:var(--b1)"></i>Bloc B1 · U2 Préparation</span>
+            <span><i style="background:var(--b2)"></i>Bloc B2 · U31 Réalisation et mise en service</span>
+            <span><i style="background:var(--b3)"></i>Bloc B3 · U32 Maintenance</span>
+            <span><i style="background:var(--muted)"></i>Plein : poids 2</span>
+            <span><i style="border:2px solid var(--muted)"></i>Anneau : poids 1</span>
+          </div>
         </div>
+        <aside class="insp" id="inspector" aria-live="polite"></aside>
       </div>
-      <aside class="insp" id="inspector" aria-live="polite"></aside>
     </div>
     <div class="sectors" id="sectors"></div>
   </div>
@@ -566,29 +599,44 @@ computeNote();
 const blockColor={B1:'var(--b1)',B2:'var(--b2)',B3:'var(--b3)'};
 const comps=MELEC.competencies;
 $('#figures').innerHTML=[[MELEC.activities.length,'activités'],[MELEC.tasks.length,'tâches'],[comps.length,'compétences'],[comps.reduce((s,c)=>s+c.criteria.length,0),'critères'],[MELEC.blocks.length,'blocs de certification'],[MELEC.sectors.length,'secteurs']].map(([n,l])=>`<div><b>${n}</b><span>${l}</span></div>`).join('');
-let mx=`<thead><tr><th class="corner">Tâche \\ Compétence</th>${comps.map(c=>`<th style="--bc:${blockColor[c.block]}"><button class="cbtn" type="button" data-c="${c.id}" title="${esc(c.label)}">${c.id}</button></th>`).join('')}</tr></thead><tbody>`;
-MELEC.activities.forEach(a=>{
-  mx+=`<tr class="grp"><th colspan="${comps.length+1}">${a.id} · ${esc(a.label)}</th></tr>`;
-  MELEC.tasks.filter(t=>t.activity===a.id).forEach(t=>{
-    mx+=`<tr data-t="${t.id}"><th scope="row"><button class="tbtn" type="button" data-t="${t.id}"><b>${t.id}</b><span>${esc(t.label)}</span></button></th>${comps.map(c=>{const w=(MELEC.links[t.id]||{})[c.id];return `<td class="cell" data-c="${c.id}" data-t="${t.id}" style="--bc:${blockColor[c.block]}">${w?`<i class="w${w}" title="${t.id} · ${c.id} · poids ${w}"></i>`:''}</td>`}).join('')}</tr>`;
-  });
-});
-$('#matrix').innerHTML=mx+'</tbody>';
-const mxEl=$('#matrix');
-function mark(cls,c,t){mxEl.querySelectorAll('.'+cls).forEach(e=>e.classList.remove(cls));
-  if(c)mxEl.querySelectorAll(`[data-c="${c}"]`).forEach(e=>(e.tagName==='BUTTON'?e.parentNode:e).classList.add(cls));
+/* Une activité à la fois : seules ses tâches et les compétences qu'elles mobilisent sont construites. */
+const shortName=a=>a.id==='A1'?'Préparation':a.label;
+const tasksOf=aid=>MELEC.tasks.filter(t=>t.activity===aid);
+const compsOf=aid=>{const ids=new Set();tasksOf(aid).forEach(t=>Object.keys(MELEC.links[t.id]||{}).forEach(c=>ids.add(c)));return comps.filter(c=>ids.has(c.id))};
+$('#actPills').innerHTML=MELEC.activities.map(a=>`<button type="button" class="act-pill" data-a="${a.id}" aria-expanded="false" aria-controls="actPanel"><b>${a.id}</b><span>${esc(shortName(a))}</span><small>${tasksOf(a.id).length} tâches · ${compsOf(a.id).length} compétences</small></button>`).join('');
+const mxEl=$('#matrix'),panel=$('#actPanel'),mxWrap=document.querySelector('.mx-wrap');
+let openAct='';
+function mark(cls,c,t){mxEl.querySelectorAll('.'+cls).forEach(e=>e.classList.remove(cls));$('#compPills').querySelectorAll('.'+cls).forEach(e=>e.classList.remove(cls));
+  if(c){mxEl.querySelectorAll(`[data-c="${c}"]`).forEach(e=>(e.tagName==='BUTTON'?e.parentNode:e).classList.add(cls));$('#compPills').querySelector(`[data-c="${c}"]`)?.classList.add(cls)}
   if(t)mxEl.querySelectorAll(`tr[data-t="${t}"] > *`).forEach(e=>e.classList.add(cls));}
+function openActivity(aid){
+  openAct=openAct===aid?'':aid;
+  $('#actPills').querySelectorAll('.act-pill').forEach(b=>{const on=b.dataset.a===openAct;b.classList.toggle('on',on);b.setAttribute('aria-expanded',String(on))});
+  panel.hidden=!openAct;$('#actHint').hidden=!!openAct;
+  if(!openAct){mxEl.innerHTML='';return}
+  const a=MELEC.activities.find(x=>x.id===openAct),list=compsOf(openAct);
+  $('#compPills').innerHTML=`<span class="eyebrow">Compétences associées</span>`+list.map(c=>`<button type="button" class="comp-pill" data-c="${c.id}" style="--bc:${blockColor[c.block]}"><b>${c.id}</b>${esc(c.label)}</button>`).join('');
+  let mx=`<thead><tr><th class="corner">${a.id} · tâche \\ compétence</th>${list.map(c=>`<th style="--bc:${blockColor[c.block]}"><button class="cbtn" type="button" data-c="${c.id}" title="${esc(c.label)}">${c.id}</button></th>`).join('')}</tr></thead><tbody>`;
+  tasksOf(openAct).forEach(t=>{
+    mx+=`<tr data-t="${t.id}"><th scope="row"><button class="tbtn" type="button" data-t="${t.id}"><b>${t.id}</b><span>${esc(t.label)}</span></button></th>${list.map(c=>{const w=(MELEC.links[t.id]||{})[c.id];return `<td class="cell" data-c="${c.id}" data-t="${t.id}" style="--bc:${blockColor[c.block]}">${w?`<i class="w${w}" title="${t.id} · ${c.id} · poids ${w}"></i>`:''}</td>`}).join('')}</tr>`;
+  });
+  mxEl.innerHTML=mx+'</tbody>';
+  mxEl.style.minWidth=(230+list.length*44)+'px';
+  showComp(list[0].id);syncHint();
+}
 function showComp(id){const c=C(id);mark('sel',id,null);
-  const tasks=MELEC.tasks.filter(t=>(MELEC.links[t.id]||{})[id]);
-  $('#inspector').innerHTML=`<span class="eyebrow">Compétence</span><h3><span class="code" style="background:color-mix(in srgb,${blockColor[c.block]} 22%,transparent);color:var(--ink)">${c.id}</span> ${esc(c.label)}</h3><div class="meta"><span class="tag">Bloc ${c.block}</span><span class="tag">Unité ${c.unit}</span><span class="tag">${c.criteria.length} critères</span></div><h4>Critères d’évaluation</h4><ul>${c.criteria.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><h4>Savoirs associés</h4><div class="chips">${c.knowledge.map(k=>`<span class="tag">${esc(MELEC.knowledge[k])}</span>`).join('')}</div><h4>Attitudes professionnelles</h4><div class="chips">${c.attitudes.map(a=>`<span class="tag">${a} · ${esc(MELEC.attitudes[a])}</span>`).join('')}</div><h4>Mobilisée par ${tasks.length} tâches</h4><div class="chips">${tasks.map(t=>`<span class="tag">${t.id} · poids ${MELEC.links[t.id][id]}</span>`).join('')}</div>`}
+  const all=MELEC.tasks.filter(t=>(MELEC.links[t.id]||{})[id]),here=all.filter(t=>t.activity===openAct);
+  $('#inspector').innerHTML=`<span class="eyebrow">Compétence</span><h3><span class="code" style="background:color-mix(in srgb,${blockColor[c.block]} 22%,transparent);color:var(--ink)">${c.id}</span> ${esc(c.label)}</h3><div class="meta"><span class="tag">Bloc ${c.block}</span><span class="tag">Unité ${c.unit}</span><span class="tag">${c.criteria.length} critères</span></div><h4>Tâches de l’activité ${openAct} qui la mobilisent</h4><div class="chips">${here.map(t=>`<button type="button" class="tag tag-btn" data-task="${t.id}">${t.id} · poids ${MELEC.links[t.id][id]}</button>`).join('')}</div><h4>Critères d’évaluation</h4><ul>${c.criteria.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><details class="insp-more"><summary>Savoirs, attitudes et autres tâches (${all.length} au total)</summary><h4>Savoirs associés</h4><div class="chips">${c.knowledge.map(k=>`<span class="tag">${esc(MELEC.knowledge[k])}</span>`).join('')}</div><h4>Attitudes professionnelles</h4><div class="chips">${c.attitudes.map(a=>`<span class="tag">${a} · ${esc(MELEC.attitudes[a])}</span>`).join('')}</div><h4>Toutes les tâches qui la mobilisent</h4><div class="chips">${all.map(t=>`<span class="tag">${t.id} · poids ${MELEC.links[t.id][id]}</span>`).join('')}</div></details>`}
 function showTask(id){const t=MELEC.tasks.find(x=>x.id===id),a=MELEC.activities.find(x=>x.id===t.activity),l=MELEC.links[id]||{};mark('sel',null,id);
-  $('#inspector').innerHTML=`<span class="eyebrow">Tâche · ${a.id} ${esc(a.label)}</span><h3><span class="code">${t.id}</span> ${esc(t.label)}</h3><div class="meta"><span class="tag">Autonomie ${t.autonomy.toLowerCase()}</span><span class="tag">${Object.keys(l).length} compétences</span></div><h4>Compétences mobilisées</h4><ul>${Object.entries(l).sort((x,y)=>y[1]-x[1]).map(([cid,w])=>`<li><b>${cid}</b> · ${esc(C(cid).label)} <span class="mono" style="color:var(--muted);font-size:.75rem">(poids ${w}, ${w===2?'essentielle':'secondaire'})</span></li>`).join('')}</ul>`}
+  $('#inspector').innerHTML=`<span class="eyebrow">Tâche · ${a.id} ${esc(shortName(a))}</span><h3><span class="code">${t.id}</span> ${esc(t.label)}</h3><div class="meta"><span class="tag">Autonomie ${t.autonomy.toLowerCase()}</span><span class="tag">${Object.keys(l).length} compétences</span></div><h4>Compétences mobilisées</h4><div class="chips">${Object.entries(l).sort((x,y)=>y[1]-x[1]).map(([cid,w])=>`<button type="button" class="tag tag-btn" data-comp="${cid}" title="${esc(C(cid).label)}">${cid} · ${w===2?'essentielle':'secondaire'}</button>`).join('')}</div><ul>${Object.entries(l).sort((x,y)=>y[1]-x[1]).map(([cid,w])=>`<li><b>${cid}</b> · ${esc(C(cid).label)}</li>`).join('')}</ul>`}
+$('#actPills').addEventListener('click',e=>{const b=e.target.closest('.act-pill');if(b)openActivity(b.dataset.a)});
+$('#compPills').addEventListener('click',e=>{const b=e.target.closest('.comp-pill');if(b)showComp(b.dataset.c)});
+$('#inspector').addEventListener('click',e=>{const b=e.target.closest('[data-task],[data-comp]');if(!b)return;b.dataset.task?showTask(b.dataset.task):showComp(b.dataset.comp)});
 mxEl.addEventListener('click',e=>{const b=e.target.closest('[data-c],[data-t]');if(!b)return;
   if(b.classList.contains('cbtn'))showComp(b.dataset.c);else if(b.classList.contains('tbtn'))showTask(b.dataset.t);else if(b.classList.contains('cell'))showComp(b.dataset.c)});
 mxEl.addEventListener('mouseover',e=>{const td=e.target.closest('td.cell');if(td)mark('hl',td.dataset.c,td.dataset.t)});
 mxEl.addEventListener('mouseleave',()=>mark('hl',null,null));
-showComp('C4');
-const mxWrap=document.querySelector('.mx-wrap');const syncHint=()=>document.getElementById('referentiel').classList.toggle('ref-scroll',mxWrap.scrollWidth>mxWrap.clientWidth+2);syncHint();window.addEventListener('resize',syncHint);
+const syncHint=()=>document.getElementById('referentiel').classList.toggle('ref-scroll',!panel.hidden&&mxWrap.scrollWidth>mxWrap.clientWidth+2);window.addEventListener('resize',syncHint);
 $('#sectors').innerHTML='<span class="eyebrow" style="align-self:center;margin-right:6px">Secteurs d’activité</span>'+MELEC.sectors.map(s=>`<span class="tag">${esc(s)}</span>`).join('');
 
 })();
