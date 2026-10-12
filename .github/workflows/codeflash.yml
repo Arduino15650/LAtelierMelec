@@ -39,8 +39,17 @@ jobs:
       # Lancement manuel (onglet Actions → Codeflash → Run workflow) : tout le code.
       - name: Lancer Codeflash
         run: |
+          set -o pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            codeflash --all
+            codeflash --all 2>&1 | tee codeflash.log
           else
-            codeflash
+            codeflash 2>&1 | tee codeflash.log
+          fi
+      # Affiche le message de Codeflash dans le résumé de l'exécution (onglet Actions).
+      - name: Résumé Codeflash
+        if: always()
+        run: |
+          if [ -f codeflash.log ]; then
+            { echo '### Codeflash'; echo '```'; tail -n 40 codeflash.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            tail -n 8 codeflash.log | sed 's/\x1b\[[0-9;]*m//g' | while IFS= read -r l; do [ -n "$l" ] && echo "::notice title=Codeflash::$l"; done
           fi
