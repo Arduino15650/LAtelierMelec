@@ -1,7 +1,7 @@
 /* Fond de l'espace élève et correspondance capsule / rubrique. */
 body.portal-page {
   background-color: #08233d;
-  background-image: linear-gradient(180deg, rgba(5, 25, 44, .69), rgba(5, 25, 44, .52) 45%, rgba(5, 25, 44, .66)), url('./fond-espace-eleve.jpg');
+  background-image: linear-gradient(180deg, rgba(5, 25, 44, .69), rgba(5, 25, 44, .52) 45%, rgba(5, 25, 44, .66)), url('./fond-espace-eleve.webp');
   background-position: center top;
   background-size: cover;
   background-repeat: no-repeat;

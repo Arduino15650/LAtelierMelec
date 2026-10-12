@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta charset="utf-8">
+  <link rel="icon" href="icon-192.png"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#071b34"><title>BAC PRO MELEC — Élève</title>
   <script>try{if(sessionStorage.getItem('melec-cloud-session-v1'))document.documentElement.classList.add('student-resuming')}catch{}</script>
   <style>html.student-resuming #studentAuth > :not(#studentAuthStatus){display:none}html.student-resuming #studentAuthStatus:empty::before{content:'Reconnexion en cours…'}</style>
@@ -50,17 +51,17 @@
   <link rel="stylesheet" href="melec-color-refresh.css?v=20260927-1">
   <link rel="stylesheet" href="melec-responsive-performance.css?v=20260927-1">
   <link rel="stylesheet" href="student-ui-colors.css?v=20260928-2">
-  <link rel="stylesheet" href="student-dashboard-background.css?v=20260929-1">
+  <link rel="stylesheet" href="student-dashboard-background.css?v=20261012-webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap">
-  <link rel="stylesheet" href="melec-sous-tension.css?v=20261012-10">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+  <link rel="stylesheet" href="melec-sous-tension.css?v=20261012-12">
   <script src="melec-circuit.js?v=20261012-2" defer></script>
 </head>
 <body class="portal-page">
   <div class="portal-shell">
     <a class="portal-top-link" href="./index.html">← Accueil</a>
-    <header class="portal-header"><img src="logo-bac-pro-melec-v3.webp" alt="Logo BAC PRO MELEC" width="92" height="92"><div><p class="eyebrow">Espace élève</p><h1>BAC PRO MELEC</h1><p>Consulter les contenus pédagogiques de votre classe.</p></div></header>
+    <header class="portal-header"><img src="logo-melec-192.webp" alt="Logo BAC PRO MELEC" width="92" height="92"><div><p class="eyebrow">Espace élève</p><h1>BAC PRO MELEC</h1><p>Consulter les contenus pédagogiques de votre classe.</p></div></header>
     <main>
       <section id="studentAuth" class="portal-panel portal-auth" aria-labelledby="studentAuthTitle">
         <h2 id="studentAuthTitle">Connexion élève</h2>
@@ -112,7 +113,7 @@
   <script src="student-referential-ccf.js?v=20260930-ccf-access1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=153',{updateViaCache:'none'}).catch(console.error));
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js?v=154',{updateViaCache:'none'}).catch(console.error));
     }
   </script>
 </body>
