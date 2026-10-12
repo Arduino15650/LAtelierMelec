@@ -142,7 +142,6 @@ html.cloud-resuming body #cloudGate::after{color:var(--st-ink)!important;font-fa
 /* ---- Barre haute ---- */
 html body .topbar{
   background:rgba(5,15,30,.9)!important;
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border-bottom:1px solid var(--st-wire)!important;
   box-shadow:none!important;
 }
@@ -717,12 +716,12 @@ canvas.melec-circuit{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;p
 @media print{canvas.melec-circuit{display:none!important}}
 /* Le contenu passe au-dessus du réseau animé : les traits restent derrière les panneaux */
 body > main.shell,body > .portal-shell{position:relative;z-index:1}
-/* Courant qui parcourt le bas de la barre haute */
-html body .topbar{position:relative}
-html body .topbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;pointer-events:none;
-  background:linear-gradient(90deg,transparent 0 40%,rgba(120,200,255,.0) 40%,rgba(120,200,255,.9) 48%,#ff8a1e 50%,rgba(120,200,255,.9) 52%,transparent 60%) 0 0/250% 100% no-repeat;
-  animation:melec-courant 4.5s linear infinite}
-@keyframes melec-courant{from{background-position:130% 0}to{background-position:-130% 0}}
+/* Courant qui parcourt le bas de la barre haute : animé par transform (calculé par la carte graphique, sans repeindre la page) */
+html body .topbar{position:relative;overflow-x:clip}
+html body .topbar::after{content:"";position:absolute;left:0;bottom:-1px;width:22%;height:2px;pointer-events:none;will-change:transform;
+  background:linear-gradient(90deg,transparent,rgba(120,200,255,.9) 40%,#ff8a1e 50%,rgba(120,200,255,.9) 60%,transparent);
+  transform:translateX(-100%);animation:melec-courant 4.5s linear infinite}
+@keyframes melec-courant{from{transform:translateX(-100%)}to{transform:translateX(460%)}}
 @media (prefers-reduced-motion:reduce){html body .topbar::after{animation:none;opacity:0}}
 
 
@@ -730,3 +729,26 @@ html body .topbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px
 html body:not(#st-a):not(#st-b) .teaching-space .teach-student.teach-duplicate{border-color:#ff8a1e!important;box-shadow:inset 4px 0 0 #ff8a1e!important}
 html body:not(#st-a):not(#st-b) .teaching-space .teach-duplicate-note{grid-column:1/-1;margin:2px 0 0;font-size:.86rem;line-height:1.4;color:#ffd7ad!important}
 html body:not(#st-a):not(#st-b) .teaching-space .teach-duplicate-note strong{color:#ff8a1e!important}
+
+/* ==== Fluidité : aucun flou d'arrière-plan (il était recalculé à chaque image du réseau animé) ==== */
+html body *,html body *::before,html body *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+
+/* ==== Autobrillance au survol : boutons, pastilles, onglets et cartes ==== */
+html body :is(button,.button,.portal-button,[role=tab],summary,.home-access-card,.nav){transition:box-shadow .18s ease,filter .18s ease,transform .18s ease,border-color .18s ease}
+@media (hover:hover){
+  html body:not(#st-a):not(#st-b) :is(button,.button,.portal-button,[role=tab],.home-access-card,.cloud-menu>summary):not(:disabled):not([aria-disabled=true]):hover{
+    filter:brightness(1.12) saturate(1.08);
+    box-shadow:0 0 0 1px rgba(160,215,255,.75),0 0 14px rgba(79,179,255,.55),0 0 28px rgba(79,179,255,.22)!important}
+  html body:not(#st-a):not(#st-b) :is(.portal-button,#studentRefresh,.button.primary,button.primary,.active,[aria-selected=true]):not(:disabled):hover{
+    box-shadow:0 0 0 1px rgba(255,200,140,.85),0 0 16px rgba(255,138,30,.6),0 0 30px rgba(255,138,30,.25)!important}
+  html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view]:hover,
+  html body:not(#st-a):not(#st-b).portal-page #studentDashboard #studentContentTabs button:hover,
+  html body:not(#st-a):not(#st-b).portal-page #studentDashboard .portal-actions button:hover{
+    transform:translateY(-1px);filter:brightness(1.1) saturate(1.1);
+    box-shadow:0 0 0 2px rgba(255,255,255,.75),0 0 16px rgba(120,200,255,.8),0 0 32px rgba(79,179,255,.35)!important}
+  html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view].active:hover,
+  html body:not(#st-a):not(#st-b).portal-page #studentDashboard #studentContentTabs button.active:hover{
+    box-shadow:0 0 0 2px rgba(255,255,255,.85),0 0 18px rgba(255,138,30,.75),0 0 34px rgba(255,138,30,.3)!important}
+}
+html body:not(#st-a):not(#st-b) :is(button,.button,.portal-button,[role=tab],.home-access-card):not(:disabled):active{filter:brightness(1.2);transform:translateY(0) scale(.98)}
+@media (prefers-reduced-motion:reduce){html body :is(button,.button,.portal-button,[role=tab],.home-access-card,.nav){transition:none}}

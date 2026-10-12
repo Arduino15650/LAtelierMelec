@@ -1,6 +1,6 @@
 /* L'Atelier MELEC : réseau de conducteurs animé en arrière-plan des espaces
    enseignant et élève (même effet que la page d'accueil).
-   Léger : 30 images par seconde au plus, pause quand l'onglet est caché,
+   Léger : 20 images par seconde au plus, conducteurs fixes mis en cache, pause quand l'onglet est caché,
    aucune animation si l'utilisateur a demandé moins de mouvement. */
 (function () {
   'use strict';
@@ -14,11 +14,14 @@
   var ctx = cv.getContext && cv.getContext('2d');
   if (!ctx) return;
 
-  var W = 0, H = 0, dpr = 1, paths = [], pulses = [], raf = 0, last = 0, acc = 0;
+  var W = 0, H = 0, dpr = 1, paths = [], pulses = [], raf = 0, last = 0, acc = 0, layer = null;
+  // Machines modestes (2 cœurs ou moins) : réseau fixe, sans animation.
+  if ((navigator.hardwareConcurrency || 4) <= 2) reduce = true;
+  var FPS = 20;
   function rnd(a, b) { return a + Math.random() * (b - a); }
 
   function build() {
-    dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    dpr = Math.min(1.25, window.devicePixelRatio || 1);
     W = window.innerWidth; H = window.innerHeight;
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -42,6 +45,16 @@
       if (pts.length > 1) paths.push({ pts: pts, len: len, hot: Math.random() < 0.28 });
     }
     pulses = paths.map(function (p) { return { p: p, t: rnd(0, p.len), v: rnd(60, 150) }; });
+    // Les conducteurs fixes sont dessinés une seule fois dans un calque mis en cache.
+    layer = document.createElement('canvas'); layer.width = cv.width; layer.height = cv.height;
+    var lc = layer.getContext('2d'); lc.setTransform(dpr, 0, 0, dpr, 0, 0);
+    lc.lineWidth = 1.3; lc.lineJoin = 'round'; lc.strokeStyle = 'rgba(79,179,255,.16)'; lc.fillStyle = 'rgba(79,179,255,.38)';
+    paths.forEach(function (p) {
+      lc.beginPath();
+      p.pts.forEach(function (q, i) { if (i) lc.lineTo(q[0], q[1]); else lc.moveTo(q[0], q[1]); });
+      lc.stroke();
+      var e = p.pts[p.pts.length - 1]; lc.beginPath(); lc.arc(e[0], e[1], 2.4, 0, 6.3); lc.fill();
+    });
     draw(0);
   }
 
@@ -56,15 +69,10 @@
   }
 
   function draw(dt) {
-    ctx.clearRect(0, 0, W, H);
-    ctx.lineWidth = 1.3; ctx.lineJoin = 'round';
-    ctx.strokeStyle = 'rgba(79,179,255,.16)'; ctx.fillStyle = 'rgba(79,179,255,.38)';
-    paths.forEach(function (p) {
-      ctx.beginPath();
-      p.pts.forEach(function (q, i) { if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); });
-      ctx.stroke();
-      var e = p.pts[p.pts.length - 1]; ctx.beginPath(); ctx.arc(e[0], e[1], 2.4, 0, 6.3); ctx.fill();
-    });
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
+    if (layer) ctx.drawImage(layer, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineJoin = 'round';
     if (reduce) return;
     pulses.forEach(function (u) {
       u.t += u.v * dt; if (u.t > u.p.len + 60) u.t = -rnd(0, 320);
@@ -82,15 +90,15 @@
       }
       if (u.t <= u.p.len) {
         var h = pointAt(u.p, u.t);
-        ctx.fillStyle = 'rgba(' + col + ',1)'; ctx.shadowColor = 'rgba(' + col + ',1)'; ctx.shadowBlur = 10;
-        ctx.beginPath(); ctx.arc(h[0], h[1], 2.2, 0, 6.3); ctx.fill(); ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(' + col + ',.22)'; ctx.beginPath(); ctx.arc(h[0], h[1], 6, 0, 6.3); ctx.fill();
+        ctx.fillStyle = 'rgba(' + col + ',1)'; ctx.beginPath(); ctx.arc(h[0], h[1], 2.2, 0, 6.3); ctx.fill();
       }
     });
   }
 
   function loop(ts) {
     var dt = last ? Math.min(0.1, (ts - last) / 1000) : 0; last = ts; acc += dt;
-    if (acc >= 1 / 30 || !dt) { draw(acc); acc = 0; }
+    if (acc >= 1 / FPS || !dt) { draw(acc); acc = 0; }
     raf = requestAnimationFrame(loop);
   }
   function start() { if (!raf && !reduce && !document.hidden) { last = 0; acc = 0; raf = requestAnimationFrame(loop); } }
