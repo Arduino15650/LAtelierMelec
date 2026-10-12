@@ -752,3 +752,53 @@ html body :is(button,.button,.portal-button,[role=tab],summary,.home-access-card
 }
 html body:not(#st-a):not(#st-b) :is(button,.button,.portal-button,[role=tab],.home-access-card):not(:disabled):active{filter:brightness(1.2);transform:translateY(0) scale(.98)}
 @media (prefers-reduced-motion:reduce){html body :is(button,.button,.portal-button,[role=tab],.home-access-card,.nav){transition:none}}
+
+/* ==== États sélectionnés, ouverts ou survolés : jamais de texte clair sur fond clair ====
+   Les anciennes feuilles passaient ces éléments sur fond pastel alors que le thème met le texte en blanc. */
+html body:not(#st-a):not(#st-b) .workplace-student-dropdown .select-row:has(input:checked),
+html body:not(#st-a):not(#st-b) #studentsView .student-groups-panel .group-member-row:has(input:checked),
+html body:not(#st-a):not(#st-b) .scope-choice.active,
+html body:not(#st-a):not(#st-b) .contract-dossiers-matrix .is-selected,
+html body:not(#st-a):not(#st-b) #ccfView .ccf-student-checks label:has(input:checked),
+html body:not(#st-a):not(#st-b) .activity-reuse-student:has(input:checked),
+html body:not(#st-a):not(#st-b) label:has(> input:checked):not(:where(.st-doc,.student-pdf-mount,.teach-preview-content,.teach-editable) *){background:linear-gradient(90deg,rgba(255,138,30,.2),rgba(255,138,30,.05) 60%),var(--st-panel-2)!important;border-color:var(--st-volt)!important;border-radius:6px;color:var(--st-ink)!important;box-shadow:inset 3px 0 0 var(--st-volt)!important}
+html body:not(#st-a):not(#st-b) .workplace-student-dropdown .select-row:has(input:checked) :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) #studentsView .student-groups-panel .group-member-row:has(input:checked) :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .scope-choice.active :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .contract-dossiers-matrix .is-selected :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) #ccfView .ccf-student-checks label:has(input:checked) :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .activity-reuse-student:has(input:checked) :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) label:has(> input:checked):not(:where(.st-doc,.student-pdf-mount,.teach-preview-content,.teach-editable) *) :is(strong,span,small,b,em,p,div,label){color:var(--st-ink)!important;-webkit-text-fill-color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .workplace-student-dropdown .select-row:has(input:checked) small,
+html body:not(#st-a):not(#st-b) #studentsView .student-groups-panel .group-member-row:has(input:checked) small{color:#ffd7ad!important;-webkit-text-fill-color:#ffd7ad!important}
+html body:not(#st-a):not(#st-b) .activity-actions[open]>summary,
+html body:not(#st-a):not(#st-b) .referential-section[open]>summary,
+html body:not(#st-a):not(#st-b) .referential-activity[open]>summary,
+html body:not(#st-a):not(#st-b) .activity-class-group[open]>summary,
+html body:not(#st-a):not(#st-b) .activity-entry[open]>.activity-entry-summary{background:var(--st-panel-2)!important;color:var(--st-ink)!important;border-color:var(--st-wire)!important}
+html body:not(#st-a):not(#st-b) .activity-actions[open]>summary :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .referential-section[open]>summary :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .referential-activity[open]>summary :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .activity-class-group[open]>summary :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .activity-entry[open]>.activity-entry-summary :is(strong,span,small,b,em,p,div,label){color:var(--st-ink)!important;-webkit-text-fill-color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .scope-choice:hover,
+html body:not(#st-a):not(#st-b) #ccfView .ccf-student-checks label:hover,
+html body:not(#st-a):not(#st-b) .home-section-title button:hover,
+html body:not(#st-a):not(#st-b) .home-section-title button:focus-visible,
+html body:not(#st-a):not(#st-b) .app-back-button:hover,
+html body:not(#st-a):not(#st-b) .app-back-button:focus-visible,
+html body:not(#st-a):not(#st-b) .assign-students-button:hover,
+html body:not(#st-a):not(#st-b) .assign-students-button:focus-visible,
+html body:not(#st-a):not(#st-b) #ccfView .ccf-submenu:hover,
+html body:not(#st-a):not(#st-b) #ccfView .ccf-submenu:focus-visible{background:var(--st-panel-2)!important;color:var(--st-ink)!important;border-color:rgba(160,215,255,.75)!important}
+html body:not(#st-a):not(#st-b) .scope-choice:hover :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) #ccfView .ccf-student-checks label:hover :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .home-section-title button:hover :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .home-section-title button:focus-visible :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .app-back-button:hover :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .app-back-button:focus-visible :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .assign-students-button:hover :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) .assign-students-button:focus-visible :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) #ccfView .ccf-submenu:hover :is(strong,span,small,b,em,p,div,label),
+html body:not(#st-a):not(#st-b) #ccfView .ccf-submenu:focus-visible :is(strong,span,small,b,em,p,div,label){color:var(--st-ink)!important;-webkit-text-fill-color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .activity-reuse-student.is-locked{background:rgba(147,171,199,.12)!important;color:var(--st-muted)!important}
