@@ -83,16 +83,26 @@ p{margin:0}
 .lead{font-size:clamp(1.05rem,1.6vw,1.24rem);max-width:70ch;margin-top:26px;color:color-mix(in srgb,var(--ink) 88%,var(--muted))}
 .entries{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:34px;max-width:640px}
 .entry{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:16px 18px;border-radius:6px;text-decoration:none;border:1px solid var(--wire);background:color-mix(in srgb,var(--panel) 88%,transparent);transition:border-color .2s,transform .2s,background .2s}
-.entry:hover{border-color:var(--volt);transform:translateY(-2px)}
+.entry{transition:background .18s,border-color .18s,box-shadow .18s,transform .18s,color .18s}
+/* Les deux accès sont neutres ; ils ne s'allument en orange qu'au survol, au clavier ou au clic */
+.entry:is(:hover,:focus-visible,:active){background:var(--volt);border-color:var(--volt);color:#1a0d00;transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,200,140,.8),0 0 22px rgba(255,138,30,.55),0 0 44px rgba(255,138,30,.2)}
+.entry:is(:hover,:focus-visible,:active) small{color:#4a2700}
+.entry:is(:hover,:focus-visible,:active) .ic{background:#1a0d00;border-color:#1a0d00}
+.entry:is(:hover,:focus-visible,:active) .arr{color:#1a0d00}
+@media (hover:hover){
+  :is(.btn,.cta-top,.top nav a,.lv-btn,.mx .tbtn,button):not(:disabled){transition:box-shadow .18s,filter .18s,border-color .18s}
+  :is(.btn,.cta-top,.top nav a,button):not(:disabled):hover{filter:brightness(1.12);box-shadow:0 0 0 1px rgba(160,215,255,.7),0 0 14px rgba(79,179,255,.5)}
+  :is(.btn.primary,.cta-top):hover{box-shadow:0 0 0 1px rgba(255,200,140,.85),0 0 16px rgba(255,138,30,.6)}
+}
 .entry .ic{width:40px;height:40px;border-radius:5px;display:grid;place-items:center;background:var(--panel-2);border:1px solid var(--wire)}
 .entry .ic svg{width:22px;height:22px}
 .entry strong{display:block;font-size:1.02rem}
 .entry small{display:block;color:var(--muted);font-size:.82rem;line-height:1.35}
 .entry .arr{font-family:var(--f-mono);color:var(--volt)}
-.entry.teacher{background:var(--volt);border-color:var(--volt);color:#1a0d00}
-.entry.teacher small{color:#4a2700}
-.entry.teacher .ic{background:#1a0d00;border-color:#1a0d00}
-.entry.teacher .arr{color:#1a0d00}
+
+
+
+
 @media (max-width:560px){.entries{grid-template-columns:1fr}}
 
 /* Disjoncteur général */
