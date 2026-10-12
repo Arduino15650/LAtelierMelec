@@ -15,6 +15,7 @@
   <style>html,body{min-height:100%;background:#06182d;color:#fff}body{margin:0}</style>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+  <link rel="icon" href="icon-192.png">
   <link rel="stylesheet" href="styles.css?v=20260911-1">
   <link rel="stylesheet" href="bo.css?v=20260930-alignement1">
   <link rel="stylesheet" href="teaching.css?v=20260926-eleves-responsive1">
@@ -132,15 +133,15 @@
   <link rel="stylesheet" href="results-follow-scroll.css?v=20260929-1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap">
-  <link rel="stylesheet" href="melec-sous-tension.css?v=20261012-10">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+  <link rel="stylesheet" href="melec-sous-tension.css?v=20261012-12">
   <script src="melec-circuit.js?v=20261012-2" defer></script>
 </head>
 <body class="cloud-locked">
   <div id="cloudGate" role="dialog" aria-modal="true" aria-label="Connexion à LAtelierMelec">
     <div class="cloud-card">
       <a class="cloud-home-link" href="./index.html">← Retour à l’accueil</a>
-      <div class="cloud-brand"><img src="logo-bac-pro-melec-v3.webp" alt=""><strong>BAC PRO MELEC</strong></div>
+      <div class="cloud-brand"><img src="logo-melec-192.webp" alt=""><strong>BAC PRO MELEC</strong></div>
       <section id="cloudLoginPane">
         <h1>Espace enseignant</h1>
         <p>Connectez-vous avec votre compte enseignant Supabase.</p>
@@ -183,7 +184,7 @@
   </dialog>
   <header class="topbar">
     <button id="appBackButton" class="app-back-button" type="button" aria-label="Revenir à la page précédente" onclick="appBack()" hidden>← <span>Retour</span></button>
-    <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome()}"><span class="brand-logo"><img src="logo-bac-pro-melec-v3.webp?v=1" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
+    <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome()}"><span class="brand-logo"><img src="logo-melec-192.webp" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
     <button id="mobileExitButton" type="button" aria-label="Quitter l’espace enseignant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5M14 7l5 5-5 5M19 12H8"/></svg><span>Quitter</span></button>
     <p class="mobile-brand-subtitle">Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p>
   </header>
@@ -247,7 +248,7 @@
   <script src="results-follow-scroll.js?v=20260929-1"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const swVersion='153';
+      const swVersion='154';
       window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
     }
   </script>

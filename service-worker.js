@@ -1,6 +1,6 @@
-const CACHE_NAME = 'bac-pro-melec-v153-tp-only';
+const CACHE_NAME = 'bac-pro-melec-v154-harmonisation';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
-const CORE_FILES = ['./logo-bac-pro-melec-v3.webp'];
+const CORE_FILES = ['./logo-melec-192.webp'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_FILES)));
