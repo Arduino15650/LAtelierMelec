@@ -830,3 +830,16 @@ html body .mfa-status.error{color:#ff9b8a}
 html body .mfa-dialog button{min-height:40px;padding:8px 16px;border:1px solid var(--st-volt);border-radius:4px;background:var(--st-volt);color:var(--st-volt-ink);font:700 .92rem var(--st-f-body);cursor:pointer}
 html body .mfa-dialog button.warn{background:transparent;color:#ffb3a6;border-color:#c0533f}
 html body .mfa-close button{background:var(--st-panel-2)!important;color:var(--st-ink)!important;border-color:var(--st-wire)!important}
+
+/* ==== Éditeur d'activité : étapes « critères par tâche » et « vérification » en panneaux sombres ==== */
+html body:not(#st-a):not(#st-b) .content .view :is(.task-criteria-groups,.workplace-verification){background:rgba(10,28,51,.6)!important;border-color:var(--st-wire)!important;color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .content .view .task-criterion-group{background:var(--st-panel)!important;border:1px solid var(--st-wire)!important;color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .content .view .task-criterion-group>h3{background:var(--st-panel-2)!important;color:var(--st-ink)!important;-webkit-text-fill-color:var(--st-ink)!important;border-bottom:1px solid var(--st-wire)!important}
+html body:not(#st-a):not(#st-b) .content .view .criteria-box{background:transparent!important;color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .content .view :is(.criteria-box,.task-criterion-group,.workplace-verification) :is(label,span,p,strong,b,small,li){color:var(--st-ink)!important;-webkit-text-fill-color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .content .view .workplace-verification :is(p,small){color:var(--st-muted)!important;-webkit-text-fill-color:var(--st-muted)!important}
+html body:not(#st-a):not(#st-b) .content .view .workplace-verification strong{color:var(--st-ink)!important}
+html body:not(#st-a):not(#st-b) .content .view td .chip{background:rgba(95,211,138,.16)!important;border:1px solid rgba(95,211,138,.6)!important;color:#c9f5da!important;-webkit-text-fill-color:#c9f5da!important}
+html body:not(#st-a):not(#st-b) .content .view .class-chip{background:rgba(79,179,255,.14)!important;border:1px solid rgba(79,179,255,.55)!important;color:#cfe8ff!important;-webkit-text-fill-color:#cfe8ff!important}
+html body:not(#st-a):not(#st-b) .content .view .progress{background:rgba(147,171,199,.18)!important}
+html body:not(#st-a):not(#st-b) .content .view td select{min-width:160px}
