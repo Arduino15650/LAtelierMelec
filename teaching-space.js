@@ -68,6 +68,12 @@
   function rosterNameExists(student) {
     return (state?.students || []).some(entry => normalized(entry.name) === normalized(student.last_name + student.first_name));
   }
+  function duplicateOf(profile) {
+    if (profile.approved_at || profile.blocked_at) return null;
+    const rosterIds = rosterMatches(profile).map(entry => String(entry.id));
+    return students.find(other => other.user_id !== profile.user_id && other.approved_at && !other.blocked_at
+      && (rosterIds.includes(String(other.roster_student_id)) || normalized(other.last_name + other.first_name) === normalized(profile.last_name + profile.first_name))) || null;
+  }
   async function load(background = false) {
     if (loadInFlight) return loadInFlight;
     if (!background) root.innerHTML = '<div class="teach-head"><div><h1>TP en atelier</h1><p>Contenus de classe et accès élèves</p></div></div><div class="teach-card">Chargement… <span id="teachStatus"></span></div>';
@@ -723,6 +729,34 @@
       btn.disabled = true;
       try { await api.invoke('melec-access', {action:'delete_account',studentId:btn.dataset.deleteAccount}); await loadClass(); status('Compte de connexion supprimé ; élève et évaluations conservés.'); }
       catch (error) { status(error.message,true); btn.disabled = false; }
+    });
+    // Doublons : un élève déjà validé qui a créé un second compte (autre adresse, mot de passe oublié…).
+    // La validation directe est refusée par le serveur ; on l'explique et on propose les deux issues.
+    body.querySelectorAll('[data-approve]').forEach(btn => {
+      const pendingProfile = students.find(s => s.user_id === btn.dataset.approve);
+      const twin = pendingProfile && duplicateOf(pendingProfile);
+      if (!twin) return;
+      const card = btn.closest('.teach-student');
+      card.classList.add('teach-duplicate');
+      const when = d => d ? new Date(d).toLocaleDateString('fr-FR') : '?';
+      const pick = card.querySelector('[data-roster-student]'); if (pick && twin.roster_student_id && [...pick.options].some(o => o.value === String(twin.roster_student_id))) pick.value = String(twin.roster_student_id);
+      card.insertAdjacentHTML('beforeend', `<p class="teach-duplicate-note"><strong>Doublon</strong> : cet élève a déjà un compte validé (${esc(twin.email || 'adresse inconnue')}, validé le ${when(twin.approved_at)}). Cette nouvelle demande date du ${when(pendingProfile.created_at)}. Demandez-lui quelle adresse il utilise.</p>`);
+      btn.textContent = 'Garder ce nouveau compte';
+      btn.onclick = async () => {
+        const rosterId = card.querySelector('[data-roster-student]').value || twin.roster_student_id || '';
+        if (!rosterId) return status('Confirmez l’élève dans le registre.', true);
+        if (!confirm(`Garder le nouveau compte (${pendingProfile.email}) ?\n\nL’ancien compte (${twin.email}) perd son accès. Les évaluations de l’élève sont conservées.`)) return;
+        btn.disabled = true;
+        try {
+          await api.invoke('melec-access', {action:'revoke', studentId:twin.user_id});
+          try { await api.invoke('melec-access', {action:'approve', studentId:pendingProfile.user_id, rosterId}); }
+          catch (error) { await api.invoke('melec-access', {action:'approve', studentId:twin.user_id, rosterId:twin.roster_student_id || rosterId}).catch(() => {}); throw error; }
+          await loadClass();
+          status('Nouveau compte validé. L’ancien compte n’a plus accès ; vous pouvez le supprimer depuis les demandes s’il y apparaît.');
+        } catch (error) { status(error.message, true); btn.disabled = false; }
+      };
+      const del = card.querySelector('[data-delete-account]');
+      if (del) del.textContent = 'Supprimer ce doublon';
     });
   }
   function renderAlerts() {
