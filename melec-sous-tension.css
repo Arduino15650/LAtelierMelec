@@ -802,3 +802,31 @@ html body:not(#st-a):not(#st-b) .assign-students-button:focus-visible :is(strong
 html body:not(#st-a):not(#st-b) #ccfView .ccf-submenu:hover :is(strong,span,small,b,em,p,div,label),
 html body:not(#st-a):not(#st-b) #ccfView .ccf-submenu:focus-visible :is(strong,span,small,b,em,p,div,label){color:var(--st-ink)!important;-webkit-text-fill-color:var(--st-ink)!important}
 html body:not(#st-a):not(#st-b) .activity-reuse-student.is-locked{background:rgba(147,171,199,.12)!important;color:var(--st-muted)!important}
+/* ==== Double authentification ==== */
+html body .mfa-dialog{width:min(520px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto;padding:22px 24px;border:1px solid var(--st-wire);border-top:3px solid var(--st-volt);border-radius:8px;background:var(--st-panel);color:var(--st-ink);box-shadow:0 24px 60px rgba(0,0,0,.6)}
+html body .mfa-dialog::backdrop{background:rgba(2,8,18,.72)}
+html body .mfa-dialog h2{margin:0 0 12px;font-size:1.35rem;color:var(--st-ink)}
+html body .mfa-dialog p,html body .mfa-dialog li{line-height:1.5;color:var(--st-ink)}
+html body .mfa-close{position:absolute;top:10px;right:12px;margin:0}
+html body .mfa-close button{min-height:0!important;width:34px;height:34px;padding:0!important;border-radius:4px!important;font-size:1.3rem!important;line-height:1}
+html body .mfa-steps{padding-left:1.2em;margin:10px 0}
+html body .mfa-qr{display:grid;place-items:center;margin:12px 0}
+html body .mfa-qr img{width:200px;height:200px;padding:10px;background:#fff;border-radius:6px}
+html body .mfa-secret{margin:8px 0 14px}
+html body .mfa-secret summary{cursor:pointer;color:var(--st-muted)}
+html body .mfa-secret code{display:block;margin-top:8px;padding:10px;border:1px dashed var(--st-wire);border-radius:4px;font-family:var(--st-f-mono);letter-spacing:.12em;word-break:break-all;color:var(--st-ink)}
+html body .mfa-confirm{display:flex;flex-wrap:wrap;align-items:end;gap:10px}
+html body .mfa-confirm label{flex:1 0 100%;font-weight:700}
+html body .mfa-confirm input,html body #cloudMfaCode{width:9.5em;font:600 1.4rem var(--st-f-mono)!important;letter-spacing:.3em;text-align:center}
+html body .mfa-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+html body .mfa-list{list-style:none;padding:0;margin:10px 0;display:grid;gap:8px}
+html body .mfa-list li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 12px;border:1px solid var(--st-wire);border-radius:6px;background:var(--st-panel-2)}
+html body .mfa-list li span{font-weight:700;flex:1 1 auto}
+html body .mfa-list li small{color:var(--st-muted)}
+html body .mfa-on strong{color:#5fd38a}
+html body .mfa-help{font-size:.9rem;color:var(--st-muted)!important}
+html body .mfa-status{min-height:1.4em;margin:12px 0 0;font-weight:600;color:#7fe0a5}
+html body .mfa-status.error{color:#ff9b8a}
+html body .mfa-dialog button{min-height:40px;padding:8px 16px;border:1px solid var(--st-volt);border-radius:4px;background:var(--st-volt);color:var(--st-volt-ink);font:700 .92rem var(--st-f-body);cursor:pointer}
+html body .mfa-dialog button.warn{background:transparent;color:#ffb3a6;border-color:#c0533f}
+html body .mfa-close button{background:var(--st-panel-2)!important;color:var(--st-ink)!important;border-color:var(--st-wire)!important}

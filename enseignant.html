@@ -133,7 +133,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap">
-  <link rel="stylesheet" href="melec-sous-tension.css?v=20261012-8">
+  <link rel="stylesheet" href="melec-sous-tension.css?v=20261012-9">
   <script src="melec-circuit.js?v=20261012-2" defer></script>
 </head>
 <body class="cloud-locked">
@@ -148,6 +148,15 @@
           <label for="cloudEmail">Adresse e-mail</label><input id="cloudEmail" type="email" autocomplete="username" required>
           <label for="cloudPassword">Mot de passe</label><input id="cloudPassword" type="password" autocomplete="current-password" required>
           <div class="cloud-actions"><button type="submit">Se connecter</button></div>
+        </form>
+      </section>
+      <section id="cloudMfaPane" hidden>
+        <h1>Code de sécurité</h1>
+        <p>Ouvrez votre application Authenticator et saisissez le code à 6 chiffres affiché pour L’Atelier MELEC.</p>
+        <form id="cloudMfaForm" autocomplete="off">
+          <label for="cloudMfaCode">Code à 6 chiffres</label>
+          <input id="cloudMfaCode" inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7" autocomplete="one-time-code" required>
+          <div class="cloud-actions"><button type="submit">Valider le code</button></div>
         </form>
       </section>
       <section id="cloudImportPane" hidden>
@@ -166,6 +175,12 @@
       <button id="cloudSignOutGate" class="secondary" type="button" hidden>Changer de compte</button>
     </div>
   </div>
+  <dialog id="mfaDialog" class="mfa-dialog" aria-labelledby="mfaTitle">
+    <form method="dialog" class="mfa-close"><button type="submit" aria-label="Fermer">×</button></form>
+    <h2 id="mfaTitle">Double authentification</h2>
+    <div id="mfaBody"></div>
+    <p id="mfaStatus" class="mfa-status" role="status" aria-live="polite"></p>
+  </dialog>
   <header class="topbar">
     <button id="appBackButton" class="app-back-button" type="button" aria-label="Revenir à la page précédente" onclick="appBack()" hidden>← <span>Retour</span></button>
     <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome()}"><span class="brand-logo"><img src="logo-bac-pro-melec-v3.webp?v=1" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
@@ -188,6 +203,7 @@
       <div class="cloud-menu-panel">
         <span id="cloudSyncStatus" role="status" aria-live="polite">Connexion…</span>
         <button id="cloudSyncNow" type="button">Actualiser les données</button>
+        <button id="mfaOpen" type="button">Double authentification</button>
         <button id="cloudSignOut" type="button">Déconnexion</button>
       </div>
     </details>
@@ -217,13 +233,14 @@
   <script src="ccf-dashboard.js?v=20260930-reset-selection1"></script>
   <script src="ccf-submenus.js?v=20260928-4"></script>
   <script src="home.js?v=20260927-sans-doublon"></script>
-  <script src="portal-api.js?v=20260930-storage-retry3"></script>
+  <script src="portal-api.js?v=20261012-mfa1"></script>
   <script src="content-render.js?v=20260930-continuation1"></script>
   <script src="tp-response-export.js?v=20260927-4"></script>
   <script src="student-pdf-viewer.js?v=20260927-2"></script>
   <script src="teaching-space.js?v=20261012-doublons1"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
-  <script src="cloud-sync.js?v=20260930-reset-selection1"></script>
+  <script src="melec-mfa.js?v=20261012-1"></script>
+  <script src="cloud-sync.js?v=20261012-mfa1"></script>
   <script src="activity-reuse.js?v=20260930-competences1"></script>
   <script src="activity-overview-filter.js?v=20260930-fin-evaluation1"></script>
   <script src="evaluation-student-filter.js?v=20260928-2"></script>

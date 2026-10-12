@@ -183,9 +183,47 @@
     current = null;
     sessionStorage.removeItem(SESSION_KEY);
   }
+  // ---- Double authentification (application Authenticator, codes TOTP à 6 chiffres) ----
+  function claims(accessToken) {
+    try {
+      const part = String(accessToken).split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(part + '='.repeat((4 - part.length % 4) % 4)));
+    } catch { return {}; }
+  }
+  // Niveau de la session : aal1 = mot de passe seul, aal2 = mot de passe + code Authenticator.
+  async function assuranceLevel() { return claims(await token()).aal || 'aal1'; }
+  async function authFetch(path, options = {}) {
+    return boundedDecode(URL + '/auth/v1/' + path, {
+      ...options,
+      headers: { apikey: KEY, Authorization: 'Bearer ' + await token(), 'Content-Type': 'application/json', ...(options.headers || {}) }
+    });
+  }
+  async function mfaFactors() {
+    const account = await user();
+    return (account.factors || []).filter(factor => factor.factor_type === 'totp');
+  }
+  async function mfaEnroll(friendlyName) {
+    const data = await authFetch('factors', { method: 'POST', body: JSON.stringify({ factor_type: 'totp', friendly_name: friendlyName, issuer: 'L’Atelier MELEC' }) });
+    const svg = String(data?.totp?.qr_code || '');
+    if (svg && !svg.startsWith('data:')) data.totp.qr_code = 'data:image/svg+xml;utf-8,' + encodeURIComponent(svg);
+    return data;
+  }
+  async function mfaVerify(factorId, code) {
+    const challenge = await authFetch('factors/' + encodeURIComponent(factorId) + '/challenge', { method: 'POST', body: '{}' });
+    const data = await authFetch('factors/' + encodeURIComponent(factorId) + '/verify', {
+      method: 'POST', body: JSON.stringify({ challenge_id: challenge.id, code: String(code).replace(/\s/g, '') })
+    });
+    // La vérification renvoie une nouvelle session de niveau aal2 : elle remplace la précédente.
+    if (data?.access_token) remember({ ...data, expires_at: data.expires_at || Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600) });
+    return data;
+  }
+  async function mfaUnenroll(factorId) {
+    return authFetch('factors/' + encodeURIComponent(factorId), { method: 'DELETE' });
+  }
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   }
-  window.MelecPortal = { URL, KEY, signIn, signUp, token, user, userId, rest, invoke, upload, download, removeFiles, signOut, escapeHtml };
+  window.MelecPortal = { URL, KEY, signIn, signUp, token, user, userId, rest, invoke, upload, download, removeFiles, signOut, escapeHtml,
+    assuranceLevel, mfaFactors, mfaEnroll, mfaVerify, mfaUnenroll };
 })();
 

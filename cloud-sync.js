@@ -119,6 +119,12 @@
     lock();
     gateMessage('Connexion et vérification des données…');
     await identify();
+    // Double authentification : si un Authenticator est activé, le code est exigé avant tout accès aux données.
+    if (window.MelecMfa) {
+      await window.MelecMfa.requireSecondFactor(gateMessage);
+      session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+      gateMessage('Connexion et vérification des données…');
+    }
     // Lire d'abord la petite révision ; la sauvegarde complète n'est nécessaire que si elle a changé.
     const [, remote] = await Promise.all([ensureTeacher(), cloudRevision()]);
     if (!remote) {
@@ -309,6 +315,7 @@
     document.documentElement.classList.remove('cloud-resuming');
     byId('cloudLoginPane').hidden = false;
     byId('cloudImportPane').hidden = true;
+    if (byId('cloudMfaPane')) byId('cloudMfaPane').hidden = true;
     byId('cloudSignOutGate').hidden = true;
     gateMessage('Vous êtes déconnecté.');
   }
