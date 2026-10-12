@@ -715,6 +715,8 @@ html body:not(#st-a):not(#st-b).portal-page #studentDashboard #studentContentTab
 /* ==== Effet électrique : réseau de conducteurs animé (melec-circuit.js) ==== */
 canvas.melec-circuit{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;display:block}
 @media print{canvas.melec-circuit{display:none!important}}
+/* Le contenu passe au-dessus du réseau animé : les traits restent derrière les panneaux */
+body > main.shell,body > .portal-shell{position:relative;z-index:1}
 /* Courant qui parcourt le bas de la barre haute */
 html body .topbar{position:relative}
 html body .topbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;pointer-events:none;
@@ -723,3 +725,8 @@ html body .topbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px
 @keyframes melec-courant{from{background-position:130% 0}to{background-position:-130% 0}}
 @media (prefers-reduced-motion:reduce){html body .topbar::after{animation:none;opacity:0}}
 
+
+/* Demande en double : signalée en ambre */
+html body:not(#st-a):not(#st-b) .teaching-space .teach-student.teach-duplicate{border-color:#ff8a1e!important;box-shadow:inset 4px 0 0 #ff8a1e!important}
+html body:not(#st-a):not(#st-b) .teaching-space .teach-duplicate-note{grid-column:1/-1;margin:2px 0 0;font-size:.86rem;line-height:1.4;color:#ffd7ad!important}
+html body:not(#st-a):not(#st-b) .teaching-space .teach-duplicate-note strong{color:#ff8a1e!important}
