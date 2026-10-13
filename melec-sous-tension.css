@@ -887,6 +887,13 @@ html body:not(#st-a):not(#st-b):not(#st-c):not(#st-d) :is(.ccf-pill,.student-ccf
    (marges de 14 px, plus prioritaire) la supprimait : la flèche recouvrait la fin du texte. */
 html body:not(#st-a):not(#st-b):not(#st-c):not(#st-d) :is(.content .view,#studentDashboard .student-pane,.cloud-card) select:not([multiple]):not(:where(.st-doc,.student-pdf-mount) *){padding-right:44px!important}
 
-/* Éditeur de TP : les cartes de documents gardaient un fond blanc sous le texte clair du thème
-   (nom du PDF illisible). Même habillage que les autres cartes : fond bleu nuit, liseré bleu. */
-html body:not(#st-a):not(#st-b) .content .view .teaching-space .teach-block:not(#st-z){background:var(--st-panel-2)!important;border-color:var(--st-wire)!important}
+/* Espace TP : plusieurs zones gardaient leur fond clair d'origine sous le texte clair du thème
+   (nom des documents, listes, codes d'accès, pièces jointes, barre d'outils… illisibles).
+   Même habillage que les autres cartes ; un liseré coloré garde les repères de couleur.
+   Les zones « papier » (éditeur de texte, aperçu, page PDF) restent blanches. */
+html body:not(#st-a):not(#st-b) #teachingView :is(.teach-block,.teach-item,.teach-code,.teach-asset,.teach-chapter-detail,.teach-item-detail,.teach-preview-actions,.teach-pdf-card,.teach-asset-options,.teach-editor-toolbar,.teach-list details):not(#st-z){background:var(--st-panel-2)!important;border-color:var(--st-wire)!important}
+html body:not(#st-a):not(#st-b) #teachingView .teach-code:not(#st-z){border-color:var(--st-volt)!important}
+html body:not(#st-a):not(#st-b) #teachingView .teach-chapter-detail:not(#st-z){border-color:#3fbf7f!important}
+html body:not(#st-a):not(#st-b) #teachingView .teach-item-detail:not(#st-z){border-color:#e8a24a!important}
+/* Renommage et choix de couleur gardent leur fond clair (texte foncé d'origine) : leurs petits textes passent aussi en foncé. */
+html body:not(#st-a):not(#st-b) #teachingView :is(.teach-rename,.teach-color-group) :is(small,label,p,span):not(#st-z){color:var(--st-paper-ink)!important;-webkit-text-fill-color:var(--st-paper-ink)!important}
