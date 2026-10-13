@@ -1,0 +1,70 @@
+name: Lecture quotidienne Supabase
+
+on:
+  schedule:
+    - cron: "19 8 * * *"
+      timezone: Europe/Paris
+  workflow_dispatch:
+  # Validate changes to this automation immediately, without a daily commit.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/supabase-daily.yml
+
+permissions: {}
+
+concurrency:
+  group: supabase-daily
+  cancel-in-progress: false
+
+jobs:
+  daily-read:
+    if: github.repository == 'Arduino15650/LAtelierMelec'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    permissions:
+      actions: write
+    steps:
+      - name: Lecture de disponibilité de la base
+        shell: bash
+        env:
+          SUPABASE_URL: https://bcvhuziwdwaorkxqsrch.supabase.co
+          # This is the public key already used by the application, not a secret.
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_B95li1RB6XAlzRY7KvmyiA_kgpD1FcW
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          curl --fail --silent --show-error \
+            --proto '=https' --connect-timeout 10 --max-time 30 \
+            --retry 2 --retry-delay 5 --retry-max-time 100 \
+            --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            --header 'Accept: application/json' \
+            --header 'Cache-Control: no-cache' \
+            --output "$response_file" \
+            "$SUPABASE_URL/rest/v1/rpc/github_daily_health"
+          if [ "$(cat "$response_file")" != '"ok"' ]; then
+            echo '::error::La base ne renvoie pas la confirmation attendue.'
+            exit 1
+          fi
+          echo 'Lecture Supabase réussie. Aucune donnée du site lue ou modifiée.'
+          echo '### Lecture Supabase réussie' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Réactiver
+        # Run even if Supabase is temporarily unavailable.
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/actions/workflows/supabase-daily.yml"
+          gh api --method PUT "$endpoint/enable" \
+            --header 'X-GitHub-Api-Version: 2022-11-28' --silent
+          state="$(gh api "$endpoint" --jq '.state')"
+          if [ "$state" != 'active' ]; then
+            echo '::error::GitHub ne confirme pas que la tâche est active.'
+            exit 1
+          fi
+          echo 'GitHub confirme que cette tâche est active.'
+          echo '### Réactivation GitHub confirmée' >> "$GITHUB_STEP_SUMMARY"
