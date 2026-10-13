@@ -74,7 +74,31 @@ renderReferential=function(){
   const body=document.createElement('div');
   body.className='referential-section-body';
   heading.replaceWith(fold);fold.append(summary,body);body.append(cards);
+  groupCompetenciesByUnit();
 };
+// Compétences rangées dans une liste déroulante, puis par unité (U2, U31, U32),
+// sur le modèle de « Activités, tâches et autonomie ».
+function groupCompetenciesByUnit(){
+  const heading=$$('#referentialView>h2').find(h=>h.textContent.trim()==='Compétences, critères, connaissances et attitudes');
+  const items=$$('#referentialView>details.competence');
+  if(!heading||!items.length)return;
+  const number=c=>Number(String(c.id).replace(/\D/g,''));
+  const fold=document.createElement('details');
+  fold.className='referential-section competence-reference-section';
+  fold.innerHTML=`<summary><strong>Compétences, critères, connaissances et attitudes</strong><span>${MELEC.competencies.length} compétence(s)</span></summary><div class="referential-section-body activities-reference-list"></div>`;
+  const body=fold.querySelector('.referential-section-body');
+  const byId=new Map(MELEC.competencies.map((c,i)=>[c.id,items[i]]));
+  MELEC.blocks.forEach(block=>{
+    const competencies=MELEC.competencies.filter(c=>c.unit===block.unit).sort((a,b)=>number(a)-number(b));
+    if(!competencies.length)return;
+    const unit=document.createElement('details');
+    unit.className='referential-activity referential-unit';
+    unit.innerHTML=`<summary><strong>${esc(block.unit)} — ${esc(block.label)}</strong><span>${competencies.length} compétence(s)${block.epreuve?' · épreuve '+esc(block.epreuve):''}</span></summary><div class="referential-group"></div>`;
+    competencies.forEach(c=>{const item=byId.get(c.id);if(item)unit.querySelector('.referential-group').append(item);});
+    body.append(unit);
+  });
+  heading.replaceWith(fold);
+}
 window.renderReferential=renderReferential;
 
 function grade(id){const a=state.activities.find(x=>x.id===id);if(gradeActivityId!==id){gradeActivityId=id;gradeStudent=''}gradeClass=a.className||'';currentId=id;showRaw('editor');const classStudents=state.students.filter(s=>s.className===gradeClass).sort((x,y)=>x.name.localeCompare(y.name,'fr'));if(gradeStudent&&!classStudents.some(s=>s.id===gradeStudent))gradeStudent='';const rows=classStudents.filter(s=>!gradeStudent||s.id===gradeStudent);$('#editorView').innerHTML=`<div class="page-head"><div><h1>${esc(a.title)}</h1><p>Évaluation de la classe ${esc(gradeClass||'non associée')} • Note pondérée sur 20</p></div></div><div class="panel grade-picker"><div class="field"><label>Classe associée à l’activité</label><input value="${esc(gradeClass||'Aucune classe associée')}" readonly></div><div class="picker-arrow">→</div><div class="field"><label>Choisir un élève de ${esc(gradeClass||'la classe')}</label><select id="gradeStudent" onchange="changeGradeStudent(this.value)"><option value="">Tous les élèves de la classe</option>${classStudents.map(s=>`<option value="${s.id}" ${gradeStudent===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div></div>${rows.length?`<div class="panel summary-panel"><h2 class="panel-title">Récapitulatif — ${esc(gradeClass)}</h2><table><thead><tr><th>Élève</th><th>Critères renseignés</th><th>Note</th></tr></thead><tbody>${rows.map(s=>{const r=scoreResult(a,s);return `<tr><td>${esc(s.name)}</td><td>${r.count} / ${a.criteria.length}</td><td><strong>${r.note===null?'—':r.note.toFixed(2)+' / 20'}</strong></td></tr>`}).join('')}</tbody></table></div>${rows.map(s=>studentScore(a,s)).join('')}`:`<div class="panel empty"><h2>Aucun élève dans la classe ${esc(gradeClass||'associée')}</h2><p>Ajoutez ou importez les élèves de cette classe depuis l’onglet Élèves.</p><button class="button primary" onclick="show('students')">Gérer les élèves</button></div>`}<div class="grade-page-actions no-print"><button class="button primary" onclick="exportGrades('${a.id}')">Exporter les notes</button><button class="button" onclick="window.print()">Imprimer</button><button class="button" onclick="show('activities')">Fermer</button></div>`;$$('[data-score]').forEach(x=>x.onchange=e=>{const [sid,key]=e.target.dataset.score.split('|');a.scores[sid]??={};if(e.target.value==='')delete a.scores[sid][key];else a.scores[sid][key]=+e.target.value;save();grade(id)});$$('[data-feedback]').forEach(x=>x.oninput=e=>{const [sid,field]=e.target.dataset.feedback.split('|');a.feedback??={};a.feedback[sid]??={};a.feedback[sid][field]=e.target.value;save();const status=document.querySelector(`[data-feedback-status="${sid}"]`);if(status){status.textContent='Enregistré';clearTimeout(status._timer);status._timer=setTimeout(()=>status.textContent='Enregistrement automatique',1200)}})}

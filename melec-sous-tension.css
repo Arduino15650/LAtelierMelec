@@ -897,3 +897,6 @@ html body:not(#st-a):not(#st-b) #teachingView .teach-chapter-detail:not(#st-z){b
 html body:not(#st-a):not(#st-b) #teachingView .teach-item-detail:not(#st-z){border-color:#e8a24a!important}
 /* Renommage et choix de couleur gardent leur fond clair (texte foncé d'origine) : leurs petits textes passent aussi en foncé. */
 html body:not(#st-a):not(#st-b) #teachingView :is(.teach-rename,.teach-color-group) :is(small,label,p,span):not(#st-z){color:var(--st-paper-ink)!important;-webkit-text-fill-color:var(--st-paper-ink)!important}
+
+/* Référentiel : compétences rangées par unité, chacune sur toute la largeur (comme avant le rangement). */
+html body:not(#st-a):not(#st-b) #referentialView .referential-unit>.referential-group{grid-template-columns:minmax(0,1fr)!important;gap:10px!important}
