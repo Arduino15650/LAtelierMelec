@@ -900,3 +900,11 @@ html body:not(#st-a):not(#st-b) #teachingView :is(.teach-rename,.teach-color-gro
 
 /* Référentiel : compétences rangées par unité, chacune sur toute la largeur (comme avant le rangement). */
 html body:not(#st-a):not(#st-b) #referentialView .referential-unit>.referential-group{grid-template-columns:minmax(0,1fr)!important;gap:10px!important}
+
+/* Espace TP : sur une carte de document, le nom et les boutons ↑ ↓ Retirer partagent la même ligne
+   (nom à gauche, boutons à droite, centrés). Les options éventuelles restent dessous, sur toute la largeur.
+   Les cartes de texte ou de vidéo, qui ont un éditeur, ne changent pas. */
+html body:not(#st-a):not(#st-b) #teachingView .teach-block:has(>span):not(#st-z){display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px}
+html body:not(#st-a):not(#st-b) #teachingView .teach-block:has(>span)>.teach-block-actions:not(#st-z){grid-column:2;grid-row:1;margin:0!important}
+html body:not(#st-a):not(#st-b) #teachingView .teach-block:has(>span)>span:not(#st-z){grid-column:1;grid-row:1;overflow-wrap:anywhere}
+html body:not(#st-a):not(#st-b) #teachingView .teach-block:has(>span)>:not(span):not(.teach-block-actions):not(#st-z){grid-column:1/-1;margin-top:10px}
