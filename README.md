@@ -25,3 +25,18 @@ npm test
 ```
 
 Ils vérifient la syntaxe de chaque script, la présence des fichiers appelés par les pages, la cohérence du référentiel, le calcul de la note pondérée, l’enregistrement des appréciations, la reprise de session enseignant et la file d’envoi vers Supabase, la fin d’évaluation, la réutilisation d’activité et le téléchargement des fichiers privés. Ils s’exécutent aussi automatiquement sur GitHub à chaque proposition de modification (onglet « Actions »).
+
+## Publication
+
+Le code source reste du HTML, du JavaScript et du CSS classiques : on les modifie directement, sans outil particulier, et le site fonctionne tel quel en local.
+
+À chaque envoi sur `main`, GitHub Actions (onglet « Actions » → « Publication ») lance les tests, puis `npm run build`, qui prépare le dossier `dist/` publié sur GitHub Pages :
+
+- chaque suite de scripts ou de feuilles de style d'une page est regroupée en un fichier compressé, dans le même ordre (la page enseignant passe de 40 fichiers à 6) ;
+- le nom de chaque fichier assemblé contient l'empreinte de son contenu : les navigateurs prennent automatiquement la nouvelle version. Les numéros `?v=` n'ont plus besoin d'être mis à jour à la main ;
+- le cache hors ligne (`service-worker.js`) change de nom à chaque publication ;
+- si un test échoue, rien n'est publié.
+
+Pour vérifier en local : `npm ci`, `npm test`, `npm run build`, puis ouvrir `dist/index.html`.
+
+Réglage nécessaire une seule fois : Settings → Pages → Source : « GitHub Actions ».
