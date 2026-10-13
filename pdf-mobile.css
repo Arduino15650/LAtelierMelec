@@ -56,7 +56,8 @@
 .student-pdf-display{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px}
 .student-pdf-controls button[aria-pressed=true]{background:#b35c00;border-color:#b35c00}
 .student-pdf-spread{display:block;width:max-content;min-width:100%}
-.student-pdf-spread.is-spread{display:flex;justify-content:center;align-items:flex-start;gap:10px}
+.student-pdf-spread.is-spread{display:flex;justify-content:center;align-items:flex-start;gap:0}
+.student-pdf-spread.is-spread>.student-pdf-stage{margin:0}
 .student-pdf-spread>.student-pdf-stage[hidden]{display:none!important}
 .student-pdf-panel:fullscreen{display:flex;flex-direction:column;width:100%;height:100%;max-width:none;padding:8px;border:0;border-radius:0;background:#3a3f45}
 .student-pdf-panel:-webkit-full-screen{display:flex;flex-direction:column;width:100%;height:100%;max-width:none;padding:8px;border:0;border-radius:0;background:#3a3f45}
