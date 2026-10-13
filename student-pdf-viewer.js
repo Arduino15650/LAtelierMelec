@@ -82,7 +82,9 @@
 
     const isFullscreen = () => fallbackFullscreen || fullscreenElement() === panel;
     const spreadActive = () => spread && !formOptions && pages > 1 && (isFullscreen() ? panel.clientWidth : mount.clientWidth) >= 640;
-    const step = () => spreadActive() ? 2 : 1;
+    // Double page comme un livre : la couverture seule, puis 2-3, 4-5… (page paire à gauche).
+    const nextPage = () => spreadActive() ? (current === 1 ? 2 : current + 2) : current + 1;
+    const previousPage = () => spreadActive() ? current - 2 : current - 1;
     function layoutKey() {
       return [Math.floor(isFullscreen() ? panel.clientWidth : mount.clientWidth), Math.floor(window.innerHeight), Math.min(window.devicePixelRatio || 1, 2), isFullscreen()].join(':');
     }
@@ -120,7 +122,7 @@
     function refreshButtons() {
       const twoActive = spreadActive();
       previous.disabled = closed || current <= 1;
-      next.disabled = closed || current + step() > pages;
+      next.disabled = closed || nextPage() > pages;
       zoomOut.disabled = closed || zoom <= .5;
       zoomIn.disabled = closed || zoom >= 2.5;
       wholePage.setAttribute('aria-pressed', String(fit === 'page' && zoom === 1));
@@ -137,11 +139,10 @@
       busy = true; previous.disabled = true; next.disabled = true;
       try {
         const twoActive = spreadActive();
-        // En double page, les pages vont par paires : 1-2, 3-4, 5-6…
-        if (twoActive) pageNumber -= (pageNumber - 1) % 2;
+        if (twoActive && pageNumber > 1) pageNumber -= pageNumber % 2;
         pageNumber = Math.max(1, Math.min(pages, pageNumber));
         const page = await documentPdf.getPage(pageNumber);
-        const partner = twoActive && pageNumber < pages ? await documentPdf.getPage(pageNumber + 1) : null;
+        const partner = twoActive && pageNumber > 1 && pageNumber < pages ? await documentPdf.getPage(pageNumber + 1) : null;
         if (closed || !mayRead()) return;
         const changingPage = pageNumber !== current;
         const horizontalFocus = scroll.scrollWidth > 0 ? (scroll.scrollLeft + scroll.clientWidth / 2) / scroll.scrollWidth : .5;
@@ -150,7 +151,7 @@
         const partnerNatural = partner ? partner.getViewport({scale:1}) : null;
         // Proportions réelles de chaque page conservées (paysage, rotation).
         const room = available();
-        const gap = twoActive ? 10 : 0;
+        const gap = 0;
         const totalWidth = twoActive ? natural.width + (partnerNatural ? partnerNatural.width : natural.width) : natural.width;
         const tallest = Math.max(natural.height, partnerNatural ? partnerNatural.height : 0);
         const widthScale = (room.width - gap) / totalWidth;
@@ -180,8 +181,8 @@
       }
     }
     const report = error => { pageCount.textContent = error.message; };
-    previous.onclick = () => showPage(current - step()).catch(report);
-    next.onclick = () => showPage(current + step()).catch(report);
+    previous.onclick = () => showPage(previousPage()).catch(report);
+    next.onclick = () => showPage(nextPage()).catch(report);
     function setZoom(value) {
       zoom = Math.max(.5, Math.min(2.5, value));
       zoomValue.textContent = Math.round(zoom * 100) + ' %';
@@ -230,7 +231,7 @@
       const dx = point.clientX - touchStart.x, dy = point.clientY - touchStart.y;
       touchStart = null;
       if (Math.abs(dy) < 70 || Math.abs(dx) > 45) return;
-      const target = dy < 0 ? current + step() : current - step();
+      const target = dy < 0 ? nextPage() : previousPage();
       if (target >= 1 && target <= pages) showPage(target).catch(report);
     };
     scroll.addEventListener('touchstart',onTouchStart,{passive:true});
