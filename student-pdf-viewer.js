@@ -95,29 +95,88 @@
         for (const child of panel.children) if (child !== scroll && child.offsetParent !== null) used += child.offsetHeight + 5;
         return {width: Math.max(1, panel.clientWidth - 24), height: Math.max(240, window.innerHeight - used), cap: 4};
       }
-      return {width: Math.max(1, mount.clientWidth - 12), height: Math.max(240, Math.min(window.innerHeight * .8, 900)), cap: 1.6};
+      return {width: Math.max(1, mount.clientWidth - 12), height: Math.max(240, Math.min(window.innerHeight * .86, window.innerHeight - 110)), cap: 1.6};
     }
-    async function draw(surface, page, viewport) {
-      const {stage: target, canvas, textLayer} = surface;
-      const ratio = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(12000000 / (viewport.width * viewport.height)));
+    // Rendu en arrière-plan : chaque page est dessinée dans un canevas caché puis recopiée
+    // d'un coup (pas de page blanche pendant le dessin). Les pages voisines sont préparées
+    // à l'avance : tourner la page est alors instantané.
+    const rendered = new Map();
+    const KEEP = 8;
+    const pixelRatio = viewport => Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(12000000 / (viewport.width * viewport.height)));
+    function renderOffscreen(page, scale) {
+      const viewport = page.getViewport({scale});
+      const ratio = pixelRatio(viewport);
+      const key = page.pageNumber + '@' + scale.toFixed(4) + 'x' + ratio.toFixed(3);
+      let entry = rendered.get(key);
+      if (entry) { rendered.delete(key); rendered.set(key, entry); return entry.promise; }
+      const canvas = document.createElement('canvas');
       canvas.width = Math.floor(viewport.width * ratio);
       canvas.height = Math.floor(viewport.height * ratio);
+      const task = page.render({canvasContext:canvas.getContext('2d',{alpha:false}),viewport,transform:ratio === 1 ? null : [ratio,0,0,ratio,0,0]});
+      entry = {task, promise: task.promise.then(() => canvas)};
+      entry.promise.catch(() => rendered.delete(key));
+      rendered.set(key, entry);
+      while (rendered.size > KEEP) {
+        const [oldKey, old] = rendered.entries().next().value;
+        rendered.delete(oldKey); old.task.cancel();
+      }
+      return entry.promise;
+    }
+    async function draw(surface, page, scale) {
+      const {stage: target, canvas, textLayer} = surface;
+      const viewport = page.getViewport({scale});
+      const source = await renderOffscreen(page, scale);
+      if (closed) return;
+      if (canvas.width !== source.width || canvas.height !== source.height) { canvas.width = source.width; canvas.height = source.height; }
+      canvas.getContext('2d',{alpha:false}).drawImage(source,0,0);
       canvas.style.width = Math.floor(viewport.width) + 'px';
       canvas.style.height = Math.floor(viewport.height) + 'px';
       target.style.width = viewport.width + 'px';
       target.style.height = viewport.height + 'px';
       target.style.setProperty('--scale-factor', String(viewport.scale));
       canvas.setAttribute('aria-label', 'Page ' + page.pageNumber + ' sur ' + pages);
-      surface.task = page.render({canvasContext:canvas.getContext('2d'),viewport,transform:ratio === 1 ? null : [ratio,0,0,ratio,0,0]});
-      await surface.task.promise;
-      if (closed) return;
+      // Texte sélectionnable posé ensuite, sans retarder l'affichage de la page.
+      surface.text?.cancel?.();
       textLayer.replaceChildren();
       if (pdfjs.TextLayer && page.streamTextContent) {
-        try {
-          const selectable = new pdfjs.TextLayer({textContentSource:page.streamTextContent(), container:textLayer, viewport});
-          await selectable.render();
-        } catch (error) { console.warn('Sélection de texte PDF indisponible', error); }
+        const text = surface.text = new pdfjs.TextLayer({textContentSource:page.streamTextContent(), container:textLayer, viewport});
+        text.render().catch(error => { if (surface.text === text && !closed) console.warn('Sélection de texte PDF indisponible', error); });
       }
+    }
+    function scaleFor(natural, partnerNatural, twoActive) {
+      // Proportions réelles de chaque page conservées (paysage, rotation).
+      const room = available();
+      const totalWidth = twoActive ? natural.width + (partnerNatural ? partnerNatural.width : natural.width) : natural.width;
+      const tallest = Math.max(natural.height, partnerNatural ? partnerNatural.height : 0);
+      const widthScale = room.width / totalWidth;
+      const fitScale = fit === 'width' ? Math.min(widthScale, room.cap) : Math.min(widthScale, room.height / tallest, room.cap);
+      return fitScale * zoom;
+    }
+    function spreadStart(number) {
+      return spreadActive() && number > 1 ? number - number % 2 : number;
+    }
+    async function pagesAt(number) {
+      const twoActive = spreadActive();
+      number = Math.max(1, Math.min(pages, spreadStart(number)));
+      const page = await documentPdf.getPage(number);
+      const partner = twoActive && number > 1 && number < pages ? await documentPdf.getPage(number + 1) : null;
+      const scale = scaleFor(page.getViewport({scale:1}), partner ? partner.getViewport({scale:1}) : null, twoActive);
+      return {number, page, partner, scale, twoActive};
+    }
+    let prefetchTimer = null;
+    function prefetch() {
+      clearTimeout(prefetchTimer);
+      first.text?.cancel?.(); second.text?.cancel?.();
+      prefetchTimer = setTimeout(async () => {
+        for (const target of [nextPage(), previousPage()]) {
+          if (closed || busy || target < 1 || target > pages) continue;
+          try {
+            const view = await pagesAt(target);
+            if (closed || busy) return;
+            await Promise.all([renderOffscreen(view.page, view.scale), view.partner && renderOffscreen(view.partner, view.scale)]);
+          } catch {}
+        }
+      }, 120);
     }
     function refreshButtons() {
       const twoActive = spreadActive();
@@ -138,31 +197,18 @@
       if (busy) { pendingPage = pageNumber; return; }
       busy = true; previous.disabled = true; next.disabled = true;
       try {
-        const twoActive = spreadActive();
-        if (twoActive && pageNumber > 1) pageNumber -= pageNumber % 2;
-        pageNumber = Math.max(1, Math.min(pages, pageNumber));
-        const page = await documentPdf.getPage(pageNumber);
-        const partner = twoActive && pageNumber > 1 && pageNumber < pages ? await documentPdf.getPage(pageNumber + 1) : null;
+        const view = await pagesAt(pageNumber);
+        const {page, partner, scale, twoActive} = view;
+        pageNumber = view.number;
         if (closed || !mayRead()) return;
         const changingPage = pageNumber !== current;
         const horizontalFocus = scroll.scrollWidth > 0 ? (scroll.scrollLeft + scroll.clientWidth / 2) / scroll.scrollWidth : .5;
         const verticalFocus = scroll.scrollHeight > scroll.clientHeight ? (scroll.scrollTop + scroll.clientHeight / 2) / scroll.scrollHeight : 0;
         const natural = page.getViewport({scale:1});
-        const partnerNatural = partner ? partner.getViewport({scale:1}) : null;
-        // Proportions réelles de chaque page conservées (paysage, rotation).
-        const room = available();
-        const gap = 0;
-        const totalWidth = twoActive ? natural.width + (partnerNatural ? partnerNatural.width : natural.width) : natural.width;
-        const tallest = Math.max(natural.height, partnerNatural ? partnerNatural.height : 0);
-        const widthScale = (room.width - gap) / totalWidth;
-        const fitScale = fit === 'width' ? Math.min(widthScale, room.cap) : Math.min(widthScale, room.height / tallest, room.cap);
-        const scale = fitScale * zoom;
+        await Promise.all([draw(first, page, scale), partner ? draw(second, partner, scale) : null]);
+        if (closed) return;
         spreadRow.classList.toggle('is-spread', twoActive);
         second.stage.hidden = !partner;
-        const work = [draw(first, page, page.getViewport({scale}))];
-        if (partner) work.push(draw(second, partner, partner.getViewport({scale})));
-        await Promise.all(work);
-        if (closed) return;
         if (formController) await formController.renderPage(page,page.getViewport({scale}),pageNumber);
         current = pageNumber;
         pageCount.textContent = (partner ? current + '-' + (current + 1) : current) + ' / ' + pages;
@@ -171,6 +217,7 @@
         scroll.scrollLeft = changingPage ? Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2) : horizontalFocus * scroll.scrollWidth - scroll.clientWidth / 2;
         scroll.scrollTop = changingPage ? 0 : verticalFocus * scroll.scrollHeight - scroll.clientHeight / 2;
         lastLayout = layoutKey();
+        prefetch();
       } finally {
         busy = false;
         refreshButtons();
@@ -213,8 +260,21 @@
     const onFullscreenChange = () => { if (!closed) showPage(current).catch(report); };
     document.addEventListener('fullscreenchange',onFullscreenChange);
     document.addEventListener('webkitfullscreenchange',onFullscreenChange);
+    // Clavier : flèches et Page préc./suiv. tournent les pages quand la souris est sur le document.
+    let pointerInside = false;
+    panel.addEventListener('pointerenter',() => { pointerInside = true; });
+    panel.addEventListener('pointerleave',() => { pointerInside = false; });
     const onKeydown = event => {
-      if (fallbackFullscreen && event.key === 'Escape') { event.stopPropagation(); setFallbackFullscreen(false); }
+      if (fallbackFullscreen && event.key === 'Escape') { event.stopPropagation(); setFallbackFullscreen(false); return; }
+      if (event.ctrlKey || event.metaKey || event.altKey || editable(event.target)) return;
+      if (!(isFullscreen() || pointerInside || panel.contains(document.activeElement))) return;
+      const horizontal = scroll.scrollWidth > scroll.clientWidth + 4;
+      const forward = event.key === 'PageDown' || (event.key === 'ArrowRight' && !horizontal);
+      const backward = event.key === 'PageUp' || (event.key === 'ArrowLeft' && !horizontal);
+      if (!forward && !backward) return;
+      event.preventDefault();
+      const target = forward ? nextPage() : previousPage();
+      if (target >= 1 && target <= pages) showPage(target).catch(report);
     };
     document.addEventListener('keydown',onKeydown,true);
     // Sur écran tactile, glisser verticalement change de page quand la page tient à l'écran.
@@ -255,7 +315,8 @@
       panel.removeEventListener('contextmenu',onContextMenu);
       panel.removeEventListener('dragstart',onDragStart);
       observer?.disconnect();
-      first.task?.cancel(); second.task?.cancel();
+      clearTimeout(prefetchTimer);
+      rendered.forEach(entry => entry.task.cancel()); rendered.clear();
       formController?.cleanup();
       documentPdf.destroy().catch(() => {});
       panel.remove();
