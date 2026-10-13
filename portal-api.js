@@ -137,6 +137,31 @@
       body: file
     }, 60000);
   }
+  // Lit le fichier au fil de l'eau : chaque morceau reçu relance le délai de 30 s et indique la progression.
+  async function readBody(response, controller, onProgress, setTimer) {
+    const reader = response.body && typeof response.body.getReader === 'function' ? response.body.getReader() : null;
+    if (!reader) return response.blob();
+    const total = Number(response.headers?.get?.('content-length')) || 0;
+    const type = response.headers?.get?.('content-type') || 'application/octet-stream';
+    const chunks = [];
+    let received = 0;
+    const watch = () => setTimer(setTimeout(() => controller.abort(), 30000));
+    watch();
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.byteLength;
+        watch();
+        if (onProgress) { try { onProgress(received, total); } catch { /* l'affichage ne bloque pas le transfert */ } }
+      }
+    } catch (error) {
+      try { reader.cancel(); } catch { /* flux déjà fermé */ }
+      throw error;
+    } finally { setTimer(0); }
+    return new Blob(chunks, { type });
+  }
   async function download(path, options = {}) {
     const url = URL + '/storage/v1/object/authenticated/melec-private/' + path.split('/').map(encodeURIComponent).join('/');
     const attempts = options.retryTransient ? 3 : 1;
@@ -145,15 +170,18 @@
     for (let attempt = 0; attempt < attempts; attempt++) {
       let response;
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15000);
+      // 15 s pour que le serveur commence à répondre. Ensuite, un gros dossier peut mettre plusieurs
+      // minutes sur le réseau partagé d'une salle : on n'abandonne que si plus rien n'arrive.
+      let timer = setTimeout(() => controller.abort(), 15000);
       try {
         response = await fetch(url, {
           headers: { apikey: KEY, Authorization: 'Bearer ' + accessToken },
           cache: attempt ? 'reload' : 'default', signal: controller.signal
         });
-        if (response.ok) return await response.blob();
+        clearTimeout(timer);
+        if (response.ok) return await readBody(response, controller, options.onProgress, next => { clearTimeout(timer); timer = next; });
       } catch (error) {
-        if (attempt === attempts - 1) throw controller.signal.aborted ? new Error('Image indisponible : le serveur ne répond pas. Réessayez dans un instant.') : error;
+        if (attempt === attempts - 1) throw controller.signal.aborted ? new Error('Document indisponible : le transfert s’est interrompu (réseau saturé ou coupé). Réessayez dans un instant.') : error;
         await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
         continue;
       } finally { clearTimeout(timer); }

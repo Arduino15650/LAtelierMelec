@@ -40,3 +40,8 @@ Le code source reste du HTML, du JavaScript et du CSS classiques : on les modifi
 Pour vérifier en local : `npm ci`, `npm test`, `npm run build`, puis ouvrir `dist/index.html`.
 
 Réglage nécessaire une seule fois : Settings → Pages → Source : « GitHub Actions ».
+
+## Documents de TP volumineux
+
+- **Compression automatique au dépôt** (`pdf-compress.js`, bibliothèque pdf-lib sous licence MIT chargée seulement à l'enregistrement) : les images des PDF (pages scannées, photos) sont recompressées et ramenées à environ 190 ppp. Le texte, les schémas vectoriels et les zones à remplir restent intacts. Si le gain est faible ou si le PDF ne se relit pas correctement, le fichier d'origine est envoyé. La limite de 20 Mo s'applique après compression.
+- **Téléchargement des élèves** : 15 s pour que le serveur commence à répondre, puis aucune limite de durée tant que des données arrivent (abandon après 30 s sans données). La progression s'affiche sur le bouton du document.

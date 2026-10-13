@@ -658,8 +658,10 @@
       else { const created = await api.rest('learning_items?select=id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify(payload)}); id = created[0].id; }
       const pendingBlocks = blocks.filter(b => b.type === 'pending');
       for (const block of pendingBlocks) {
-        const file = draftAssets[block.index]; if (!file) continue;
-        if (file.size > 20 * 1024 * 1024) throw new Error('Fichier trop volumineux (20 Mo maximum).');
+        let file = draftAssets[block.index]; if (!file) continue;
+        // PDF compressés automatiquement avant l'envoi : images allégées, texte et zones à remplir intacts.
+        if (window.MelecPdfCompress) { file = await window.MelecPdfCompress.compress(file, message => status(message)); draftAssets[block.index] = file; }
+        if (file.size > 20 * 1024 * 1024) throw new Error('« ' + file.name + ' » reste trop volumineux après compression (20 Mo maximum). Scindez le dossier en plusieurs PDF.');
         const path = id + '/' + crypto.randomUUID() + '-' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
         await api.upload(path,file);
         const asset = await api.rest('learning_assets?select=id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({item_id:id,object_path:path,file_name:file.name,mime_type:file.type || 'application/octet-stream',asset_role:draftRoles[block.index] || 'main'})});
