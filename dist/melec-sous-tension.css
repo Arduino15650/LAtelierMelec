@@ -869,9 +869,16 @@ html body:not(#st-a):not(#st-b) :is(.content .view,#studentDashboard .student-pa
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23ff8a1e' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E")!important;
   background-repeat:no-repeat!important;background-position:right 16px center!important;background-size:14px 9px!important}
 html body:not(#st-a):not(#st-b) :is(.content .view,#studentDashboard .student-pane,.cloud-card) select:not([multiple]):not(:where(td,.st-doc) *){max-width:min(100%,620px)}
-html body:not(#st-a):not(#st-b) :is(.content .view,#studentDashboard .student-pane,.cloud-card) select option{background:#0f2846;color:#e9f1fb}
+/* Listes déroulantes : texte clair sur fond bleu nuit pour chaque option (la règle des champs, plus haut, imposait une encre foncée illisible). */
+html body:not(#st-a):not(#st-b):not(#st-c) select :is(option,optgroup){background:#0f2846!important;color:#e9f1fb!important;-webkit-text-fill-color:#e9f1fb!important}
+html body:not(#st-a):not(#st-b):not(#st-c) select option:disabled{color:#9fb3c8!important;-webkit-text-fill-color:#9fb3c8!important}
 html body:not(#st-a):not(#st-b) :is(.content .view,#studentDashboard .student-pane,.cloud-card,.mfa-dialog) :is(input,textarea)::placeholder{color:#8aa3bf!important;-webkit-text-fill-color:#8aa3bf!important;opacity:1}
 html body:not(#st-a):not(#st-b) :is(.content .view,#studentDashboard .student-pane,.cloud-card,.mfa-dialog) :is(input,select,textarea):not(:where(.st-doc,.student-pdf-mount) *):hover{border-color:rgba(160,215,255,.8)!important}
 html body:not(#st-a):not(#st-b) :is(.content .view,#studentDashboard .student-pane,.cloud-card,.mfa-dialog) :is(input,select,textarea):not(:where(.st-doc,.student-pdf-mount) *):focus{outline:none!important;border-color:var(--st-volt)!important;box-shadow:0 0 0 3px rgba(255,138,30,.28)!important}
 html body:not(#st-a):not(#st-b) .content .view input[readonly]:not(:where(.st-doc,.student-pdf-mount) *){background-color:#0b2038!important;color:var(--st-muted)!important;-webkit-text-fill-color:var(--st-muted)!important}
 html body:not(#st-a):not(#st-b) .content .view textarea{min-height:96px}
+
+/* Pastilles de compétences (résultats, CCF, espace élève) : la note a la même taille que le code
+   de compétence et reste dans le cercle. La règle générale des petits textes (13 px) ne s'y applique pas. */
+html body:not(#st-a):not(#st-b):not(#st-c):not(#st-d) :is(.ccf-pill,.student-ccf-pill){line-height:1!important;white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.02em;overflow:hidden}
+html body:not(#st-a):not(#st-b):not(#st-c):not(#st-d) :is(.ccf-pill,.student-ccf-pill) small{display:block;margin-top:1px!important;font-size:1em!important;font-weight:700!important;line-height:1!important;letter-spacing:-.03em}

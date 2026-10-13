@@ -29,10 +29,10 @@
     documentCache.clear();
     documentCacheBytes = 0;
   }
-  async function loadDocument(asset) {
+  async function loadDocument(asset, onProgress) {
     const cached = documentCache.get(asset.object_path);
     if (cached) return cached;
-    const pending = api.download(asset.object_path, {retryTransient:true});
+    const pending = api.download(asset.object_path, {retryTransient:true, onProgress});
     documentCache.set(asset.object_path, pending);
     try {
       const blob = await pending;
@@ -255,8 +255,10 @@
             button.textContent = asset.file_name; button.setAttribute('aria-expanded','false'); return;
           }
           button.disabled=true;
+          // Gros dossiers : la progression montre que le téléchargement avance.
+          const showProgress = (received, total) => { if (total) button.textContent = 'Chargement… ' + Math.min(99, Math.floor(received * 100 / total)) + ' % · ' + asset.file_name; };
           try {
-            const blob = await loadDocument(asset);
+            const blob = await loadDocument(asset, showProgress);
             if (!viewer.isConnected || !activeTp || tpEnd(activeTp) <= Date.now()) throw new Error('L’accès à ce TP a expiré.');
             await tpPdfCleanup?.flush?.();
             tpPdfCleanup?.(); tpPdfCleanup = null;
@@ -296,7 +298,7 @@
               }
             } catch (error) { mount.remove(); throw error; }
             button.dataset.fileName=asset.file_name; button.textContent='Réduire · '+asset.file_name; button.setAttribute('aria-expanded','true');
-          } catch(error) { alert(error.message); } finally { button.disabled=false; }
+          } catch(error) { button.textContent = asset.file_name; alert(error.message); } finally { button.disabled=false; if (/^Chargement… /.test(button.textContent)) button.textContent = asset.file_name; }
         };
         group.append(button);
       }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-d8e6e05d2a';
+const CACHE_NAME = 'bac-pro-melec-909aa2ef91';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
 const CORE_FILES = ['./logo-melec-192.webp'];
 
