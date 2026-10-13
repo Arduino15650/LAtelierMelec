@@ -56,10 +56,12 @@
       expires_at: Math.floor(Date.now()/1000) + Number(redirectTokens.get('expires_in') || 3600) });
     history.replaceState(null, '', location.pathname + location.search);
   }
-  async function signIn(email, password) {
+  // Jeton anti-robot (Cloudflare Turnstile) vérifié par Supabase Auth à chaque connexion et inscription.
+  const security = captchaToken => captchaToken ? { gotrue_meta_security: { captcha_token: captchaToken } } : {};
+  async function signIn(email, password, captchaToken) {
     const data = await boundedDecode(URL + '/auth/v1/token?grant_type=password', {
       method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, ...security(captchaToken) })
     });
     remember(data);
     return data;
@@ -69,7 +71,8 @@
       method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: fields.email, password: fields.password,
-        data: { last_name: fields.lastName, first_name: fields.firstName, requested_class: fields.className }
+        data: { last_name: fields.lastName, first_name: fields.firstName, requested_class: fields.className },
+        ...security(fields.captchaToken)
       })
     }, 30000);
   }
