@@ -21,7 +21,7 @@
   let profile = null;
   let cleanupViewer = null;
   let assignments = [], tpItems = [], activeTp = null, selectedContentTab = 'tp';
-  let tpItemsLoadedAt = 0, tpItemsKey = '';
+  let tpItemsLoadedAt = 0, tpItemsKey = '', tpListSignature = '';
   const documentCache = new Map();
   let documentCacheBytes = 0;
   const MAX_DOCUMENT_CACHE_BYTES = 24 * 1024 * 1024;
@@ -84,6 +84,12 @@
     target.textContent = text;
     target.classList.toggle('error', error);
   }
+  // Contrôle anti-robot affiché uniquement sur le formulaire visible.
+  function mountCaptcha() {
+    if (!window.MelecCaptcha || authPane.hidden || document.documentElement.classList.contains('student-resuming')) return;
+    [$('studentLoginForm'), $('studentSignupForm')].forEach(form => { if (!form.hidden) window.MelecCaptcha.mount(form); });
+  }
+  const captchaMessage = error => /captcha/i.test(error.code || error.message) ? 'Le contrôle anti-robot a expiré. Validez-le à nouveau.' : error.message;
   function switchTab(tab) {
     if (tab === 'signup') $('studentSignupForm').reset();
     $('studentLoginForm').hidden = tab !== 'login';
@@ -93,6 +99,7 @@
     $('studentAuthTitle').textContent = tab === 'signup' ? 'Créer un compte élève' : tab === 'contact' ? 'Besoin d’aide ?' : 'Connexion élève';
     showContact(tab === 'contact');
     message(authStatus, '');
+    mountCaptcha();
   }
   $('studentLoginTab').onclick = () => switchTab('login');
   $('studentSignupTab').onclick = () => switchTab('signup');
@@ -104,11 +111,12 @@
     button.disabled = true;
     message(authStatus, 'Connexion…');
     try {
-      await api.signIn(form.elements.email.value.trim(), form.elements.password.value);
+      const captchaToken = window.MelecCaptcha ? window.MelecCaptcha.token(form) : '';
+      await api.signIn(form.elements.email.value.trim(), form.elements.password.value, captchaToken);
       form.elements.password.value = '';
       await openDashboard();
-    } catch (error) { message(authStatus, error.message, true); }
-    finally { button.disabled = false; }
+    } catch (error) { message(authStatus, captchaMessage(error), true); }
+    finally { button.disabled = false; window.MelecCaptcha?.reset(form); }
   };
   $('studentSignupForm').onsubmit = async event => {
     event.preventDefault();
@@ -117,13 +125,14 @@
     button.disabled = true;
     message(authStatus, 'Création du compte…');
     try {
+      const captchaToken = window.MelecCaptcha ? window.MelecCaptcha.token(form) : '';
       await api.signUp({ lastName: form.elements.lastName.value.trim(), firstName: form.elements.firstName.value.trim(),
         className: form.elements.className.value.trim(), email: form.elements.email.value.trim(),
-        password: form.elements.password.value });
+        password: form.elements.password.value, captchaToken });
       form.reset();
       message(authStatus, 'Vérifiez votre boîte e-mail pour confirmer l’adresse, puis revenez vous connecter. L’accès reste soumis à la validation de l’enseignant.');
-    } catch (error) { message(authStatus, error.message, true); }
-    finally { button.disabled = false; }
+    } catch (error) { message(authStatus, captchaMessage(error), true); }
+    finally { button.disabled = false; window.MelecCaptcha?.reset(form); }
   };
   async function openDashboard() {
     const user = { id: await api.userId() };
@@ -181,6 +190,12 @@
     activeTp = assignments.find(row => tpEnd(row) > Date.now()) || null;
     if (previousActiveId !== activeTp?.id) clearDocumentCache();
     if (preserveViewer && previousActiveId && activeTp?.id === previousActiveId) return;
+    // Actualisation automatique : la liste n'est reconstruite que si les TP ont changé (évite le scintillement toutes les 30 s).
+    const signature = JSON.stringify([activeTp?.id || null,
+      assignments.map(row => [row.id, row.tp_id, row.tp_title, row.started_at, row.validated_at, row.reactivated_at, row.reactivated_until]),
+      tpItems.map(item => [item.id, item.title])]);
+    if (preserveViewer && signature === tpListSignature && $('studentTpList').childNodes.length) return;
+    tpListSignature = signature;
     clearTpViewer();
     const list = $('studentTpList'); list.replaceChildren();
     $('studentTpNotice').textContent = activeTp ? 'Un TP est en cours. Les autres rubriques restent verrouillées jusqu’à la fin du chronomètre.' : 'Ouvrir un TP démarre immédiatement un chronomètre de 3 h 30. Après son expiration, demandez une prolongation à l’enseignant.';
@@ -309,7 +324,7 @@
     if (cleanupViewer) cleanupViewer();
     clearTpViewer(); clearDocumentCache(); activeTp=null; assignments=[]; tpItems=[]; tpItemsLoadedAt=0; tpItemsKey='';
     await api.signOut();
-    dashboard.hidden = true; authPane.hidden = false; profile = null;
+    dashboard.hidden = true; authPane.hidden = false; profile = null; tpListSignature = '';
     switchTab('login');
   };
   setInterval(() => {
@@ -362,6 +377,7 @@
   openDashboard().catch(error => {
     authPane.hidden = false; dashboard.hidden = true;
     document.documentElement.classList.remove('student-resuming');
+    mountCaptcha();
     if (sessionStorage.getItem('melec-cloud-session-v1'))
       message(authStatus, 'Le serveur ne répond pas correctement : ' + error.message + ' Votre session est conservée ; actualisez pour réessayer.', true);
   });

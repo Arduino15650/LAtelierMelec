@@ -121,7 +121,8 @@
     await identify();
     // Double authentification : si un Authenticator est activé, le code est exigé avant tout accès aux données.
     if (window.MelecMfa) {
-      await window.MelecMfa.requireSecondFactor(gateMessage);
+      // Authenticator obligatoire pour l'enseignant : activation guidée s'il n'en a pas encore.
+      await window.MelecMfa.requireSecondFactor(gateMessage, () => ensureTeacher().then(() => true, () => false));
       session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
       gateMessage('Connexion et vérification des données…');
     }
@@ -265,18 +266,27 @@
     }
   };
 
+  // Contrôle anti-robot affiché uniquement quand le formulaire de connexion est visible.
+  function mountLoginCaptcha() {
+    if (window.MelecCaptcha && !byId('cloudLoginPane').hidden && !document.documentElement.classList.contains('cloud-resuming'))
+      window.MelecCaptcha.mount(byId('cloudLoginForm'));
+  }
   byId('cloudLoginForm').addEventListener('submit', async event => {
     event.preventDefault();
-    const button = event.target.querySelector('button[type=submit]');
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type=submit]');
     button.disabled = true;
     gateMessage('Connexion…');
     try {
-      const value = await window.MelecPortal.signIn(byId('cloudEmail').value.trim(), byId('cloudPassword').value);
+      const captchaToken = window.MelecCaptcha ? window.MelecCaptcha.token(form) : '';
+      const value = await window.MelecPortal.signIn(byId('cloudEmail').value.trim(), byId('cloudPassword').value, captchaToken);
       byId('cloudPassword').value = '';
       saveSession(value);
       await begin();
-    } catch (error) { gateMessage(error.message, 'error'); }
-    finally { button.disabled = false; }
+    } catch (error) {
+      gateMessage(/captcha/i.test(error.code || error.message) ? 'Le contrôle anti-robot a expiré. Validez-le à nouveau.' : error.message, 'error');
+    }
+    finally { button.disabled = false; window.MelecCaptcha?.reset(form); }
   });
   byId('cloudImportFile').addEventListener('click', async () => {
     const file = byId('cloudBackupFile').files[0];
@@ -318,6 +328,7 @@
     if (byId('cloudMfaPane')) byId('cloudMfaPane').hidden = true;
     byId('cloudSignOutGate').hidden = true;
     gateMessage('Vous êtes déconnecté.');
+    mountLoginCaptcha();
   }
   byId('cloudSignOut').addEventListener('click', () => signOut(false));
   byId('cloudSignOutGate').addEventListener('click', () => signOut(true));
@@ -329,6 +340,7 @@
       clearSession();
       byId('cloudLoginPane').hidden = false;
       retryButton.hidden = true;
+      mountLoginCaptcha();
       gateMessage('La session a réellement expiré. Reconnectez-vous ; vos brouillons locaux sont conservés.', 'error');
       return;
     }
@@ -350,4 +362,5 @@
       begin().catch(handleResumeError);
     }
   } catch { clearSession(); document.documentElement.classList.remove('cloud-resuming'); }
+  mountLoginCaptcha();
 })();

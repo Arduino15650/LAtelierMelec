@@ -19,18 +19,34 @@
   }
 
   // ---- Étape de connexion -------------------------------------------------
-  // Résout quand la session est de niveau aal2, ou immédiatement si aucun Authenticator n'est activé.
-  async function requireSecondFactor(gateMessage) {
+  // Résout quand la session est de niveau aal2. L'Authenticator est obligatoire pour l'enseignant :
+  // s'il n'en a pas encore, il l'active ici (QR code) avant d'accéder aux données.
+  async function requireSecondFactor(gateMessage, isTeacher) {
     if (await api().assuranceLevel() === 'aal2') return;
-    const verified = (await api().mfaFactors()).filter(factor => factor.status === 'verified');
-    if (!verified.length) return;
+    const factors = await api().mfaFactors();
+    let verified = factors.filter(factor => factor.status === 'verified');
+    let setup = null;
+    if (!verified.length) {
+      if (!isTeacher || !(await isTeacher())) return;
+      // Un essai abandonné laisse un appareil « non vérifié » : on le nettoie avant d'en créer un nouveau.
+      for (const factor of factors) await api().mfaUnenroll(factor.id).catch(() => {});
+      const data = await api().mfaEnroll('Téléphone principal');
+      verified = [{ id: data.id }];
+      setup = document.createElement('div');
+      setup.className = 'mfa-gate-setup';
+      setup.innerHTML = `<ol class="mfa-steps"><li>Installez Google Authenticator, Microsoft Authenticator ou une application équivalente.</li><li>Choisissez « Ajouter un compte », puis scannez ce QR code :</li></ol>
+        <div class="mfa-qr"><img alt="QR code à scanner avec l’application Authenticator" src="${esc(data.totp.qr_code)}"></div>
+        <details class="mfa-secret"><summary>Impossible de scanner ? Saisir la clé à la main</summary><code>${esc(data.totp.secret)}</code></details>`;
+    }
     const pane = byId('cloudMfaPane'), form = byId('cloudMfaForm'), input = byId('cloudMfaCode');
+    pane.querySelector('.mfa-gate-setup')?.remove();
+    if (setup) form.before(setup);
     byId('cloudLoginPane').hidden = true;
     byId('cloudImportPane').hidden = true;
     byId('cloudSignOutGate').hidden = false;
     pane.hidden = false;
     document.documentElement.classList.remove('cloud-resuming');
-    gateMessage('Mot de passe accepté. Saisissez le code de votre application Authenticator.');
+    gateMessage(setup ? 'Mot de passe accepté. La double authentification est obligatoire pour l’espace enseignant : scannez le QR code, puis saisissez le code affiché.' : 'Mot de passe accepté. Saisissez le code de votre application Authenticator.');
     input.value = '';
     setTimeout(() => input.focus(), 50);
     await new Promise(resolve => {
@@ -50,6 +66,7 @@
         button.disabled = false;
         if (lastError) { input.select(); return gateMessage(friendlyError(lastError), 'error'); }
         pane.hidden = true;
+        setup?.remove();
         form.onsubmit = null;
         resolve();
       };
@@ -80,8 +97,10 @@
       <div class="mfa-actions"><button type="button" id="mfaAdd">Ajouter un second appareil</button></div>`;
     byId('mfaAdd').onclick = () => enroll(factors, 'Appareil de secours');
     body.querySelectorAll('[data-remove]').forEach(button => button.onclick = async () => {
-      const last = verified.length === 1;
-      if (!confirm(last ? 'Retirer le dernier appareil désactive la double authentification. Le mot de passe seul suffira pour se connecter. Continuer ?' : 'Retirer cet appareil ? Il ne pourra plus générer de code pour ce compte.')) return;
+      // La double authentification est obligatoire : le dernier appareil ne peut pas être retiré.
+      if (verified.length === 1) return setStatus('La double authentification est obligatoire. Ajoutez d’abord un second appareil, puis retirez celui-ci.', true);
+      const last = false;
+      if (!confirm('Retirer cet appareil ? Il ne pourra plus générer de code pour ce compte.')) return;
       button.disabled = true;
       try { await api().mfaUnenroll(button.dataset.remove); await render(); setStatus(last ? 'Double authentification désactivée.' : 'Appareil retiré.'); }
       catch (error) { button.disabled = false; setStatus(friendlyError(error), true); }

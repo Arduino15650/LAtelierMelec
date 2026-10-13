@@ -148,6 +148,7 @@
         <form id="cloudLoginForm">
           <label for="cloudEmail">Adresse e-mail</label><input id="cloudEmail" type="email" autocomplete="username" required>
           <label for="cloudPassword">Mot de passe</label><input id="cloudPassword" type="password" autocomplete="current-password" required>
+          <div class="melec-captcha" data-captcha="enseignant_connexion" style="min-height:65px;margin:12px 0"></div>
           <div class="cloud-actions"><button type="submit">Se connecter</button></div>
         </form>
       </section>
@@ -234,14 +235,15 @@
   <script src="ccf-dashboard.js?v=20260930-reset-selection1"></script>
   <script src="ccf-submenus.js?v=20260928-4"></script>
   <script src="home.js?v=20260927-sans-doublon"></script>
-  <script src="portal-api.js?v=20261012-mfa1"></script>
+  <script src="portal-api.js?v=20261013-captcha1"></script>
   <script src="content-render.js?v=20260930-continuation1"></script>
   <script src="tp-response-export.js?v=20260927-4"></script>
   <script src="student-pdf-viewer.js?v=20260927-2"></script>
   <script src="teaching-space.js?v=20261012-doublons1"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
-  <script src="melec-mfa.js?v=20261012-1"></script>
-  <script src="cloud-sync.js?v=20261012-mfa1"></script>
+  <script src="melec-captcha.js?v=20261013-1"></script>
+  <script src="melec-mfa.js?v=20261013-obligatoire1"></script>
+  <script src="cloud-sync.js?v=20261013-captcha1"></script>
   <script src="activity-reuse.js?v=20260930-competences1"></script>
   <script src="activity-overview-filter.js?v=20260930-fin-evaluation1"></script>
   <script src="evaluation-student-filter.js?v=20260928-2"></script>

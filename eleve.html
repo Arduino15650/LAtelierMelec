@@ -69,6 +69,7 @@
         <form id="studentLoginForm" class="portal-form">
           <label>Adresse e-mail<input name="email" type="email" autocomplete="username" required></label>
           <label>Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>
+          <div class="melec-captcha" data-captcha="eleve_connexion" style="min-height:65px;margin:4px 0 8px"></div>
           <button class="portal-button" type="submit">Se connecter</button>
         </form>
         <form id="studentSignupForm" class="portal-form" autocomplete="off" hidden>
@@ -77,6 +78,7 @@
           <label>Adresse e-mail<input name="email" type="email" maxlength="254" autocomplete="email" required></label>
           <label>Mot de passe<input name="password" type="password" minlength="12" autocomplete="new-password" required></label>
           <p class="portal-small">Après l’inscription, confirmez votre adresse e-mail. L’enseignant validera ensuite votre classe.</p>
+          <div class="melec-captcha" data-captcha="eleve_inscription" style="min-height:65px;margin:4px 0 8px"></div>
           <button class="portal-button" type="submit">Demander mon inscription</button>
         </form>
         <p id="studentAuthStatus" class="form-status" role="status" aria-live="polite"></p>
@@ -103,12 +105,13 @@
       </section>
     </main>
   </div>
-  <script src="portal-api.js?v=20261012-mfa1"></script>
+  <script src="portal-api.js?v=20261013-captcha1"></script>
+  <script src="melec-captcha.js?v=20261013-1"></script>
   <script src="content-render.js?v=20260930-continuation1"></script>
   <script src="portal-contact.js?v=20260925-1"></script>
   <script src="student-pdf-forms.js?v=20260927-4"></script>
   <script src="student-pdf-viewer.js?v=20260927-2"></script>
-  <script src="student-space.js?v=20260930-tp-fluidite1"></script>
+  <script src="student-space.js?v=20261013-captcha1"></script>
   <script src="referential.js?v=20261012-bo"></script>
   <script src="student-referential-ccf.js?v=20260930-ccf-access1"></script>
   <script>
