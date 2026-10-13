@@ -4,9 +4,9 @@
   function closePdfPreview() {
     if (pdfPreviewClose) pdfPreviewClose();
   }
+  // Les PDF du cours s'affichent dans la visionneuse du site (sans enregistrement ni impression).
   function openPdfPreview(blob, title, category) {
     closePdfPreview();
-    const url = URL.createObjectURL(blob);
     const previousFocus = document.activeElement;
     const previousOverflow = document.body.style.overflow;
     const pane = document.createElement('section');
@@ -21,20 +21,23 @@
     const card = document.createElement('div'); card.className = 'student-pdf-preview-card';
     const actions = document.createElement('div'); actions.className = 'student-pdf-preview-actions';
     const toggle = document.createElement('button'); toggle.type = 'button'; toggle.textContent = 'Réduire le PDF';
-    const link = document.createElement('a'); link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
-    link.textContent = 'Ouvrir / imprimer ce PDF';
-    actions.append(toggle, link);
-    const frame = document.createElement('iframe'); frame.src = url + '#toolbar=1&navpanes=0';
-    frame.title = title; frame.className = 'student-pdf-preview-frame';
+    actions.append(toggle);
+    const frame = document.createElement('div'); frame.className = 'student-pdf-preview-reader';
+    frame.textContent = 'Chargement du document…';
+    let readerCleanup = null;
     card.append(actions, frame); pane.append(heading, card); document.body.append(pane);
     document.body.style.overflow = 'hidden';
-    const onKeydown = event => { if (event.key === 'Escape') closePdfPreview(); };
+    // Échap en plein écran sert à quitter le plein écran, pas à fermer l'aperçu.
+    const onKeydown = event => { if (event.key === 'Escape' && !document.fullscreenElement && !document.webkitFullscreenElement) closePdfPreview(); };
     document.addEventListener('keydown', onKeydown);
+    window.MelecStudentPdf.render(blob, frame).then(cleanup => {
+      if (pane.isConnected) readerCleanup = cleanup; else cleanup();
+    }).catch(error => { frame.textContent = 'Document illisible : ' + error.message; });
     pdfPreviewClose = () => {
       document.removeEventListener('keydown', onKeydown);
+      readerCleanup?.(); readerCleanup = null;
       pane.remove();
       document.body.style.overflow = previousOverflow;
-      URL.revokeObjectURL(url);
       pdfPreviewClose = null;
       if (previousFocus?.isConnected) previousFocus.focus();
     };

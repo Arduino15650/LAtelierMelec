@@ -52,3 +52,19 @@
   .student-tp-viewer section>button{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:center}
   .teach-pdf-card{min-width:0}
 }
+/* Lecteur PDF : page entière, largeur, double page, plein écran. */
+.student-pdf-display{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px}
+.student-pdf-controls button[aria-pressed=true]{background:#b35c00;border-color:#b35c00}
+.student-pdf-spread{display:block;width:max-content;min-width:100%}
+.student-pdf-spread.is-spread{display:flex;justify-content:center;align-items:flex-start;gap:10px}
+.student-pdf-spread>.student-pdf-stage[hidden]{display:none!important}
+.student-pdf-panel:fullscreen{display:flex;flex-direction:column;width:100%;height:100%;max-width:none;padding:8px;border:0;border-radius:0;background:#3a3f45}
+.student-pdf-panel:-webkit-full-screen{display:flex;flex-direction:column;width:100%;height:100%;max-width:none;padding:8px;border:0;border-radius:0;background:#3a3f45}
+.student-pdf-panel.student-pdf-fullscreen{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;width:100vw;height:100dvh;max-width:none;padding:8px;border:0;border-radius:0;background:#3a3f45}
+.student-pdf-panel:fullscreen .student-pdf-scroll,.student-pdf-panel.student-pdf-fullscreen .student-pdf-scroll{flex:1;max-height:none}
+.student-pdf-panel:-webkit-full-screen .student-pdf-scroll{flex:1;max-height:none}
+.student-pdf-panel:fullscreen :is(.student-pdf-page-count,.student-pdf-zoom output,.student-pdf-save-status,.student-pdf-color-label),.student-pdf-panel.student-pdf-fullscreen :is(.student-pdf-page-count,.student-pdf-zoom output,.student-pdf-save-status,.student-pdf-color-label){color:#fff}
+html.student-pdf-fullscreen-open,html.student-pdf-fullscreen-open body{overflow:hidden!important}
+.student-pdf-page{-webkit-user-drag:none;-webkit-touch-callout:none}
+/* Les documents consultés sur le site ne s'impriment pas. */
+@media print{.student-pdf-panel,.student-pdf-preview{display:none!important}}
