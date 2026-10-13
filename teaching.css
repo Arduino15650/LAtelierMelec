@@ -137,3 +137,8 @@ body.subpage-active .header-nav .nav[data-view="teaching"]:not(.active) span{
   body.print-lesson .lesson-content img,body.print-lesson .lesson-content table,body.print-lesson .lesson-content tr{break-inside:avoid-page!important}
   body.print-lesson .lesson-image{max-height:220mm}
 }
+
+/* Aperçu intégré des PDF sous le titre du TP. */
+.teach-tp-inline{display:grid;gap:8px;margin:12px 0;min-width:0}
+.teach-tp-inline .teach-row{flex-wrap:wrap}
+.teach-tp-inline .teach-help{margin:0}
