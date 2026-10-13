@@ -615,17 +615,10 @@
             try {
               const blob = asset.local_blob || await api.download(asset.object_path);
               if (epoch !== previewEpoch || !pane.isConnected) return;
-              if (window.matchMedia('(max-width: 900px), (pointer: coarse)').matches) {
-                const mount = document.createElement('div'); mount.className='teach-pdf-reader'; card.append(mount);
-                try { pdfReaders.set(card,await MelecStudentPdf.render(blob,mount)); }
-                catch (error) { mount.remove(); throw error; }
-              } else {
-                const url = URL.createObjectURL(blob); pdfUrls.push(url);
-                const frame = document.createElement('iframe'); frame.src = url + '#toolbar=1&navpanes=0';
-                frame.title = asset.file_name; frame.className = 'teach-pdf-frame'; card.append(frame);
-                const link = document.createElement('a'); link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
-                link.className = 'teach-pdf-open'; link.textContent = 'Ouvrir / imprimer ce PDF'; actions.append(link);
-              }
+              // Même visionneuse que les élèves : page entière, double page, plein écran, sans enregistrement ni impression.
+              const mount = document.createElement('div'); mount.className='teach-pdf-reader'; card.append(mount);
+              try { pdfReaders.set(card,await MelecStudentPdf.render(blob,mount)); }
+              catch (error) { mount.remove(); throw error; }
               button.textContent = 'Réduire le PDF'; button.setAttribute('aria-expanded','true');
             } catch (error) { button.textContent = 'Réessayer'; status('PDF inaccessible : ' + error.message,true); }
             finally { button.disabled = false; }

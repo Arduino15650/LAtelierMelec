@@ -46,8 +46,8 @@
     const compact = window.matchMedia('(max-width: 700px)');
     const updateCompact = () => { if (!compact.matches) actions.open = true; else actions.open = false; };
     updateCompact(); compact.addEventListener('change',updateCompact);
-    panel.insertBefore(actions, stage.parentElement);
-    panel.insertBefore(status, stage.parentElement);
+    panel.insertBefore(actions, stage.closest(".student-pdf-scroll"));
+    panel.insertBefore(status, stage.closest(".student-pdf-scroll"));
     const strokeLayer = document.createElementNS('http://www.w3.org/2000/svg','svg');
     strokeLayer.setAttribute('viewBox','0 0 1000 1000'); strokeLayer.setAttribute('preserveAspectRatio','none');
     strokeLayer.classList.add('student-pdf-stroke-layer');
