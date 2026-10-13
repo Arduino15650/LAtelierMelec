@@ -7,6 +7,7 @@
   let tpAssignments = [], classStudents = [], pendingStudents = [], selectedTpId = '', draftRoles = [];
   let requestClassId = '';
   let previewCleanup = null;
+  let inlineCleanup = null;
   let previewEpoch = 0;
   let loadedSession = '', lastLoaded = 0, loadInFlight = null;
   let studentsLoadedAt = 0;
@@ -27,6 +28,7 @@
       // Libérer le lecteur PDF (canvas, observateurs et URL) dès que l'on quitte cette vue.
       previewEpoch++;
       if (previewCleanup) { previewCleanup(); previewCleanup = null; }
+      if (inlineCleanup) { inlineCleanup(); inlineCleanup = null; }
       document.querySelector('#teachPreview')?.remove();
       document.body.classList.remove('print-lesson');
       return originalShow(name);
@@ -179,6 +181,7 @@
   }
   function renderTp() {
     const body = root.querySelector('#teachBody');
+    if (inlineCleanup) { inlineCleanup(); inlineCleanup = null; }
     if (!classId) { body.innerHTML = '<div class="teach-card">Choisissez une classe pour gérer ses TP.</div>'; return; }
     const tps = items.filter(item => item.kind === 'tp');
     if (selectedTpId && selectedTpId !== 'all' && !tps.some(item => item.id === selectedTpId)) selectedTpId = '';
@@ -186,7 +189,7 @@
     const selectedClassName = classes.find(candidate => candidate.id === classId)?.name || '';
     const accountNotice = `<div class="teach-card"><strong>Comptes élèves de ${esc(selectedClassName)}</strong><p class="teach-help">${classStudents.length} compte(s) rattaché(s) à la classe · ${pendingStudents.length} inscription(s) à valider.</p><p class="teach-help">Pour attribuer un TP chronométré, l’élève doit créer son compte dans l’espace élève. Validez sa classe et remettez-lui un code d’accès. La simple présence dans la liste des élèves ne crée pas de compte.</p><button type="button" id="openStudentAccess" class="subtle">Gérer les accès élèves</button></div>`;
     body.innerHTML = `<div class="teach-card teach-content-manager"><h2>TP en atelier</h2><p class="teach-help">Ajoutez un TP PDF, puis choisissez les élèves autorisés. Chaque dossier technique reste lié à son TP.</p><div class="teach-row"><button type="button" id="createTp">＋ Ajouter un TP</button><label for="tpFilter">Afficher<select id="tpFilter"><option value="">Choisir un TP à afficher…</option><option value="all" ${selectedTpId === 'all' ? 'selected' : ''}>Tous les TP (${tps.length})</option>${tps.map(item => `<option value="${item.id}" ${item.id === selectedTpId ? 'selected' : ''}>${esc(item.title)}</option>`).join('')}</select></label></div></div>
-      ${accountNotice}${displayed.map(item => { const assignments = tpAssignments.filter(row => row.tp_id === item.id); return `<article class="teach-card teach-tp-card" data-tp="${item.id}"><div class="teach-section-heading"><div><h3>${esc(item.title)}</h3><span class="teach-meta">${assignments.length} élève(s) associé(s)</span></div><div class="teach-row"><button type="button" data-preview-tp="${item.id}" class="subtle">Voir</button><button type="button" data-edit-tp="${item.id}" class="subtle">Modifier</button><button type="button" data-publish-tp="${item.id}" class="subtle">${item.published ? 'Masquer' : 'Publier'}</button><button type="button" data-delete-tp="${item.id}" class="warn">Supprimer</button></div></div><details><summary>Associer des élèves et gérer le temps</summary><div class="teach-tp-students">${classStudents.map(student => { const assignment = assignments.find(row => row.student_id === student.user_id); const active = assignment && tpIsActive(assignment); const locked = assignment?.started_at && !active; return `<div class="teach-tp-student"><label><input type="checkbox" data-tp-student="${student.user_id}" ${assignment ? 'checked' : ''}><span>${esc(student.last_name)} ${esc(student.first_name)}</span></label><div class="teach-tp-time">${assignment ? active ? 'En cours' : locked ? 'Terminé / verrouillé' : 'Non commencé' : 'Non associé'}${locked ? `<select data-extend-time="${assignment.id}" aria-label="Prolongation"><option value="30">30 min</option><option value="60">1 h</option><option value="90">1 h 30</option><option value="120">2 h</option><option value="180">3 h</option></select><button type="button" data-extend="${assignment.id}">Réactiver</button>` : ''}</div></div>`; }).join('') || '<p>Aucun compte élève rattaché à cette classe.</p>'}</div><button type="button" data-save-tp="${item.id}" ${classStudents.length ? '' : 'disabled'}>Enregistrer les associations</button></details></article>`; }).join('') || `<div class="teach-card">${tps.length ? 'Choisissez un TP à afficher.' : 'Aucun TP pour cette classe. Cliquez sur « Ajouter un TP ».'}</div>`}<div id="teachEditor"></div>`;
+      ${accountNotice}${displayed.map(item => { const assignments = tpAssignments.filter(row => row.tp_id === item.id); return `<article class="teach-card teach-tp-card" data-tp="${item.id}"><div class="teach-section-heading"><div><h3>${esc(item.title)}</h3><span class="teach-meta">${assignments.length} élève(s) associé(s)</span></div><div class="teach-row"><button type="button" data-inline-tp="${item.id}" class="subtle" aria-expanded="false">Aperçu</button><button type="button" data-preview-tp="${item.id}" class="subtle">Voir</button><button type="button" data-edit-tp="${item.id}" class="subtle">Modifier</button><button type="button" data-publish-tp="${item.id}" class="subtle">${item.published ? 'Masquer' : 'Publier'}</button><button type="button" data-delete-tp="${item.id}" class="warn">Supprimer</button></div></div><details><summary>Associer des élèves et gérer le temps</summary><div class="teach-tp-students">${classStudents.map(student => { const assignment = assignments.find(row => row.student_id === student.user_id); const active = assignment && tpIsActive(assignment); const locked = assignment?.started_at && !active; return `<div class="teach-tp-student"><label><input type="checkbox" data-tp-student="${student.user_id}" ${assignment ? 'checked' : ''}><span>${esc(student.last_name)} ${esc(student.first_name)}</span></label><div class="teach-tp-time">${assignment ? active ? 'En cours' : locked ? 'Terminé / verrouillé' : 'Non commencé' : 'Non associé'}${locked ? `<select data-extend-time="${assignment.id}" aria-label="Prolongation"><option value="30">30 min</option><option value="60">1 h</option><option value="90">1 h 30</option><option value="120">2 h</option><option value="180">3 h</option></select><button type="button" data-extend="${assignment.id}">Réactiver</button>` : ''}</div></div>`; }).join('') || '<p>Aucun compte élève rattaché à cette classe.</p>'}</div><button type="button" data-save-tp="${item.id}" ${classStudents.length ? '' : 'disabled'}>Enregistrer les associations</button></details></article>`; }).join('') || `<div class="teach-card">${tps.length ? 'Choisissez un TP à afficher.' : 'Aucun TP pour cette classe. Cliquez sur « Ajouter un TP ».'}</div>`}<div id="teachEditor"></div>`;
     for (const assignment of tpAssignments) {
       const reactivate = body.querySelector(`[data-extend="${assignment.id}"]`);
       const card = body.querySelector(`[data-tp="${assignment.tp_id}"]`);
@@ -276,6 +279,7 @@
       } catch (error) { status(error.message,true); }
     };
     body.querySelectorAll('[data-preview-tp]').forEach(button => button.onclick = () => previewItem(items.find(item => item.id === button.dataset.previewTp)));
+    body.querySelectorAll('[data-inline-tp]').forEach(button => button.onclick = () => toggleInlineTp(button));
     body.querySelectorAll('[data-edit-tp]').forEach(button => button.onclick = () => editItem(button.dataset.editTp));
     body.querySelectorAll('[data-publish-tp]').forEach(button => button.onclick = async () => {
       const item = items.find(candidate => candidate.id === button.dataset.publishTp);
@@ -557,13 +561,64 @@
     list.querySelectorAll('[data-swatch]').forEach(button => { button.onmousedown = event => event.preventDefault(); button.onclick = () => formatSelection(button.dataset.swatch,button.dataset.value,button); });
     list.querySelectorAll('[data-table]').forEach(btn => { btn.onmousedown = event => event.preventDefault(); btn.onclick = () => formatSelection('insertHTML', '<table><tbody><tr><td>Cellule 1</td><td>Cellule 2</td></tr><tr><td>Cellule 3</td><td>Cellule 4</td></tr></tbody></table><p></p>',btn); });
   }
+  // Aperçu intégré : les PDF du TP s'affichent directement sous son titre, dans la même
+  // visionneuse que les élèves (un document à la fois pour rester léger).
+  async function toggleInlineTp(button) {
+    const card = button.closest('.teach-tp-card');
+    const wasOpen = Boolean(card?.querySelector('.teach-tp-inline'));
+    if (inlineCleanup) { inlineCleanup(); inlineCleanup = null; }
+    if (!card || wasOpen) return;
+    const box = document.createElement('div'); box.className = 'teach-tp-inline';
+    const choices = document.createElement('div'); choices.className = 'teach-row';
+    const note = document.createElement('p'); note.className = 'teach-help'; note.setAttribute('role','status'); note.textContent = 'Chargement des documents…';
+    const mount = document.createElement('div'); mount.className = 'teach-pdf-reader';
+    box.append(choices,note,mount);
+    card.querySelector('.teach-section-heading').after(box);
+    let closed = false, reader = null, epoch = 0;
+    button.textContent = 'Fermer l’aperçu'; button.setAttribute('aria-expanded','true');
+    inlineCleanup = () => {
+      closed = true; epoch++; reader?.(); reader = null; box.remove();
+      if (button.isConnected) { button.textContent = 'Aperçu'; button.setAttribute('aria-expanded','false'); }
+    };
+    try {
+      const assets = (await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(card.dataset.tp) + '&select=id,object_path,file_name,mime_type,asset_role'))
+        .filter(asset => asset.mime_type === 'application/pdf' || /\.pdf$/i.test(asset.file_name || ''))
+        .sort((a,b) => (a.asset_role === 'technical') - (b.asset_role === 'technical'));
+      if (closed) return;
+      if (!assets.length) { note.textContent = 'Aucun PDF dans ce TP.'; return; }
+      const show = async (asset, choice) => {
+        const current = ++epoch;
+        reader?.(); reader = null;
+        choices.querySelectorAll('button').forEach(other => other.setAttribute('aria-pressed', String(other === choice)));
+        note.textContent = 'Chargement… ' + asset.file_name;
+        try {
+          const blob = await api.download(asset.object_path, {retryTransient:true, onProgress:(received,total) => {
+            if (total && current === epoch) note.textContent = 'Chargement… ' + Math.min(99, Math.floor(received * 100 / total)) + ' % · ' + asset.file_name;
+          }});
+          if (closed || current !== epoch) return;
+          const cleanup = await MelecStudentPdf.render(blob, mount);
+          if (closed || current !== epoch) { cleanup(); return; }
+          reader = cleanup;
+          note.textContent = (asset.asset_role === 'technical' ? 'Dossier technique' : 'Travaux pratiques') + ' · ' + asset.file_name;
+        } catch (error) { if (current === epoch) note.textContent = 'PDF inaccessible : ' + error.message; }
+      };
+      assets.forEach((asset, index) => {
+        const choice = document.createElement('button'); choice.type = 'button'; choice.className = 'subtle';
+        choice.textContent = (asset.asset_role === 'technical' ? 'Dossier technique · ' : 'TP · ') + asset.file_name;
+        choice.onclick = () => show(asset, choice);
+        choices.append(choice);
+        if (!index) show(asset, choice);
+      });
+    } catch (error) { if (!closed) note.textContent = 'Aperçu impossible : ' + error.message; }
+  }
+
   async function previewItem(item, draft = false) {
     const epoch = ++previewEpoch;
     if (previewCleanup) { previewCleanup(); previewCleanup = null; }
     document.querySelector('#teachPreview')?.remove();
     const title = draft ? root.querySelector('#itemTitle')?.value.trim() || 'Sans titre' : item.title;
     let previewBlocks = draft ? (captureBlocks(), structuredClone(blocks)) : (await api.rest('learning_items?id=eq.' + encodeURIComponent(item.id) + '&select=blocks'))[0]?.blocks || [];
-    let assets = draft ? [...originalAssets] : await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(item.id) + '&select=id,object_path,file_name,mime_type');
+    let assets = draft ? [...originalAssets] : await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(item.id) + '&select=id,object_path,file_name,mime_type,asset_role');
     if (epoch !== previewEpoch || root.classList.contains('hidden')) return;
     if (draft) previewBlocks = previewBlocks.map(block => {
       if (block.type !== 'pending') return block;
@@ -576,6 +631,10 @@
     const assetMap = new Map(assets.map(asset => [asset.id,asset]));
     const isPdf = asset => asset && (asset.mime_type === 'application/pdf' || /\.pdf$/i.test(asset.file_name || ''));
     const pdfAssets = previewBlocks.filter(block => block.type === 'asset' && isPdf(assetMap.get(block.assetId))).map(block => ({asset:assetMap.get(block.assetId),block}));
+    // Un PDF rattaché au contenu mais absent de sa liste de blocs (enregistrement interrompu…)
+    // reste visible dans l'aperçu au lieu d'une page vide.
+    const listed = new Set(pdfAssets.map(entry => entry.asset.id));
+    assets.filter(asset => isPdf(asset) && !listed.has(asset.id)).forEach(asset => pdfAssets.push({asset,block:{title:asset.file_name}}));
     const otherBlocks = previewBlocks.filter(block => !(block.type === 'asset' && isPdf(assetMap.get(block.assetId))));
     const hasPrintable = otherBlocks.some(block => (block.type === 'html' && /[^\s\u00a0]/.test(String(block.html || '').replace(/<[^>]*>/g, '').replace(/&nbsp;|&#160;/gi, ''))) || block.type === 'table' ||
       (block.type === 'asset' && String(assetMap.get(block.assetId)?.mime_type || '').startsWith('image/')));
@@ -593,6 +652,7 @@
       const renderCleanup = await MelecContent.render(otherBlocks, pane.querySelector('.teach-preview-content'), assets);
       if (epoch !== previewEpoch || !pane.isConnected) { renderCleanup(); pane.remove(); return; }
       previewCleanup = () => { renderCleanup(); pdfReaders.forEach(cleanup => cleanup()); pdfReaders.clear(); pdfUrls.forEach(url => URL.revokeObjectURL(url)); };
+      if (!pdfAssets.length && !otherBlocks.length) { const empty = document.createElement('p'); empty.className = 'teach-help'; empty.textContent = 'Aucun document à afficher pour ce contenu.'; pane.querySelector('.teach-preview-content').append(empty); }
       if (pdfAssets.length) {
         const section = document.createElement('section'); section.className = 'teach-pdf-attachments';
         let firstOpen = null;
