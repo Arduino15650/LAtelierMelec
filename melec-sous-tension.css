@@ -886,3 +886,7 @@ html body:not(#st-a):not(#st-b):not(#st-c):not(#st-d) :is(.ccf-pill,.student-ccf
 /* Listes déroulantes : place réservée à droite pour la flèche orange. La règle générale des champs
    (marges de 14 px, plus prioritaire) la supprimait : la flèche recouvrait la fin du texte. */
 html body:not(#st-a):not(#st-b):not(#st-c):not(#st-d) :is(.content .view,#studentDashboard .student-pane,.cloud-card) select:not([multiple]):not(:where(.st-doc,.student-pdf-mount) *){padding-right:44px!important}
+
+/* Éditeur de TP : les cartes de documents gardaient un fond blanc sous le texte clair du thème
+   (nom du PDF illisible). Même habillage que les autres cartes : fond bleu nuit, liseré bleu. */
+html body:not(#st-a):not(#st-b) .content .view .teaching-space .teach-block:not(#st-z){background:var(--st-panel-2)!important;border-color:var(--st-wire)!important}
