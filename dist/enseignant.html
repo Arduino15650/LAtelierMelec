@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="theme-color" content="#06182d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="MELEC">
+  <title>BAC PRO MELEC</title>
+  <script>try{if(sessionStorage.getItem('melec-cloud-session-v1'))document.documentElement.classList.add('cloud-resuming')}catch{}</script>
+  <style>html,body{min-height:100%;background:#06182d;color:#fff}body{margin:0}</style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+  <link rel="icon" href="icon-192.png">
+  <link rel="stylesheet" href="enseignant-1.419437fbd1.css">
+  <style>
+    .teach-asset-options{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;width:100%;min-width:0;margin-top:14px;padding:16px;border:1px solid #a8c8e8;border-radius:14px;background:#f5f9ff;box-sizing:border-box}
+    .teach-asset-options>.teach-help{margin:0}
+    .teach-asset-options .teach-editor-toolbar{max-width:100%;min-width:0;flex-wrap:wrap}
+    .teach-asset-field{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;min-width:0}
+    .teach-asset-field>label{display:block;margin:0;font-weight:700}
+    .teach-asset-input{box-sizing:border-box;width:100%;min-width:0;min-height:48px;padding:11px 13px;border:1px solid #86a9d0;border-radius:10px;background:#fff;color:#173450;overflow-wrap:anywhere}
+    .teach-asset-comment{min-height:96px}
+    .teach-asset-input:empty:before{content:attr(data-placeholder);color:#63748a;pointer-events:none}
+    .teach-asset-field input[type=range]{display:block;width:min(100%,420px);margin-top:8px}
+    @media(max-width:600px){.teach-asset-options{padding:12px}.teach-asset-options .teach-editor-toolbar{overflow-x:auto}}
+  </style>
+  <style>
+    body.cloud-locked > :not(#cloudGate):not(script){visibility:hidden!important}
+    #cloudGate{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;overflow:auto;padding:20px;background:#06182d;color:#172b45;font-family:Arial,sans-serif}
+    #cloudGate[hidden]{display:none}
+    /* Pendant une reprise de session, éviter le flash de la carte de connexion.
+       Un message discret apparaît seulement si la vérification prend du temps. */
+    html.cloud-resuming #cloudGate .cloud-card{visibility:hidden;pointer-events:none}
+    html.cloud-resuming #cloudGate::after{content:'Ouverture de votre espace…';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#dcecff;font:600 15px Arial,sans-serif;opacity:0;animation:cloud-progress .15s ease 1s forwards}
+    @keyframes cloud-progress{to{opacity:1}}
+    html.cloud-resuming #cloudLoginPane{display:none}
+    html.cloud-resuming #cloudGateStatus:empty::before{content:'Reconnexion en cours…'}
+    .cloud-card{width:min(100%,500px);box-sizing:border-box;padding:clamp(20px,5vw,34px);border:2px solid #ef9e31;border-radius:24px;background:#eff6ff;box-shadow:0 20px 60px #0008}
+    .cloud-home-link{display:inline-flex;align-items:center;min-height:36px;margin-bottom:18px;color:#165a9d;font-size:16px;font-weight:700;text-decoration:none}
+    .cloud-home-link:hover{text-decoration:underline}
+    .cloud-home-link:focus-visible{outline:3px solid #ef9e31;outline-offset:3px;border-radius:4px}
+    .cloud-brand{display:flex;align-items:center;gap:14px;margin-bottom:18px}.cloud-brand img{width:72px;height:72px;object-fit:contain}.cloud-brand strong{font-size:clamp(21px,5vw,29px)}
+    .cloud-card h1{font-size:24px;margin:0 0 10px}.cloud-card p{line-height:1.5}.cloud-card label{display:block;margin:14px 0 6px;font-weight:700}
+    .cloud-card input[type=email],.cloud-card input[type=password],.cloud-card input[type=file]{box-sizing:border-box;width:100%;min-height:46px;padding:10px;border:1px solid #8ca9c9;border-radius:12px;background:#fff;color:#172b45;font-size:16px}
+    .cloud-card button{min-height:46px;padding:10px 17px;border:0;border-radius:999px;background:#145cb5;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+    .cloud-card button.secondary{background:#dcecff;color:#123661;border:1px solid #8cb7ec}.cloud-card button:disabled{opacity:.55;cursor:wait}
+    .cloud-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}.cloud-status{min-height:20px;margin:12px 0 0;font-size:14px;overflow-wrap:anywhere}
+    .cloud-status.error{color:#ad2525}.cloud-status.success{color:#125d36}
+    .cloud-toolbar{display:flex;align-items:center;justify-content:flex-end;padding:8px 24px;background:transparent;color:#fff;font:13px Arial,sans-serif}
+    .cloud-toolbar[hidden]{display:none!important}
+    .cloud-menu{position:relative}
+    .cloud-menu>summary{display:flex;align-items:center;justify-content:center;min-height:42px;padding:0 17px;border:1px solid #e3a34c;border-radius:999px;background:#174878;color:#fff;font-weight:700;cursor:pointer;list-style:none}
+    .cloud-menu>summary::-webkit-details-marker{display:none}
+    .cloud-menu>summary:hover,.cloud-menu>summary:focus-visible{background:#2366a2;outline:2px solid #fff;outline-offset:2px}
+    .cloud-menu-panel{position:absolute;right:0;top:calc(100% + 7px);z-index:1000;box-sizing:border-box;width:min(310px,calc(100vw - 28px));display:grid;gap:11px;padding:16px;border:1px solid #93b9df;border-radius:17px;background:#edf5ff;color:#18324c;box-shadow:0 12px 30px #0007}
+    .cloud-menu-panel button{min-height:42px;padding:8px 14px;border:1px solid #8eb5de;border-radius:999px;background:#155395;color:#fff;font:700 14px Arial,sans-serif;cursor:pointer}
+    .cloud-menu-panel button:hover,.cloud-menu-panel button:focus-visible{filter:brightness(1.12);outline:2px solid #174878;outline-offset:2px}
+    .cloud-menu-panel .cloud-sync-error{color:#a12626}
+    .quick-nav{min-width:0!important;gap:8px!important}
+    .quick-nav .nav{flex:0 0 auto!important;width:auto!important;min-width:max-content!important;white-space:nowrap!important}
+    .quick-nav .cloud-toolbar{width:auto!important;min-width:max-content!important;padding:0!important;margin:0!important;justify-content:center;flex:0 0 auto!important}
+    .quick-nav .cloud-menu{width:auto!important}
+    .quick-nav .cloud-menu>summary{width:auto!important;min-height:44px;white-space:nowrap}
+    @media(min-width:981px){.quick-nav .cloud-menu>summary{justify-content:flex-start;padding-left:14px}}
+    #mobileMenuToggle,#mobileExitButton,.mobile-brand-subtitle{display:none}
+    @media(max-width:980px){
+      html,body{width:100%!important;max-width:100vw!important;overflow-x:hidden!important}
+      .topbar{box-sizing:border-box!important;width:100vw!important;max-width:100vw!important;overflow:hidden!important}
+      .topbar .brand{box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;padding:0!important}
+      .topbar .brand-copy{flex:1 1 auto!important;min-width:0!important;max-width:calc(100vw - 90px)!important}
+      .topbar .brand-copy strong{display:block!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important}
+      .topbar .brand-copy p{max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important}
+      #mobileMenuToggle{display:inline-flex!important;align-items:center;justify-content:center;min-height:46px;margin:10px 12px;padding:8px 18px;border:1px solid #e3a34c;border-radius:999px;background:#174878;color:#fff;font:700 15px Arial,sans-serif;cursor:pointer}
+      #mobileMenuToggle:focus-visible{outline:3px solid #ffc275;outline-offset:3px}
+      #teacherPrimaryNav,.home-active #teacherPrimaryNav{display:none!important;position:relative!important;inset:auto!important;z-index:60!important;box-sizing:border-box!important;width:calc(100vw - 24px)!important;max-width:calc(100vw - 24px)!important;height:auto!important;max-height:65dvh!important;margin:0 12px 12px!important;padding:12px!important;overflow-x:hidden!important;overflow-y:auto!important;flex-direction:row!important;gap:8px!important;border:1px solid #7ca7d0!important;border-radius:16px!important;background:#082a49!important;box-shadow:0 12px 28px #0006!important}
+      body.mobile-nav-open #teacherPrimaryNav,body.mobile-nav-open.home-active #teacherPrimaryNav{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
+      #teacherPrimaryNav::before,#teacherPrimaryNav::after{display:none!important}
+      #teacherPrimaryNav .nav,#teacherPrimaryNav .nav:not(.active),.subpage-active #teacherPrimaryNav .nav{display:flex!important;align-items:center!important;justify-content:flex-start!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;min-height:48px!important;margin:0!important;padding:8px 10px!important;white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.2!important;text-align:left!important;color:#fff!important;background:#174878!important;border:1px solid #527fa9!important;border-radius:10px!important;font-size:13px!important}
+      #teacherPrimaryNav .nav.active{background:#d18213!important;color:#fff!important;border-color:#f5c778!important}
+      #teacherPrimaryNav .nav span{display:inline!important;flex:0 0 auto!important;width:22px!important;margin-right:5px!important;color:inherit!important}
+      #teacherPrimaryNav .cloud-toolbar{display:flex!important;grid-column:1/-1!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;justify-content:stretch!important}
+      #teacherPrimaryNav .cloud-toolbar[hidden]{display:none!important}
+      #teacherPrimaryNav .cloud-menu{width:100%!important}
+      #teacherPrimaryNav .cloud-menu>summary{box-sizing:border-box!important;width:100%!important;justify-content:center!important}
+      #teacherPrimaryNav .cloud-menu-panel{position:static!important;width:100%!important;margin-top:8px;max-height:none!important;overflow:visible!important}
+    }
+    @media(min-width:601px) and (max-width:980px){
+      .topbar .brand{display:flex!important;align-items:center!important;justify-content:center!important;gap:18px!important}
+      .topbar .brand-logo{width:clamp(70px,10vw,90px)!important;height:clamp(70px,10vw,90px)!important;flex:0 0 clamp(70px,10vw,90px)!important}
+      .topbar .brand-copy{flex:0 1 auto!important;max-width:min(680px,calc(100vw - 135px))!important}
+    }
+    @media(max-width:600px){
+      .topbar{position:relative!important;display:grid!important;grid-template-columns:clamp(44px,18vw,80px) minmax(0,1fr) clamp(44px,18vw,80px)!important;grid-template-rows:auto auto!important;align-items:center!important;column-gap:8px!important;row-gap:7px!important;box-sizing:border-box!important;height:auto!important;min-height:0!important;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 13px!important}
+      .topbar #appBackButton,.topbar #mobileExitButton{position:static!important;inset:auto!important;z-index:5!important;align-items:center!important;justify-content:center!important;gap:4px!important;box-sizing:border-box!important;min-height:44px!important;max-width:100%!important;padding:6px!important;border:1px solid #e3a34c!important;border-radius:999px!important;background:#174878!important;color:#fff!important;font:700 12px Arial,sans-serif!important;white-space:nowrap!important;cursor:pointer!important}
+      .topbar #appBackButton{grid-column:1!important;grid-row:1!important;justify-self:start!important}
+      .topbar #appBackButton[hidden],body.home-active .topbar #appBackButton{display:none!important}
+      body.subpage-active .topbar #appBackButton{display:inline-flex!important}
+      .topbar #appBackButton span{display:inline!important}
+      .topbar #mobileExitButton{display:inline-flex!important;grid-column:3!important;grid-row:1!important;justify-self:end!important}
+      .topbar #mobileExitButton svg{display:block;width:16px;height:16px;flex:0 0 16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+      #mobileMenuToggle{display:flex!important;min-width:135px!important;margin:10px auto 14px!important}
+      .topbar .brand{display:flex!important;grid-column:2!important;grid-row:1!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;width:100%!important;min-width:0!important;height:auto!important;min-height:0!important;gap:7px!important;padding:0!important;text-align:center!important}
+      body.home-active .topbar .brand{grid-column:1/3!important;justify-content:flex-start!important;text-align:left!important}
+      body.home-active .topbar .brand-copy,body.home-active .topbar .brand-copy strong{ text-align:left!important }
+      .topbar .brand-logo{position:static!important;width:clamp(52px,16vw,72px)!important;height:clamp(52px,16vw,72px)!important;flex:0 0 clamp(52px,16vw,72px)!important;margin:0!important}
+      .topbar .brand-logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important}
+      .topbar .brand-copy{flex:0 1 auto!important;width:auto!important;max-width:none!important;text-align:center!important}
+      .topbar .brand-copy strong,.topbar .brand-copy strong span{font-size:clamp(16px,4vw,20px)!important;line-height:1.08!important;white-space:nowrap!important;overflow-wrap:normal!important;text-align:center!important}
+      .topbar .brand-copy p{display:none!important}
+      .topbar .mobile-brand-subtitle{display:block!important;grid-column:1/-1!important;grid-row:2!important;width:100%!important;max-width:36em!important;margin:0 auto!important;padding:0 4px!important;color:#d6e3f3!important;font:400 clamp(11px,2.8vw,14px)/1.35 Arial,sans-serif!important;text-align:center!important;text-wrap:balance;overflow-wrap:anywhere}
+      body.mobile-nav-open #teacherPrimaryNav,body.mobile-nav-open.home-active #teacherPrimaryNav{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    }
+    @media(max-width:420px){.topbar #appBackButton span,.topbar #mobileExitButton span{display:none!important}.topbar #appBackButton,.topbar #mobileExitButton{width:44px!important;padding:6px!important}.topbar .brand-copy strong,.topbar .brand-copy strong span{font-size:clamp(15px,4.5vw,19px)!important}}
+  </style>
+  <link rel="stylesheet" href="enseignant-2.9268a5c4aa.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+  <link rel="stylesheet" href="enseignant-3.401959e2e4.css">
+  <script src="enseignant-1.f71d2d12e7.js" defer></script>
+</head>
+<body class="cloud-locked">
+  <div id="cloudGate" role="dialog" aria-modal="true" aria-label="Connexion à LAtelierMelec">
+    <div class="cloud-card">
+      <a class="cloud-home-link" href="./index.html">← Retour à l’accueil</a>
+      <div class="cloud-brand"><img src="logo-melec-192.webp" alt=""><strong>BAC PRO MELEC</strong></div>
+      <section id="cloudLoginPane">
+        <h1>Espace enseignant</h1>
+        <p>Connectez-vous avec votre compte enseignant Supabase.</p>
+        <form id="cloudLoginForm">
+          <label for="cloudEmail">Adresse e-mail</label><input id="cloudEmail" type="email" autocomplete="username" required>
+          <label for="cloudPassword">Mot de passe</label><input id="cloudPassword" type="password" autocomplete="current-password" required>
+          <div class="melec-captcha" data-captcha="enseignant_connexion" style="min-height:65px;margin:12px 0"></div>
+          <div class="cloud-actions"><button type="submit">Se connecter</button></div>
+        </form>
+      </section>
+      <section id="cloudMfaPane" hidden>
+        <h1>Code de sécurité</h1>
+        <p>Ouvrez votre application Authenticator et saisissez le code à 6 chiffres affiché pour L’Atelier MELEC.</p>
+        <form id="cloudMfaForm" autocomplete="off">
+          <label for="cloudMfaCode">Code à 6 chiffres</label>
+          <input id="cloudMfaCode" inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7" autocomplete="one-time-code" required>
+          <div class="cloud-actions"><button type="submit">Valider le code</button></div>
+        </form>
+      </section>
+      <section id="cloudImportPane" hidden>
+        <h1>Première synchronisation</h1>
+        <p>Aucune donnée n’est encore enregistrée dans ce compte. Importez votre sauvegarde JSON, ou utilisez les données conservées dans ce navigateur. Rien ne sera envoyé sans votre confirmation.</p>
+        <label for="cloudBackupFile">Sauvegarde JSON téléchargée précédemment</label>
+        <input id="cloudBackupFile" type="file" accept=".json,application/json">
+        <div class="cloud-actions">
+          <button id="cloudImportFile" type="button">Importer ce fichier</button>
+          <button id="cloudImportLocal" class="secondary" type="button">Utiliser les données de ce navigateur</button>
+          <button id="cloudStartEmpty" class="secondary" type="button">Commencer sans données</button>
+        </div>
+      </section>
+      <p id="cloudGateStatus" class="cloud-status" role="status" aria-live="polite"></p>
+      <button id="cloudRetrySession" class="secondary" type="button" hidden>Réessayer la connexion</button>
+      <button id="cloudSignOutGate" class="secondary" type="button" hidden>Changer de compte</button>
+    </div>
+  </div>
+  <dialog id="mfaDialog" class="mfa-dialog" aria-labelledby="mfaTitle">
+    <form method="dialog" class="mfa-close"><button type="submit" aria-label="Fermer">×</button></form>
+    <h2 id="mfaTitle">Double authentification</h2>
+    <div id="mfaBody"></div>
+    <p id="mfaStatus" class="mfa-status" role="status" aria-live="polite"></p>
+  </dialog>
+  <header class="topbar">
+    <button id="appBackButton" class="app-back-button" type="button" aria-label="Revenir à la page précédente" onclick="appBack()" hidden>← <span>Retour</span></button>
+    <div class="brand" role="button" tabindex="0" aria-label="Revenir à l'accueil" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome()}"><span class="brand-logo"><img src="logo-melec-192.webp" alt="Logo BAC PRO MELEC : habitat, tertiaire et industrie"></span><div class="brand-copy"><strong><span>BAC PRO</span> MELEC</strong><p>Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p></div></div>
+    <button id="mobileExitButton" type="button" aria-label="Quitter l’espace enseignant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5M14 7l5 5-5 5M19 12H8"/></svg><span>Quitter</span></button>
+    <p class="mobile-brand-subtitle">Baccalauréat professionnel Métiers de l'Électricité et de ses Environnements Connectés</p>
+  </header>
+    <button id="mobileMenuToggle" type="button" aria-controls="teacherPrimaryNav" aria-expanded="false">☰ Menu</button>
+    <nav id="teacherPrimaryNav" class="header-nav quick-nav" aria-label="Navigation principale">
+      <button class="nav nav-home" data-view="home"><span>⌂</span> Accueil</button>
+      <button class="nav active" data-view="activities"><span>▦</span> Activités</button>
+      <button class="nav" data-view="activity-list"><span>☷</span> Liste des activités</button>
+      <button class="nav" data-view="students"><span>♙</span> Élèves</button>
+      <button class="nav" data-view="results"><span>▤</span> Résultats</button>
+      <button class="nav" data-view="ccf"><span>◉</span> Récap Des CCF</button>
+      <button class="nav" data-view="referential"><span>◎</span> Référentiel</button>
+      <button class="nav" data-view="teaching"><span>▣</span> TP en atelier · Élèves</button>
+      <div class="cloud-toolbar" hidden>
+    <details class="cloud-menu">
+      <summary>⚙ Mon compte</summary>
+      <div class="cloud-menu-panel">
+        <span id="cloudSyncStatus" role="status" aria-live="polite">Connexion…</span>
+        <button id="cloudSyncNow" type="button">Actualiser les données</button>
+        <button id="mfaOpen" type="button">Double authentification</button>
+        <button id="cloudSignOut" type="button">Déconnexion</button>
+      </div>
+    </details>
+      </div>
+    </nav>
+
+  <main class="shell">
+    <section class="content">
+      <div id="homeView" class="view hidden"></div>
+      <div id="activitiesView" class="view"></div>
+      <div id="activity-listView" class="view hidden"></div>
+      <div id="studentsView" class="view hidden"></div>
+      <div id="resultsView" class="view hidden"></div>
+      <div id="ccfView" class="view hidden"></div>
+      <div id="referentialView" class="view hidden"></div>
+      <div id="editorView" class="view hidden"></div>
+      <div id="teachingView" class="view hidden teaching-space"></div>
+    </section>
+  </main>
+  <div id="toast" class="toast"></div>
+  <script src="enseignant-2.445020eb1b.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      const swVersion='154';
+      window.addEventListener('load', () => navigator.serviceWorker.register(`./service-worker.js?v=${swVersion}`,{updateViaCache:'none'}).catch(console.error));
+    }
+  </script>
+  <script>
+    const mobileMenuToggle=document.getElementById('mobileMenuToggle');
+    const teacherPrimaryNav=document.getElementById('teacherPrimaryNav');
+    const accountMenu=teacherPrimaryNav.querySelector('.cloud-menu');
+    document.addEventListener('click',event=>{
+      if(accountMenu?.open && !event.target.closest('.cloud-menu')) accountMenu.open=false;
+    });
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape' && accountMenu?.open){
+        accountMenu.open=false;
+        accountMenu.querySelector('summary')?.focus();
+      }
+    });
+    mobileMenuToggle.addEventListener('click',()=>{
+      const expanded=document.body.classList.toggle('mobile-nav-open');
+      mobileMenuToggle.setAttribute('aria-expanded',String(expanded));
+    });
+    teacherPrimaryNav.addEventListener('click',event=>{
+      if(!event.target.closest('button.nav')) return;
+      if(accountMenu) accountMenu.open=false;
+      document.body.classList.remove('mobile-nav-open');
+      mobileMenuToggle.setAttribute('aria-expanded','false');
+    });
+    const teacherBackButton=document.getElementById('appBackButton');
+    const syncBackButton=()=>{teacherBackButton.hidden=!document.body.classList.contains('subpage-active')};
+    new MutationObserver(syncBackButton).observe(document.body,{attributes:true,attributeFilter:['class']});
+    syncBackButton();
+    if(typeof window.appBack!=='function' || typeof window.resetToHome!=='function'){
+      const originalShow=window.show;
+      const routeStack=[location.hash.slice(1)||'home'];
+      if(typeof originalShow==='function'){
+        window.show=function(name){if(name!==routeStack[routeStack.length-1])routeStack.push(name);return originalShow(name)};
+        const originalShowRaw=window.showRaw;
+        if(typeof originalShowRaw==='function')window.showRaw=function(name){
+          if(name==='editor'){
+            if(routeStack[routeStack.length-1]!==name)routeStack.push(name);
+            document.body.classList.remove('home-active');document.body.classList.add('subpage-active');
+          }
+          const result=originalShowRaw(name);syncBackButton();return result;
+        };
+        window.appBack=function(){if(routeStack.length>1)routeStack.pop();originalShow(routeStack[routeStack.length-1]||'home');syncBackButton()};
+        window.resetToHome=function(){window.dispatchEvent(new Event('melec-reset-selection'));routeStack.length=0;routeStack.push('home');originalShow('home');history.replaceState(null,'',location.pathname+location.search);syncBackButton()};
+      }
+    }
+    document.querySelector('.topbar .brand').addEventListener('click',()=>{
+      document.body.classList.remove('mobile-nav-open');
+      mobileMenuToggle.setAttribute('aria-expanded','false');
+    });
+    document.getElementById('mobileExitButton').addEventListener('click',()=>{
+      document.getElementById('cloudSignOut').click();
+    });
+  </script>
+  <script src="enseignant-3.4cb01c0d96.js"></script>
+</body>
+</html>
