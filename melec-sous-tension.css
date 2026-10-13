@@ -877,3 +877,8 @@ html body:not(#st-a):not(#st-b) :is(.content .view,#studentDashboard .student-pa
 html body:not(#st-a):not(#st-b) :is(.content .view,#studentDashboard .student-pane,.cloud-card,.mfa-dialog) :is(input,select,textarea):not(:where(.st-doc,.student-pdf-mount) *):focus{outline:none!important;border-color:var(--st-volt)!important;box-shadow:0 0 0 3px rgba(255,138,30,.28)!important}
 html body:not(#st-a):not(#st-b) .content .view input[readonly]:not(:where(.st-doc,.student-pdf-mount) *){background-color:#0b2038!important;color:var(--st-muted)!important;-webkit-text-fill-color:var(--st-muted)!important}
 html body:not(#st-a):not(#st-b) .content .view textarea{min-height:96px}
+
+/* Pastilles de compétences (résultats, CCF, espace élève) : la note a la même taille que le code
+   de compétence et reste dans le cercle. La règle générale des petits textes (13 px) ne s'y applique pas. */
+html body:not(#st-a):not(#st-b):not(#st-c):not(#st-d) :is(.ccf-pill,.student-ccf-pill){line-height:1!important;white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.02em;overflow:hidden}
+html body:not(#st-a):not(#st-b):not(#st-c):not(#st-d) :is(.ccf-pill,.student-ccf-pill) small{display:block;margin-top:1px!important;font-size:1em!important;font-weight:700!important;line-height:1!important;letter-spacing:-.03em}
