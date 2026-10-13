@@ -1,0 +1,783 @@
+(function () {
+  'use strict';
+  const api = MelecPortal, esc = api.escapeHtml, root = document.getElementById('teachingView');
+  let classes = [], chapters = [], items = [], students = [], messages = [];
+  let classId = '', tab = 'tp', editing = null, blocks = [], draftAssets = [], activeItem = null, originalAssets = [];
+  let selectedChapterId = '', selectedItemId = '';
+  let tpAssignments = [], classStudents = [], pendingStudents = [], selectedTpId = '', draftRoles = [];
+  let requestClassId = '';
+  let previewCleanup = null;
+  let previewEpoch = 0;
+  let loadedSession = '', lastLoaded = 0, loadInFlight = null;
+  let studentsLoadedAt = 0;
+  let messagesLoadedAt = 0, tpLoadedAt = 0, tpLoadedClassId = '';
+  const kindNames = { course: 'Cours', td: 'Travaux dirigés', tp: 'Travaux pratiques' };
+  const originalShow = window.show;
+  function sessionKey() {
+    try {
+      const token = JSON.parse(sessionStorage.getItem('melec-cloud-session-v1') || 'null')?.access_token;
+      if (!token) return '';
+      // Utilisé seulement pour isoler le cache d'affichage, jamais pour autoriser l'accès.
+      return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub || token;
+    }
+    catch { return ''; }
+  }
+  window.show = show = function (name) {
+    if (name !== 'teaching') {
+      // Libérer le lecteur PDF (canvas, observateurs et URL) dès que l'on quitte cette vue.
+      previewEpoch++;
+      if (previewCleanup) { previewCleanup(); previewCleanup = null; }
+      document.querySelector('#teachPreview')?.remove();
+      document.body.classList.remove('print-lesson');
+      return originalShow(name);
+    }
+    history.replaceState(null, '', location.pathname + location.search + '#teaching');
+    document.body.classList.remove('home-active'); document.body.classList.add('subpage-active');
+    document.querySelectorAll('.view').forEach(node => node.classList.add('hidden'));
+    root.classList.remove('hidden');
+    document.querySelectorAll('.nav').forEach(node => node.classList.toggle('active', node.dataset.view === name));
+    window.scrollTo(0, 0);
+    const key = sessionKey();
+    if (key && loadedSession === key) {
+      // Le DOM est déjà à jour : éviter sa reconstruction à chaque retour dans le menu.
+      if (!root.querySelector('#teachClass')) render();
+      if (Date.now() - lastLoaded > 30000) load(true).catch(error => status(error.message, true));
+    } else {
+      classes = []; chapters = []; items = []; students = []; messages = []; studentsLoadedAt = 0; messagesLoadedAt = 0; tpLoadedAt = 0;
+      loadedSession = '';
+      load().catch(error => status(error.message, true));
+    }
+  };
+  function status(text, error = false) {
+    const node = root.querySelector('#teachStatus');
+    if (node) { node.textContent = text; node.classList.toggle('error', error); }
+  }
+  function classNames() {
+    const names = new Set();
+    (state?.students || []).forEach(s => { if (s.className) names.add(s.className.trim()); });
+    (state?.activities || []).forEach(a => { if (a.className) names.add(a.className.trim()); });
+    return [...names].filter(Boolean).sort((a,b) => a.localeCompare(b, 'fr'));
+  }
+  function normalized(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  }
+  function rosterMatches(student) {
+    return (state?.students || []).filter(entry => normalized(entry.name) === normalized(student.last_name + student.first_name)
+      && classes.some(item => normalized(item.name) === normalized(entry.className)));
+  }
+  function rosterNameExists(student) {
+    return (state?.students || []).some(entry => normalized(entry.name) === normalized(student.last_name + student.first_name));
+  }
+  function duplicateOf(profile) {
+    if (profile.approved_at || profile.blocked_at) return null;
+    const rosterIds = rosterMatches(profile).map(entry => String(entry.id));
+    return students.find(other => other.user_id !== profile.user_id && other.approved_at && !other.blocked_at
+      && (rosterIds.includes(String(other.roster_student_id)) || normalized(other.last_name + other.first_name) === normalized(profile.last_name + profile.first_name))) || null;
+  }
+  async function load(background = false) {
+    if (loadInFlight) return loadInFlight;
+    if (!background) root.innerHTML = '<div class="teach-head"><div><h1>TP en atelier</h1><p>Contenus de classe et accès élèves</p></div></div><div class="teach-card">Chargement… <span id="teachStatus"></span></div>';
+    const key = sessionKey();
+    loadInFlight = (async () => {
+      // La base applique les règles d'accès : aucune donnée n'est affichée avant contrôle du compte.
+      const userId = await api.userId();
+      const [teachers, nextClasses] = await Promise.all([
+        api.rest('teacher_accounts?user_id=eq.' + encodeURIComponent(userId) + '&select=user_id'),
+        api.rest('teaching_classes?select=id,name&order=name.asc')
+      ]);
+      if (!teachers.length) throw new Error('Accès réservé à l’enseignant.');
+      if (sessionKey() !== key) return;
+      classes = nextClasses;
+      if (classId && !classes.some(c => c.id === classId)) {
+        classId = '';
+        selectedChapterId = ''; selectedItemId = '';
+      }
+      await loadClass();
+      if (sessionKey() === key) { loadedSession = key; lastLoaded = Date.now(); }
+    })();
+    try { await loadInFlight; }
+    finally { loadInFlight = null; }
+  }
+  async function loadClass() {
+    const refreshStudents = !studentsLoadedAt || Date.now() - studentsLoadedAt > 120000
+      || tab === 'students' || tab === 'alerts' || tab === 'tp';
+    const profilesPromise = refreshStudents
+      ? api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc')
+      : Promise.resolve(students);
+    const auxiliary = tab === 'messages'
+        ? api.rest('contact_messages?select=*&order=created_at.desc&limit=100')
+        : null;
+    if (classId && tab === 'tp') {
+      [chapters, items] = await Promise.all([
+        api.rest('learning_chapters?class_id=eq.' + classId + '&select=*&order=position.asc,title.asc'),
+        api.rest('learning_items?select=id,chapter_id,kind,title,linked_course_id,position,published&order=position.asc,title.asc')
+      ]);
+      items = items.filter(i => chapters.some(c => c.id === i.chapter_id));
+      if (tab === 'tp') {
+        [students,tpAssignments] = await Promise.all([profilesPromise, api.rest('tp_assignments?select=*')]);
+        const selectedClass = classes.find(candidate => candidate.id === classId);
+        classStudents = students.filter(student => student.class_id === classId);
+        pendingStudents = students.filter(student =>
+          (!student.approved_at || !student.class_id) &&
+          (student.class_id === classId || (!student.class_id && student.requested_class?.trim().toLocaleLowerCase('fr') === selectedClass?.name.trim().toLocaleLowerCase('fr'))));
+        tpLoadedClassId = classId;
+        tpLoadedAt = Date.now();
+      }
+    } else { chapters = []; items = []; }
+    students = await profilesPromise;
+    if (refreshStudents) studentsLoadedAt = Date.now();
+    if (auxiliary) { messages = await auxiliary; messagesLoadedAt = Date.now(); }
+    render();
+  }
+  async function refreshAuxiliary(selectedTab) {
+    const result = selectedTab === 'students' || selectedTab === 'alerts'
+      ? await api.rest('student_profiles?select=*&order=last_name.asc,first_name.asc')
+      : await api.rest('contact_messages?select=*&order=created_at.desc&limit=100');
+    if (tab !== selectedTab || !root.offsetParent) return;
+    if (selectedTab === 'students' || selectedTab === 'alerts') { students = result; studentsLoadedAt = Date.now(); }
+    else { messages = result; messagesLoadedAt = Date.now(); }
+    render();
+  }
+  function render() {
+    root.innerHTML = `<div class="teach-head"><div><h1>TP en atelier</h1><p>Créer et publier des travaux pratiques par classe.</p></div></div>
+      <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><button type="button" id="teachSyncClasses" class="subtle">Ajouter les classes de l’application</button></div></div>
+      <div class="teach-tabs" role="tablist">${[['tp','Travaux pratiques'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
+      <div id="teachBody"></div><p id="teachStatus" class="teach-status" role="status"></p>`;
+    root.querySelector('#teachClass').onchange = e => { classId = e.target.value; selectedChapterId = ''; selectedItemId = ''; selectedTpId = ''; editing = null; loadClass().catch(err => status(err.message, true)); };
+    root.querySelector('#teachSyncClasses').onclick = syncClasses;
+    root.querySelectorAll('[data-teach-tab]').forEach(button => button.onclick = () => {
+      const nextTab=button.dataset.teachTab;
+      if(nextTab!==tab){
+        if(nextTab==='tp')selectedTpId='';
+      }
+      tab = nextTab; selectedItemId = ''; editing = null; render();
+      if ((tab === 'students' || tab === 'alerts') && Date.now()-studentsLoadedAt>=15000) refreshAuxiliary(tab).catch(err => status(err.message, true));
+      if (tab === 'messages' && Date.now()-messagesLoadedAt>=15000) refreshAuxiliary(tab).catch(err => status(err.message, true));
+      if (tab === 'tp' && (tpLoadedClassId!==classId || Date.now()-tpLoadedAt>=15000)) loadClass().catch(err => status(err.message, true));
+    });
+    if (tab === 'students') renderStudents();
+    else if (tab === 'alerts') renderAlerts();
+    else if (tab === 'messages') renderMessages();
+    else if (tab === 'tp') renderTp();
+    else { tab = 'tp'; renderTp(); }
+  }
+  async function syncClasses() {
+    try {
+      const existing = new Set(classes.map(c => c.name.toLocaleLowerCase('fr')));
+      const names = classNames().filter(name => !existing.has(name.toLocaleLowerCase('fr')));
+      if (!names.length) { status('Toutes les classes sont déjà présentes.'); return; }
+      await api.rest('teaching_classes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(names.map(name => ({name}))) });
+      await load(); status(names.length + ' classe(s) ajoutée(s).');
+    } catch (error) { status(error.message, true); }
+  }
+  function tpIsActive(assignment) {
+    if (assignment.validated_at) return false;
+    const end = assignment.reactivated_at
+      ? Date.parse(assignment.reactivated_until || '') || 0
+      : assignment.started_at ? Date.parse(assignment.started_at) + 210 * 60000 : 0;
+    return end > Date.now();
+  }
+  function renderTp() {
+    const body = root.querySelector('#teachBody');
+    if (!classId) { body.innerHTML = '<div class="teach-card">Choisissez une classe pour gérer ses TP.</div>'; return; }
+    const tps = items.filter(item => item.kind === 'tp');
+    if (selectedTpId && selectedTpId !== 'all' && !tps.some(item => item.id === selectedTpId)) selectedTpId = '';
+    const displayed = selectedTpId === 'all' ? tps : selectedTpId ? tps.filter(item => item.id === selectedTpId) : [];
+    const selectedClassName = classes.find(candidate => candidate.id === classId)?.name || '';
+    const accountNotice = `<div class="teach-card"><strong>Comptes élèves de ${esc(selectedClassName)}</strong><p class="teach-help">${classStudents.length} compte(s) rattaché(s) à la classe · ${pendingStudents.length} inscription(s) à valider.</p><p class="teach-help">Pour attribuer un TP chronométré, l’élève doit créer son compte dans l’espace élève. Validez sa classe et remettez-lui un code d’accès. La simple présence dans la liste des élèves ne crée pas de compte.</p><button type="button" id="openStudentAccess" class="subtle">Gérer les accès élèves</button></div>`;
+    body.innerHTML = `<div class="teach-card teach-content-manager"><h2>TP en atelier</h2><p class="teach-help">Ajoutez un TP PDF, puis choisissez les élèves autorisés. Chaque dossier technique reste lié à son TP.</p><div class="teach-row"><button type="button" id="createTp">＋ Ajouter un TP</button><label for="tpFilter">Afficher<select id="tpFilter"><option value="">Choisir un TP à afficher…</option><option value="all" ${selectedTpId === 'all' ? 'selected' : ''}>Tous les TP (${tps.length})</option>${tps.map(item => `<option value="${item.id}" ${item.id === selectedTpId ? 'selected' : ''}>${esc(item.title)}</option>`).join('')}</select></label></div></div>
+      ${accountNotice}${displayed.map(item => { const assignments = tpAssignments.filter(row => row.tp_id === item.id); return `<article class="teach-card teach-tp-card" data-tp="${item.id}"><div class="teach-section-heading"><div><h3>${esc(item.title)}</h3><span class="teach-meta">${assignments.length} élève(s) associé(s)</span></div><div class="teach-row"><button type="button" data-preview-tp="${item.id}" class="subtle">Voir</button><button type="button" data-edit-tp="${item.id}" class="subtle">Modifier</button><button type="button" data-publish-tp="${item.id}" class="subtle">${item.published ? 'Masquer' : 'Publier'}</button><button type="button" data-delete-tp="${item.id}" class="warn">Supprimer</button></div></div><details><summary>Associer des élèves et gérer le temps</summary><div class="teach-tp-students">${classStudents.map(student => { const assignment = assignments.find(row => row.student_id === student.user_id); const active = assignment && tpIsActive(assignment); const locked = assignment?.started_at && !active; return `<div class="teach-tp-student"><label><input type="checkbox" data-tp-student="${student.user_id}" ${assignment ? 'checked' : ''}><span>${esc(student.last_name)} ${esc(student.first_name)}</span></label><div class="teach-tp-time">${assignment ? active ? 'En cours' : locked ? 'Terminé / verrouillé' : 'Non commencé' : 'Non associé'}${locked ? `<select data-extend-time="${assignment.id}" aria-label="Prolongation"><option value="30">30 min</option><option value="60">1 h</option><option value="90">1 h 30</option><option value="120">2 h</option><option value="180">3 h</option></select><button type="button" data-extend="${assignment.id}">Réactiver</button>` : ''}</div></div>`; }).join('') || '<p>Aucun compte élève rattaché à cette classe.</p>'}</div><button type="button" data-save-tp="${item.id}" ${classStudents.length ? '' : 'disabled'}>Enregistrer les associations</button></details></article>`; }).join('') || `<div class="teach-card">${tps.length ? 'Choisissez un TP à afficher.' : 'Aucun TP pour cette classe. Cliquez sur « Ajouter un TP ».'}</div>`}<div id="teachEditor"></div>`;
+    for (const assignment of tpAssignments) {
+      const reactivate = body.querySelector(`[data-extend="${assignment.id}"]`);
+      const card = body.querySelector(`[data-tp="${assignment.tp_id}"]`);
+      const time = card?.querySelector(`[data-tp-student="${assignment.student_id}"]`)?.closest('.teach-tp-student')?.querySelector('.teach-tp-time');
+      if (!time || !assignment.started_at) continue;
+      if (assignment.validated_at && time.firstChild?.nodeType === Node.TEXT_NODE) {
+        time.firstChild.textContent = 'Validé · TP terminé';
+        time.querySelector(`[data-extend-time="${assignment.id}"]`)?.remove();
+        reactivate?.remove();
+        continue;
+      }
+      if (!reactivate) continue;
+      const validate = document.createElement('button');
+      validate.type='button'; validate.className='subtle'; validate.dataset.validateTp=assignment.id;
+      validate.textContent='Valider';
+      const actions = document.createElement('span'); actions.className='teach-tp-final-actions';
+      reactivate.replaceWith(actions); actions.append(reactivate,validate);
+    }
+    body.querySelectorAll('.teach-tp-card').forEach(card => {
+      const details = document.createElement('details');
+      const summary = document.createElement('summary'); summary.textContent = 'Réponses des élèves · PDF complété'; details.append(summary);
+      const list = document.createElement('div'); list.className = 'teach-tp-students teach-tp-response-list'; details.append(list); card.append(details);
+      details.addEventListener('toggle', async () => {
+        if (!details.open) return;
+        list.textContent = 'Chargement des réponses…';
+        try {
+          const [rows,assets] = await Promise.all([
+            api.rest('tp_document_responses?tp_id=eq.' + encodeURIComponent(card.dataset.tp) + '&select=student_id,asset_id,answers,updated_at&order=updated_at.desc'),
+            api.rest('learning_assets?item_id=eq.' + encodeURIComponent(card.dataset.tp) + '&select=id,object_path,file_name,mime_type,asset_role')
+          ]);
+          if (!details.open) return;
+          list.replaceChildren();
+          for (const row of rows) {
+            const asset = assets.find(candidate => candidate.id === row.asset_id && (candidate.asset_role || 'main') === 'main');
+            if (!asset) continue;
+            const student = students.find(candidate => candidate.user_id === row.student_id);
+            const line = document.createElement('div'); line.className = 'teach-tp-student teach-tp-response-row';
+            const label = document.createElement('span'); label.className='teach-tp-response-label'; label.textContent = `${student?.last_name || 'Élève'} ${student?.first_name || row.student_id} · ${asset.file_name} · ${new Date(row.updated_at).toLocaleString('fr-FR')}`;
+            const button = document.createElement('button'); button.type='button'; button.textContent='Télécharger le PDF complété';
+            const progress = document.createElement('span'); progress.className='teach-help'; progress.setAttribute('role','status');
+            button.onclick = async () => {
+              button.disabled = true;
+              try {
+                const blob = await api.download(asset.object_path);
+                const name = `${student?.last_name || row.student_id}-${student?.first_name || ''}-${asset.file_name.replace(/\.pdf$/i,'')}-complete.pdf`;
+                await MelecTpResponseExport.download(blob,row.answers?.entries || [],name,text => { progress.textContent=text; });
+              } catch (error) { progress.textContent = 'Export impossible : ' + error.message; }
+              finally { button.disabled = false; }
+            };
+            const remove = document.createElement('button'); remove.type='button'; remove.className='warn'; remove.textContent='Supprimer cette réponse';
+            remove.setAttribute('aria-label',`Supprimer définitivement les réponses de ${student?.first_name || ''} ${student?.last_name || row.student_id} pour ${asset.file_name}`);
+            remove.onclick = async () => {
+              const typed = window.prompt(`Suppression définitive des réponses de ${student?.first_name || ''} ${student?.last_name || row.student_id} pour « ${asset.file_name} ». Le PDF original et les réponses des autres élèves seront conservés. Téléchargez le PDF complété avant de continuer si vous voulez en garder une copie.\n\nTapez SUPPRIMER pour confirmer :`);
+              if (typed !== 'SUPPRIMER') return;
+              remove.disabled = true; button.disabled = true; progress.textContent='Suppression en cours…';
+              try {
+                const path = 'tp_document_responses?student_id=eq.' + encodeURIComponent(row.student_id)
+                  + '&tp_id=eq.' + encodeURIComponent(card.dataset.tp)
+                  + '&asset_id=eq.' + encodeURIComponent(row.asset_id) + '&select=student_id,asset_id';
+                const deleted = await api.rest(path,{method:'DELETE',headers:{Prefer:'return=representation'}});
+                if (!Array.isArray(deleted) || deleted.length !== 1) throw new Error('Suppression non confirmée par la base. Vérifiez la règle SQL.');
+                line.remove();
+                if (!list.children.length) list.textContent='Aucune réponse enregistrée pour ce TP.';
+                status('Réponse supprimée définitivement de la base.');
+              } catch (error) {
+                progress.textContent='Suppression impossible : ' + error.message;
+                remove.disabled = false; button.disabled = false;
+              }
+            };
+            const actions = document.createElement('div'); actions.className='teach-tp-response-actions'; actions.append(button,remove);
+            line.append(label,actions,progress); list.append(line);
+          }
+          if (!list.children.length) list.textContent='Aucune réponse enregistrée pour ce TP.';
+        } catch (error) { list.textContent='Réponses indisponibles : ' + error.message; }
+      });
+    });
+    body.querySelector('#openStudentAccess').onclick = () => { tab = 'students'; render(); refreshAuxiliary('students').catch(error => status(error.message,true)); };
+    body.querySelector('#tpFilter').onchange = event => { selectedTpId = event.target.value; renderTp(); };
+    body.querySelector('#createTp').onclick = async () => {
+      try {
+        let chapter = chapters.find(candidate => candidate.title === 'TP en atelier');
+        if (!chapter) {
+          const created = await api.rest('learning_chapters?select=*', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({class_id:classId,title:'TP en atelier',published:true})});
+          chapter = created[0]; chapters.push(chapter);
+        } else if (!chapter.published) await api.rest('learning_chapters?id=eq.' + chapter.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:true})});
+        editItem(null,chapter.id);
+      } catch (error) { status(error.message,true); }
+    };
+    body.querySelectorAll('[data-preview-tp]').forEach(button => button.onclick = () => previewItem(items.find(item => item.id === button.dataset.previewTp)));
+    body.querySelectorAll('[data-edit-tp]').forEach(button => button.onclick = () => editItem(button.dataset.editTp));
+    body.querySelectorAll('[data-publish-tp]').forEach(button => button.onclick = async () => {
+      const item = items.find(candidate => candidate.id === button.dataset.publishTp);
+      if (!item) return;
+      try {
+        if (!item.published) {
+          const chapter = chapters.find(candidate => candidate.id === item.chapter_id);
+          if (chapter && !chapter.published) await api.rest('learning_chapters?id=eq.' + encodeURIComponent(chapter.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:true})});
+        }
+        await api.rest('learning_items?id=eq.' + encodeURIComponent(item.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:!item.published})});
+        await loadClass(); status(item.published ? 'TP masqué.' : 'TP publié pour les élèves associés.');
+      } catch (error) { status(error.message,true); }
+    });
+    body.querySelectorAll('[data-delete-tp]').forEach(button => button.onclick = () => deleteItem(button.dataset.deleteTp));
+    body.querySelectorAll('[data-save-tp]').forEach(button => button.onclick = () => saveTpAssignments(button.dataset.saveTp));
+    body.querySelectorAll('[data-extend]').forEach(button => button.onclick = () => extendTp(button.dataset.extend));
+    body.querySelectorAll('[data-validate-tp]').forEach(button => button.onclick = () => validateTp(button.dataset.validateTp));
+  }
+  async function validateTp(id) {
+    const assignment = tpAssignments.find(row => row.id === id);
+    if (!assignment || !assignment.started_at || tpIsActive(assignment) || assignment.validated_at)
+      return status('Le TP doit être expiré et non validé pour être validé.',true);
+    const student = students.find(row => row.user_id === assignment.student_id);
+    if (!confirm(`Valider définitivement le TP de ${student?.first_name || ''} ${student?.last_name || 'cet élève'} ? Aucune réactivation ne sera possible ensuite.`)) return;
+    try {
+      const changed = await api.rest('tp_assignments?id=eq.' + encodeURIComponent(id) + '&validated_at=is.null&select=id,validated_at',{
+        method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=representation'},
+        body:JSON.stringify({validated_at:new Date().toISOString()})
+      });
+      if (!Array.isArray(changed) || changed.length !== 1 || !changed[0].validated_at)
+        throw new Error('Validation non confirmée. Vérifiez l’installation du SQL et actualisez.');
+      await loadClass(); status('TP validé définitivement. Aucune réactivation n’est possible.');
+    } catch (error) { status(error.message,true); }
+  }
+  async function saveTpAssignments(tpId) {
+    const card = root.querySelector(`[data-tp="${tpId}"]`);
+    const selected = new Set([...card.querySelectorAll('[data-tp-student]:checked')].map(input => input.dataset.tpStudent));
+    const existing = tpAssignments.filter(row => row.tp_id === tpId);
+    const removed = existing.filter(row => !selected.has(row.student_id));
+    if (removed.some(row => row.started_at) && !confirm('Retirer un élève qui a déjà ouvert ce TP supprimera son accès et son chronomètre. Continuer ?')) return;
+    try {
+      const newRows = [...selected].filter(id => !existing.some(row => row.student_id === id)).map(student_id => ({tp_id:tpId,student_id}));
+      if (newRows.length) await api.rest('tp_assignments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newRows)});
+      if (removed.length) await api.rest('tp_assignments?id=in.(' + removed.map(row => encodeURIComponent(row.id)).join(',') + ')',{method:'DELETE'});
+      const item = items.find(candidate => candidate.id === tpId);
+      if (selected.size && item && !item.published) {
+        const chapter = chapters.find(candidate => candidate.id === item.chapter_id);
+        if (chapter && !chapter.published) await api.rest('learning_chapters?id=eq.' + encodeURIComponent(chapter.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:true})});
+        await api.rest('learning_items?id=eq.' + encodeURIComponent(tpId),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:true})});
+      }
+      await loadClass(); status(selected.size ? 'Associations enregistrées. Le TP est accessible aux élèves sélectionnés.' : 'Associations du TP enregistrées.');
+    } catch (error) { status(error.message,true); }
+  }
+  async function extendTp(id) {
+    const assignment = tpAssignments.find(row => row.id === id);
+    const select = root.querySelector(`[data-extend-time="${id}"]`);
+    if (!assignment || !select || tpIsActive(assignment) || assignment.validated_at)
+      return status(assignment?.validated_at ? 'Ce TP est validé : aucune réactivation n’est possible.' : 'Ce TP est encore actif.',true);
+    const minutes = Number(select.value);
+    if (!Number.isInteger(minutes) || minutes < 30 || minutes > 180) return status('Choisissez une prolongation de 30 minutes à 3 heures.',true);
+    try {
+      await api.rest('tp_assignments?id=eq.' + encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({extension_minutes:minutes})});
+      await loadClass(); status('TP réactivé pour cet élève pendant ' + minutes + ' minute(s).');
+    } catch (error) { status(error.message,true); }
+  }
+  function renderContent() {
+    const body = root.querySelector('#teachBody');
+    if (!classId) { body.innerHTML = '<div class="teach-card">Ajoutez ou choisissez une classe pour commencer.</div>'; return; }
+    const contentChapters = chapters.filter(candidate => candidate.title.trim().toLocaleLowerCase('fr') !== 'tp en atelier');
+    if (!contentChapters.some(chapter => chapter.id === selectedChapterId)) { selectedChapterId = ''; selectedItemId = ''; }
+    const chapter = contentChapters.find(candidate => candidate.id === selectedChapterId);
+    const relatedItems = chapter ? items.filter(item => item.chapter_id === chapter.id && item.kind === tab) : [];
+    if (!relatedItems.some(item => item.id === selectedItemId)) selectedItemId = '';
+    const selectedItem = relatedItems.find(item => item.id === selectedItemId);
+    body.innerHTML = `<div class="teach-card teach-content-manager"><h2>${esc(kindNames[tab])} de la classe</h2>
+      <div class="teach-manager-fields"><label for="chapterSelect">Chapitre<select id="chapterSelect"><option value="">Choisir un chapitre…</option>${contentChapters.map(candidate => `<option value="${candidate.id}" ${candidate.id === selectedChapterId ? 'selected' : ''}>${esc(candidate.title)}</option>`).join('')}</select></label>
+      <div class="teach-create-chapter"><label for="chapterTitle">Créer un chapitre<input id="chapterTitle" maxlength="180" placeholder="Ex. Symboles architecturaux"></label><button type="button" id="addChapter">Créer</button></div></div></div>
+      ${chapter ? `<div class="teach-card teach-chapter-detail"><div class="teach-section-heading"><div><h3>${esc(chapter.title)}</h3></div><div class="teach-row"><button type="button" id="publishChapter" class="subtle">${chapter.published ? 'Masquer aux élèves' : 'Publier le chapitre'}</button><button type="button" id="deleteChapter" class="warn">Supprimer le chapitre</button></div></div>
+      <details class="teach-rename"><summary>Modifier le nom du chapitre</summary><div class="teach-row"><label for="chapterRename">Nouveau nom</label><input id="chapterRename" maxlength="180" value="${esc(chapter.title)}"><button type="button" id="renameChapter">Enregistrer le nom</button></div></details>
+      <div class="teach-manager-fields"><label for="lessonSelect">${tab === 'course' ? 'Leçons du chapitre' : tab === 'td' ? 'TD du chapitre' : 'TP du chapitre'}<select id="lessonSelect"><option value="">Choisir ${tab === 'course' ? 'une leçon' : tab === 'td' ? 'un TD' : 'un TP'}…</option>${relatedItems.map(item => `<option value="${item.id}" ${item.id === selectedItemId ? 'selected' : ''}>${esc(item.title)}</option>`).join('')}</select></label><button type="button" id="addItem">Ajouter ${tab === 'course' ? 'une leçon' : tab === 'td' ? 'un TD' : 'un TP'}</button></div>
+      </div>` : ''}
+      ${selectedItem ? `<div class="teach-card teach-item-detail"><div><h3>${esc(selectedItem.title)}</h3></div><div class="teach-row"><button type="button" id="previewSelectedItem" class="subtle">Voir le contenu</button><button type="button" id="editSelectedItem" class="subtle">Modifier</button><button type="button" id="publishSelectedItem" class="subtle">${selectedItem.published ? 'Masquer' : 'Publier et voir le PDF'}</button><button type="button" id="deleteSelectedItem" class="warn">Supprimer</button></div></div>` : ''}<div id="teachEditor"></div>`;
+    body.querySelector('#addChapter').onclick = async () => {
+      const title = body.querySelector('#chapterTitle').value.trim(); if (!title) return status('Saisissez le nom du chapitre.', true);
+      if (title.toLocaleLowerCase('fr') === 'tp en atelier') return status('Ce nom est réservé à la rubrique Travaux pratiques.', true);
+      const existing = contentChapters.find(candidate => candidate.title.trim().toLocaleLowerCase('fr') === title.toLocaleLowerCase('fr'));
+      if (existing) { selectedChapterId = existing.id; selectedItemId = ''; renderContent(); return status('Ce chapitre existe déjà. Il est maintenant sélectionné.'); }
+      try { const created = await api.rest('learning_chapters?select=id', {method:'POST', headers:{'Content-Type':'application/json',Prefer:'return=representation'}, body:JSON.stringify({class_id:classId,title,position:chapters.length})}); selectedChapterId = created[0].id; selectedItemId = ''; await loadClass(); status('Chapitre créé. Vous pouvez y ajouter plusieurs contenus.'); }
+      catch (error) { status(error.message, true); }
+    };
+    body.querySelector('#chapterSelect').onchange = event => { selectedChapterId = event.target.value; selectedItemId = ''; renderContent(); };
+    if (!chapter) return;
+    body.querySelector('#publishChapter').onclick = () => update('learning_chapters', chapter.id, {published: !chapter.published});
+    body.querySelector('#deleteChapter').onclick = () => deleteChapter(chapter.id);
+    body.querySelector('#renameChapter').onclick = () => renameChapter(chapter.id);
+    body.querySelector('#addItem').onclick = () => { selectedItemId = ''; editItem(null, chapter.id); };
+    body.querySelector('#lessonSelect').onchange = event => { selectedItemId = event.target.value; renderContent(); };
+    if (selectedItem) {
+      body.querySelector('#previewSelectedItem').onclick = () => previewItem(selectedItem);
+      body.querySelector('#editSelectedItem').onclick = () => editItem(selectedItem.id);
+      body.querySelector('#publishSelectedItem').onclick = async () => {
+        try {
+          await api.rest('learning_items?id=eq.' + encodeURIComponent(selectedItem.id), {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published: !selectedItem.published})});
+          await loadClass();
+          if (!selectedItem.published) {
+            await previewItem({...selectedItem,published:true});
+            status('Contenu publié. Aperçu ouvert.');
+          }
+          else status('Contenu masqué aux élèves.');
+        } catch (error) { status(error.message, true); }
+      };
+      body.querySelector('#deleteSelectedItem').onclick = () => deleteItem(selectedItem.id);
+    }
+  }
+  async function renameChapter(id) {
+    const chapter = chapters.find(candidate => candidate.id === id);
+    const title = root.querySelector('#chapterRename')?.value.trim();
+    if (!chapter || !title) return status('Saisissez un nom de chapitre.', true);
+    if (chapters.some(candidate => candidate.id !== id && candidate.title.trim().toLocaleLowerCase('fr') === title.toLocaleLowerCase('fr'))) {
+      return status('Un autre chapitre porte déjà ce nom.', true);
+    }
+    try {
+      const changed = await api.rest('learning_chapters?id=eq.' + encodeURIComponent(id) + '&class_id=eq.' + encodeURIComponent(classId) + '&select=id', {
+        method: 'PATCH', headers: {'Content-Type':'application/json', Prefer:'return=representation'}, body: JSON.stringify({title})
+      });
+      if (!Array.isArray(changed) || changed.length !== 1) throw new Error('La modification du chapitre n’a pas été confirmée.');
+      await loadClass(); status('Nom du chapitre modifié.');
+    } catch (error) { status(error.message, true); }
+  }
+  async function deleteChapter(id) {
+    const chapter = chapters.find(candidate => candidate.id === id);
+    if (!chapter || selectedChapterId !== id) return status('Chapitre introuvable. Actualisez la page.', true);
+    const chapterItems = items.filter(item => item.chapter_id === id);
+    let assets = [];
+    try {
+      for (let index = 0; index < chapterItems.length; index += 50) {
+        const ids = chapterItems.slice(index, index + 50).map(item => item.id).join(',');
+        const batch = await api.rest('learning_assets?item_id=in.(' + ids + ')&select=object_path');
+        assets.push(...batch);
+      }
+    } catch (error) { return status('Impossible de vérifier les fichiers liés : ' + error.message, true); }
+    const courseCount = chapterItems.filter(item => item.kind === 'course').length;
+    const tdCount = chapterItems.filter(item => item.kind === 'td').length;
+    const tpCount = chapterItems.filter(item => item.kind === 'tp').length;
+    const message = `Supprimer définitivement le chapitre « ${chapter.title} » ?\n\nCela supprimera aussi ${courseCount} leçon(s), ${tdCount} TD, ${tpCount} TP et ${assets.length} fichier(s) joint(s). Cette opération est irréversible.`;
+    if (!confirm(message)) return;
+    try {
+      const deleted = await api.rest('learning_chapters?id=eq.' + encodeURIComponent(id) + '&class_id=eq.' + encodeURIComponent(classId) + '&select=id', {
+        method: 'DELETE', headers: {Prefer:'return=representation'}
+      });
+      if (!Array.isArray(deleted) || deleted.length !== 1) throw new Error('La suppression du chapitre n’a pas été confirmée par la base.');
+      selectedChapterId = ''; selectedItemId = '';
+      activeItem = null; editing = null; blocks = []; draftAssets = []; originalAssets = [];
+      await loadClass();
+      const paths = assets.map(asset => asset.object_path).filter(Boolean);
+      if (paths.length) {
+        try { await api.removeFiles(paths); }
+        catch (error) { return status('Chapitre et contenus supprimés, mais le nettoyage des fichiers a échoué : ' + error.message, true); }
+      }
+      status('Chapitre et contenus associés supprimés.');
+    } catch (error) { status(error.message, true); }
+  }
+  async function deleteItem(id) {
+    const item = items.find(candidate => candidate.id === id && candidate.kind === tab);
+    if (!item) return status('Contenu introuvable. Actualisez la page.', true);
+    const linkedCount = item.kind === 'course' ? items.filter(candidate => candidate.kind === 'td' && candidate.linked_course_id === id).length : 0;
+    const warning = linkedCount ? `\n${linkedCount} TD lié(s) seront conservés, mais leur liaison avec ce cours sera retirée.` : '';
+    if (!confirm(`Supprimer définitivement « ${item.title} » et ses fichiers joints ?${warning}`)) return;
+    try {
+      const assets = await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(id) + '&select=object_path');
+      const deleted = await api.rest('learning_items?id=eq.' + encodeURIComponent(id) + '&kind=eq.' + encodeURIComponent(item.kind) + '&select=id', {
+        method: 'DELETE', headers: { Prefer: 'return=representation' }
+      });
+      if (!Array.isArray(deleted) || deleted.length !== 1) throw new Error('La suppression n’a pas été confirmée par la base.');
+      if (activeItem === id) { activeItem = null; editing = null; blocks = []; draftAssets = []; originalAssets = []; }
+      if (selectedItemId === id) selectedItemId = '';
+      await loadClass();
+      const paths = assets.map(asset => asset.object_path).filter(Boolean);
+      if (paths.length) {
+        try { await api.removeFiles(paths); }
+        catch (error) { return status('Contenu supprimé, mais le nettoyage des fichiers a échoué : ' + error.message, true); }
+      }
+      status('Contenu et fichiers joints supprimés.');
+    } catch (error) { status(error.message, true); }
+  }
+  async function update(table, id, fields) {
+    try { await api.rest(table + '?' + (table === 'student_profiles' ? 'user_id' : 'id') + '=eq.' + id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(fields)}); await loadClass(); status('Modification enregistrée.'); }
+    catch (error) { status(error.message, true); }
+  }
+  async function editItem(id, chapterId) {
+    editing = id ? items.find(i => i.id === id) : null;
+    if (id && (!editing || editing.kind !== tab)) return status('Contenu introuvable. Actualisez la page.', true);
+    if (id) {
+      try {
+        const full = await api.rest('learning_items?id=eq.' + encodeURIComponent(id) + '&select=blocks');
+        if (!full.length) return status('Contenu introuvable. Actualisez la page.', true);
+        editing = { ...editing, blocks: full[0].blocks || [] };
+      } catch (error) { return status('Impossible de charger le contenu : ' + error.message, true); }
+    }
+    activeItem = editing?.id || null;
+    blocks = structuredClone(editing?.blocks || []); draftAssets = []; draftRoles = [];
+    try {
+      originalAssets = id ? await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(id) + '&select=id,object_path,file_name,mime_type,asset_role') : [];
+    } catch (error) { return status('Impossible de charger les fichiers joints : ' + error.message, true); }
+    const host = root.querySelector('#teachEditor');
+    const courseOptions = items.filter(i => i.kind === 'course' && i.chapter_id === (editing?.chapter_id || chapterId));
+    host.innerHTML = `<div class="teach-card teach-editor"><h2>${editing ? 'Modifier' : 'Créer'} : ${esc(kindNames[tab])}</h2><label>Titre <input id="itemTitle" maxlength="180" value="${esc(editing?.title || '')}" required></label>${tab === 'td' ? `<label>Cours lié <select id="linkedCourse"><option value="">Aucun</option>${courseOptions.map(i => `<option value="${i.id}" ${editing?.linked_course_id === i.id ? 'selected' : ''}>${esc(i.title)}</option>`).join('')}</select></label>` : ''}<div id="blockList"></div><div class="teach-row">${tab !== 'tp' ? '<button type="button" id="addText" class="subtle">＋ Texte / tableau</button><button type="button" id="addVideo" class="subtle">＋ Vidéo</button>' : ''}<button type="button" id="addFile" class="subtle">＋ ${tab === 'tp' ? 'PDF du TP' : 'Image ou document'}</button><input id="itemFile" type="file" accept="${tab === 'tp' ? '.pdf' : 'image/*,.pdf,.doc,.docx'}" hidden>${tab === 'tp' ? '<button type="button" id="addTechnical" class="subtle">＋ Dossier technique PDF</button><input id="technicalFile" type="file" accept=".pdf" hidden>' : ''}</div><div class="teach-row"><button type="button" id="previewDraft" class="subtle">Aperçu</button><button type="button" id="saveItem">Enregistrer</button><button type="button" id="cancelItem" class="subtle">Annuler</button></div><p class="teach-help">${tab === 'tp' ? 'Chaque PDF ajouté reste lié uniquement à ce TP.' : 'Publiez ensuite le chapitre et le contenu pour les rendre accessibles aux élèves.'}</p></div>`;
+    if (tab !== 'tp') {
+      const tip = document.createElement('p'); tip.className='teach-help';
+      tip.textContent='Sélectionnez d’abord le texte, puis cliquez sur une couleur, une taille ou un autre outil de la palette.';
+      host.querySelector('#blockList').before(tip);
+    }
+    host.querySelector('#cancelItem').onclick = () => host.replaceChildren();
+    host.querySelector('#saveItem').onclick = () => saveItem(editing?.chapter_id || chapterId);
+    host.querySelector('#previewDraft').onclick = () => previewItem(null, true);
+    host.querySelector('#addText')?.addEventListener('click', () => { captureBlocks(); blocks.push({type:'html',html:'<p>Votre texte…</p>'}); renderBlocks(); });
+    host.querySelector('#addVideo')?.addEventListener('click', () => { captureBlocks(); blocks.push({type:'video',url:''}); renderBlocks(); });
+    host.querySelector('#addFile').onclick = () => host.querySelector('#itemFile').click();
+    host.querySelector('#itemFile').onchange = e => { const file = e.target.files[0]; if (file) { captureBlocks(); draftAssets.push(file); draftRoles.push('main'); blocks.push({type:'pending',index:draftAssets.length-1}); renderBlocks(); e.target.value=''; } };
+    host.querySelector('#addTechnical')?.addEventListener('click', () => host.querySelector('#technicalFile').click());
+    if (host.querySelector('#technicalFile')) host.querySelector('#technicalFile').onchange = e => { const file=e.target.files[0]; if (file) { captureBlocks(); draftAssets.push(file); draftRoles.push('technical'); blocks.push({type:'pending',index:draftAssets.length-1}); renderBlocks(); e.target.value=''; } };
+    renderBlocks(); host.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function captureBlocks() {
+    root.querySelectorAll('[data-block-index]').forEach(node => {
+      const index = Number(node.dataset.blockIndex);
+      if (blocks[index]?.type === 'html') blocks[index].html = MelecContent.sanitize(node.querySelector('.teach-editable')?.innerHTML || '');
+      if (blocks[index]?.type === 'video') blocks[index].url = node.querySelector('input')?.value || '';
+      if (['asset','pending'].includes(blocks[index]?.type) && tab !== 'tp') {
+        const title = node.querySelector('[data-asset-title]');
+        const comment = node.querySelector('[data-asset-comment]');
+        blocks[index].title = (title?.textContent || '').trim().slice(0,180);
+        blocks[index].comment = (comment?.textContent || '').trim().slice(0,500);
+        blocks[index].titleHtml = blocks[index].title ? MelecContent.sanitize(title?.innerHTML || '') : '';
+        blocks[index].commentHtml = blocks[index].comment ? MelecContent.sanitize(comment?.innerHTML || '') : '';
+        const width = Number(node.querySelector('[data-asset-width]')?.value);
+        blocks[index].width = Number.isInteger(width) && width >= 25 && width <= 100 ? width : 100;
+      }
+    });
+  }
+  const blockSelections = new WeakMap();
+  function rememberSelection() {
+    const selection = window.getSelection();
+    const anchor = selection?.anchorNode;
+    const editable = (anchor?.nodeType === Node.ELEMENT_NODE ? anchor : anchor?.parentElement)?.closest('.teach-editable');
+    const block = editable?.closest('[data-block-index]');
+    if (block && selection.rangeCount && editable.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+      blockSelections.set(block, {editable,range:selection.getRangeAt(0).cloneRange()});
+    }
+  }
+  document.addEventListener('selectionchange', rememberSelection);
+  function formatSelection(command, value, control) {
+    const block = control.closest('[data-block-index]');
+    const saved = block && blockSelections.get(block);
+    if (!saved || !saved.editable.isConnected || !block.contains(saved.editable) || !saved.editable.contains(saved.range.commonAncestorContainer)) return;
+    const {editable,range} = saved;
+    editable.focus();
+    const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+    document.execCommand(command, false, value);
+    rememberSelection();
+    captureBlocks();
+  }
+  function editorToolbar() {
+    const commands = [['bold','Gras','G'],['italic','Italique','I'],['underline','Souligné','S'],['strikeThrough','Barré','S̶'],['subscript','Indice','x₂'],['superscript','Exposant','x²'],['insertUnorderedList','Puces','• Liste'],['insertOrderedList','Numérotation','1. Liste'],['outdent','Réduire le retrait','⇤'],['indent','Augmenter le retrait','⇥'],['justifyLeft','Aligner à gauche','☷'],['justifyCenter','Centrer','☰'],['justifyRight','Aligner à droite','☷'],['justifyFull','Justifier','▤']];
+    const colors = ['#173450','#d12d32','#e47713','#147a45','#1669b3','#7b4bad'];
+    const highlights = ['#fff08a','#ffb8bb','#c2f0ce','#bfe6ff','#e5d7ff'];
+    return `<div class="teach-editor-toolbar" role="toolbar" aria-label="Mise en forme du texte"><label>Police<select data-format-select="fontName" aria-label="Police"><option value="">Police</option>${['Arial','Aptos','Calibri','Georgia','Times New Roman','Verdana','Tahoma','Trebuchet MS'].map(font => `<option value="${font}">${font}</option>`).join('')}</select></label><label>Taille<select data-format-select="fontSize" aria-label="Taille"><option value="">Taille</option>${[['1','10'],['2','12'],['3','14'],['4','16'],['5','18'],['6','24'],['7','32']].map(([value,label]) => `<option value="${value}">${label} pt</option>`).join('')}</select></label>${commands.map(([command,label,symbol]) => `<button type="button" data-format="${command}" title="${label}" aria-label="${label}">${symbol}</button>`).join('')}<div class="teach-color-group"><span>Texte</span>${colors.map(color => `<button type="button" class="teach-swatch" data-swatch="foreColor" data-value="${color}" style="--swatch:${color}" title="Texte ${color}" aria-label="Texte ${color}"></button>`).join('')}<input type="color" data-color="foreColor" value="#173450" aria-label="Autre couleur du texte"></div><div class="teach-color-group"><span>Surlignage</span>${highlights.map(color => `<button type="button" class="teach-swatch" data-swatch="hiliteColor" data-value="${color}" style="--swatch:${color}" title="Surlignage ${color}" aria-label="Surlignage ${color}"></button>`).join('')}<input type="color" data-color="hiliteColor" value="#fff08a" aria-label="Autre couleur de surlignage"></div><button type="button" data-table="1" title="Insérer un tableau">▦ Tableau</button></div>`;
+  }
+  function renderBlocks() {
+    const list = root.querySelector('#blockList'); if (!list) return;
+    const assetOptions = block => tab === 'tp' ? '' : `<div class="teach-asset-options"><p class="teach-help">Sélectionnez du texte dans le titre ou le commentaire, puis utilisez la palette.</p>${editorToolbar()}<div class="teach-asset-field"><label>Titre personnalisé (facultatif)</label><div data-asset-title class="teach-editable teach-asset-input" contenteditable="true" role="textbox" aria-label="Titre personnalisé" data-placeholder="Aucun titre affiché par défaut">${MelecContent.sanitize(block.titleHtml || esc(block.title || ''))}</div></div><div class="teach-asset-field"><label>Commentaire (facultatif)</label><div data-asset-comment class="teach-editable teach-asset-input teach-asset-comment" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Commentaire" data-placeholder="Commentaire sous le document">${MelecContent.sanitize(block.commentHtml || esc(block.comment || ''))}</div></div>${(block.type === 'pending' ? draftAssets[block.index]?.type : originalAssets.find(asset => asset.id === block.assetId)?.mime_type || '').startsWith('image/') ? `<div class="teach-asset-field"><label>Largeur de l’image : <output>${Number(block.width) || 100} %</output><input data-asset-width type="range" min="25" max="100" step="5" value="${Number(block.width) || 100}"></label></div>` : ''}</div>`;
+    list.innerHTML = blocks.map((block,index) => `<div class="teach-block" data-block-index="${index}"><div class="teach-block-actions"><button type="button" data-up="${index}" class="subtle" aria-label="Monter">↑</button><button type="button" data-down="${index}" class="subtle" aria-label="Descendre">↓</button><button type="button" data-remove="${index}" class="warn">Retirer</button></div>${block.type === 'html' ? `${editorToolbar()}<div class="teach-editable" contenteditable="true" role="textbox" aria-label="Contenu du cours">${MelecContent.sanitize(block.html)}</div>` : block.type === 'video' ? `<label>Adresse YouTube ou Vimeo <input type="url" value="${esc(block.url)}" placeholder="https://..."></label>` : `<span>${tab === 'tp' ? (block.type === 'pending' ? draftRoles[block.index] : originalAssets.find(asset => asset.id === block.assetId)?.asset_role) === 'technical' ? 'Dossier technique · ' : 'Document du TP · ' : ''}${block.type === 'pending' ? esc(draftAssets[block.index]?.name || 'Fichier') : esc(originalAssets.find(asset => asset.id === block.assetId)?.file_name || 'Document joint')}</span>${assetOptions(block)}`}</div>`).join('');
+    list.querySelectorAll('[data-asset-width]').forEach(input => input.oninput = () => { input.closest('label').querySelector('output').textContent = input.value + ' %'; });
+    list.querySelectorAll('[data-up],[data-down],[data-remove]').forEach(btn => btn.onclick = () => { captureBlocks(); const n = Number(btn.dataset.up ?? btn.dataset.down ?? btn.dataset.remove); if (btn.dataset.remove != null) blocks.splice(n,1); else { const m = btn.dataset.up != null ? n-1 : n+1; if (m >= 0 && m < blocks.length) [blocks[n],blocks[m]] = [blocks[m],blocks[n]]; } renderBlocks(); });
+    list.querySelectorAll('.teach-editable').forEach(editable => { editable.addEventListener('keyup',rememberSelection); editable.addEventListener('pointerup',rememberSelection); editable.addEventListener('touchend',rememberSelection); });
+    list.querySelectorAll('[data-format]').forEach(btn => { btn.onmousedown = event => event.preventDefault(); btn.onclick = () => formatSelection(btn.dataset.format, undefined, btn); });
+    list.querySelectorAll('[data-format-select]').forEach(select => select.onchange = () => { if (select.value) formatSelection(select.dataset.formatSelect, select.value, select); select.value = ''; });
+    list.querySelectorAll('[data-color]').forEach(input => input.oninput = () => formatSelection(input.dataset.color, input.value, input));
+    list.querySelectorAll('[data-swatch]').forEach(button => { button.onmousedown = event => event.preventDefault(); button.onclick = () => formatSelection(button.dataset.swatch,button.dataset.value,button); });
+    list.querySelectorAll('[data-table]').forEach(btn => { btn.onmousedown = event => event.preventDefault(); btn.onclick = () => formatSelection('insertHTML', '<table><tbody><tr><td>Cellule 1</td><td>Cellule 2</td></tr><tr><td>Cellule 3</td><td>Cellule 4</td></tr></tbody></table><p></p>',btn); });
+  }
+  async function previewItem(item, draft = false) {
+    const epoch = ++previewEpoch;
+    if (previewCleanup) { previewCleanup(); previewCleanup = null; }
+    document.querySelector('#teachPreview')?.remove();
+    const title = draft ? root.querySelector('#itemTitle')?.value.trim() || 'Sans titre' : item.title;
+    let previewBlocks = draft ? (captureBlocks(), structuredClone(blocks)) : (await api.rest('learning_items?id=eq.' + encodeURIComponent(item.id) + '&select=blocks'))[0]?.blocks || [];
+    let assets = draft ? [...originalAssets] : await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(item.id) + '&select=id,object_path,file_name,mime_type');
+    if (epoch !== previewEpoch || root.classList.contains('hidden')) return;
+    if (draft) previewBlocks = previewBlocks.map(block => {
+      if (block.type !== 'pending') return block;
+      const file = draftAssets[block.index];
+      if (!file) return null;
+      const id = 'draft-' + block.index;
+      assets.push({id,file_name:file.name,mime_type:file.type || 'application/octet-stream',local_blob:file});
+      return {type:'asset',assetId:id,title:block.title || '',titleHtml:block.titleHtml || '',comment:block.comment || '',commentHtml:block.commentHtml || '',width:block.width || 100};
+    }).filter(Boolean);
+    const assetMap = new Map(assets.map(asset => [asset.id,asset]));
+    const isPdf = asset => asset && (asset.mime_type === 'application/pdf' || /\.pdf$/i.test(asset.file_name || ''));
+    const pdfAssets = previewBlocks.filter(block => block.type === 'asset' && isPdf(assetMap.get(block.assetId))).map(block => ({asset:assetMap.get(block.assetId),block}));
+    const otherBlocks = previewBlocks.filter(block => !(block.type === 'asset' && isPdf(assetMap.get(block.assetId))));
+    const hasPrintable = otherBlocks.some(block => (block.type === 'html' && /[^\s\u00a0]/.test(String(block.html || '').replace(/<[^>]*>/g, '').replace(/&nbsp;|&#160;/gi, ''))) || block.type === 'table' ||
+      (block.type === 'asset' && String(assetMap.get(block.assetId)?.mime_type || '').startsWith('image/')));
+    const pane = document.createElement('section'); pane.id = 'teachPreview'; pane.className = 'teach-preview';
+    pane.innerHTML = `<div class="teach-preview-actions"><strong>Aperçu · ${esc(kindNames[tab])} · ${esc(title)}</strong>${hasPrintable ? '<button type="button" id="printLesson">Imprimer le contenu</button>' : ''}<button type="button" id="closePreview">Fermer</button></div>${hasPrintable ? `<header><p>BAC PRO MELEC · ${esc(classes.find(entry => entry.id === classId)?.name || '')}</p><h1>${esc(title)}</h1></header>` : ''}<div class="teach-preview-content${pdfAssets.length ? ' teach-preview-with-pdf' : ''}"></div>`;
+    document.body.append(pane);
+    const pdfUrls = [], pdfReaders = new Map();
+    const close = () => { previewEpoch++; if (previewCleanup) { previewCleanup(); previewCleanup = null; } pane.remove(); document.body.classList.remove('print-lesson'); };
+    pane.querySelector('#closePreview').onclick = close;
+    if (hasPrintable) pane.querySelector('#printLesson').onclick = async () => {
+      await Promise.all([...pane.querySelectorAll('img')].map(image => image.decode?.().catch(() => {}) || Promise.resolve()));
+      document.body.classList.add('print-lesson'); window.print();
+    };
+    try {
+      const renderCleanup = await MelecContent.render(otherBlocks, pane.querySelector('.teach-preview-content'), assets);
+      if (epoch !== previewEpoch || !pane.isConnected) { renderCleanup(); pane.remove(); return; }
+      previewCleanup = () => { renderCleanup(); pdfReaders.forEach(cleanup => cleanup()); pdfReaders.clear(); pdfUrls.forEach(url => URL.revokeObjectURL(url)); };
+      if (pdfAssets.length) {
+        const section = document.createElement('section'); section.className = 'teach-pdf-attachments';
+        let firstOpen = null;
+        for (const {asset,block} of pdfAssets) {
+          const card = document.createElement('article'); card.className = 'teach-pdf-card';
+          if (block.titleHtml || block.title) { const name = document.createElement('div'); name.innerHTML = MelecContent.sanitize(block.titleHtml || esc(block.title)); card.append(name); }
+          if (block.commentHtml || block.comment) { const comment = document.createElement('div'); comment.innerHTML = MelecContent.sanitize(block.commentHtml || esc(block.comment)); card.append(comment); }
+          const actions = document.createElement('div'); actions.className = 'teach-row';
+          const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Afficher le PDF'; actions.append(button);
+          card.append(actions); section.append(card);
+          const showPdf = async () => {
+            const existingFrame = card.querySelector('.teach-pdf-frame, .teach-pdf-reader');
+            if (existingFrame) {
+              pdfReaders.get(card)?.(); pdfReaders.delete(card);
+              existingFrame.remove(); actions.querySelector('.teach-pdf-open')?.remove();
+              button.textContent = 'Afficher le PDF'; button.setAttribute('aria-expanded','false');
+              return;
+            }
+            button.disabled = true; button.textContent = 'Chargement…';
+            try {
+              const blob = asset.local_blob || await api.download(asset.object_path);
+              if (epoch !== previewEpoch || !pane.isConnected) return;
+              if (window.matchMedia('(max-width: 900px), (pointer: coarse)').matches) {
+                const mount = document.createElement('div'); mount.className='teach-pdf-reader'; card.append(mount);
+                try { pdfReaders.set(card,await MelecStudentPdf.render(blob,mount)); }
+                catch (error) { mount.remove(); throw error; }
+              } else {
+                const url = URL.createObjectURL(blob); pdfUrls.push(url);
+                const frame = document.createElement('iframe'); frame.src = url + '#toolbar=1&navpanes=0';
+                frame.title = asset.file_name; frame.className = 'teach-pdf-frame'; card.append(frame);
+                const link = document.createElement('a'); link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+                link.className = 'teach-pdf-open'; link.textContent = 'Ouvrir / imprimer ce PDF'; actions.append(link);
+              }
+              button.textContent = 'Réduire le PDF'; button.setAttribute('aria-expanded','true');
+            } catch (error) { button.textContent = 'Réessayer'; status('PDF inaccessible : ' + error.message,true); }
+            finally { button.disabled = false; }
+          };
+          button.onclick = showPdf;
+          if (!firstOpen) firstOpen = showPdf;
+        }
+        pane.querySelector('.teach-preview-content').append(section);
+        if (!hasPrintable && firstOpen) await firstOpen();
+      }
+    }
+    catch (error) { close(); status('Aperçu impossible : ' + error.message, true); return; }
+    pane.scrollIntoView({behavior:'smooth',block:'start'});
+    return {hasPrintable,pdfCount:pdfAssets.length};
+  }
+  window.addEventListener('afterprint', () => document.body.classList.remove('print-lesson'));
+  async function saveItem(chapterId) {
+    const host = root.querySelector('#teachEditor'), title = host.querySelector('#itemTitle').value.trim();
+    if (!title) return status('Saisissez un titre.', true);
+    captureBlocks();
+    if (tab === 'tp' && !blocks.some(block => block.type === 'pending' ? draftRoles[block.index] === 'main' : originalAssets.some(asset => asset.id === block.assetId && asset.asset_role === 'main'))) return status('Ajoutez au moins un PDF du TP.',true);
+    if (blocks.some(b => b.type === 'video' && b.url && !MelecContent.videoUrl(b.url))) return status('Lien vidéo accepté : YouTube ou Vimeo en HTTPS.', true);
+    const button = host.querySelector('#saveItem'); button.disabled = true;
+    try {
+      const payload = {chapter_id:chapterId,kind:tab,title,linked_course_id:tab === 'td' ? host.querySelector('#linkedCourse').value || null : null,blocks:blocks.filter(b => b.type !== 'pending'),updated_at:new Date().toISOString()};
+      const keptAssetIds = new Set(payload.blocks.filter(block => block.type === 'asset').map(block => block.assetId));
+      const removedAssets = originalAssets.filter(asset => !keptAssetIds.has(asset.id));
+      let id = activeItem;
+      if (id) await api.rest('learning_items?id=eq.' + id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      else { const created = await api.rest('learning_items?select=id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify(payload)}); id = created[0].id; }
+      const pendingBlocks = blocks.filter(b => b.type === 'pending');
+      for (const block of pendingBlocks) {
+        const file = draftAssets[block.index]; if (!file) continue;
+        if (file.size > 20 * 1024 * 1024) throw new Error('Fichier trop volumineux (20 Mo maximum).');
+        const path = id + '/' + crypto.randomUUID() + '-' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+        await api.upload(path,file);
+        const asset = await api.rest('learning_assets?select=id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({item_id:id,object_path:path,file_name:file.name,mime_type:file.type || 'application/octet-stream',asset_role:draftRoles[block.index] || 'main'})});
+        payload.blocks.push({type:'asset',assetId:asset[0].id,title:block.title || '',titleHtml:block.titleHtml || '',comment:block.comment || '',commentHtml:block.commentHtml || '',width:block.width || 100});
+      }
+      if (pendingBlocks.length) await api.rest('learning_items?id=eq.' + id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({blocks:payload.blocks})});
+      for (const asset of removedAssets) {
+        await api.rest('learning_assets?id=eq.' + encodeURIComponent(asset.id), {method:'DELETE'});
+      }
+      let cleanupError = null;
+      if (removedAssets.length) {
+        try { await api.removeFiles(removedAssets.map(asset => asset.object_path)); }
+        catch (error) { cleanupError = error; }
+      }
+      const wasPublished = Boolean(editing?.published);
+      selectedChapterId = chapterId;
+      selectedItemId = id;
+      activeItem = null; editing = null; originalAssets = [];
+      await loadClass();
+      status(cleanupError ? 'Contenu modifié, mais le nettoyage d’anciens fichiers a échoué : ' + cleanupError.message : wasPublished ? 'Contenu modifié.' : 'Contenu enregistré.', !!cleanupError);
+    } catch (error) { status(error.message, true); button.disabled = false; }
+  }
+  function renderStudents() {
+    const body = root.querySelector('#teachBody');
+    const pending = students.filter(s => !s.approved_at && !s.blocked_at && rosterMatches(s).length);
+    const approved = students.filter(s => s.approved_at && !s.blocked_at);
+    const selected = classes.find(c => c.id === requestClassId);
+    const showAll = requestClassId === 'all';
+    const visible = showAll ? pending : selected ? pending.filter(s => rosterMatches(s).some(r => normalized(r.className) === normalized(selected.name))) : [];
+    const visibleApproved = showAll ? approved : selected ? approved.filter(s => s.class_id === selected.id) : [];
+    body.innerHTML = `<div class="teach-card"><h2>Demandes d’accès élèves (${pending.length})</h2><p class="teach-help">Seuls les élèves retrouvés dans la liste de l’application peuvent être proposés à la validation. Vérifiez leur identité et leur adresse e-mail avant de remettre le code.</p><div class="teach-row"><label for="requestClassFilter">Afficher la classe</label><select id="requestClassFilter"><option value="">Choisir une classe…</option><option value="all" ${showAll ? 'selected' : ''}>Toutes les classes</option>${classes.map(c => `<option value="${c.id}" ${requestClassId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>${!requestClassId ? '<p class="teach-help">Choisissez une classe pour afficher les élèves.</p>' : ''}<div class="teach-students">${visible.map(s => { const matches = rosterMatches(s); return `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)} · classe demandée : ${esc(s.requested_class)}</small><small>En attente</small></div><select data-roster-student="${s.user_id}"><option value="">Confirmer l’élève du registre</option>${matches.map(r => `<option value="${esc(r.id)}">${esc(r.name)} · ${esc(r.className)}</option>`).join('')}</select><button type="button" data-approve="${s.user_id}">Valider</button></div>`; }).join('') || (requestClassId ? '<p>Aucune demande concordante pour cette classe.</p>' : '')}</div><h3>Élèves approuvés (${visibleApproved.length})</h3><div class="teach-students">${visibleApproved.map(s => `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)}${s.access_until ? ' · accès jusqu’au ' + esc(new Date(s.access_until).toLocaleString('fr-FR')) : ''}</small></div><div class="teach-row"><button type="button" data-code="${s.user_id}" class="subtle">Nouveau code</button><button type="button" data-unlock="${s.user_id}" class="subtle">Débloquer et renouveler</button><button type="button" data-revoke="${s.user_id}" class="warn">Révoquer</button></div></div>`).join('') || (requestClassId ? '<p>Aucun élève approuvé dans cette classe.</p>' : '')}</div><div id="issuedCode"></div></div>`;
+    const approvedHeading=Array.from(body.querySelectorAll('h3')).find(heading=>heading.textContent.startsWith('Élèves approuvés'));
+    if(approvedHeading){const approvedList=approvedHeading.nextElementSibling,details=document.createElement('details'),summary=document.createElement('summary');details.className='teach-approved-details';summary.textContent=approvedHeading.textContent;details.append(summary,approvedList);approvedHeading.replaceWith(details);}
+    body.querySelector('.teach-help').textContent = 'Validez uniquement les élèves présents dans le registre et dans la bonne classe. Si le courriel de confirmation manque, utilisez « Renvoyer le courriel ». « Supprimer le compte » conserve l’élève et ses évaluations du registre, mais est refusé si des travaux TP dépendent du compte.';
+    body.querySelectorAll('[data-code]').forEach(button => button.remove());
+    body.querySelectorAll('[data-approve], [data-unlock]').forEach(button => {
+      const studentId = button.dataset.approve || button.dataset.unlock;
+      let actions = button.parentElement;
+      if (button.dataset.approve) {
+        actions = document.createElement('div');
+        actions.className = 'teach-student-actions';
+        button.replaceWith(actions);
+        actions.append(button);
+      }
+      if (!studentId || !actions) return;
+      actions.insertAdjacentHTML('beforeend', `<button type="button" data-resend-confirmation="${esc(studentId)}" class="subtle">Renvoyer le courriel</button><button type="button" data-delete-account="${esc(studentId)}" class="warn">Supprimer le compte</button>`);
+    });
+    body.querySelectorAll('[data-unlock]').forEach(button => { button.textContent = 'Débloquer le compte'; button.closest('.teach-student').querySelector('small').textContent = students.find(s => s.user_id === button.dataset.unlock)?.email || ''; });
+    body.querySelector('#requestClassFilter').onchange = e => { requestClassId = e.target.value; renderStudents(); };
+    body.querySelectorAll('[data-unlock]').forEach(button => {
+      button.closest('.teach-student').classList.add('teach-approved-student');
+      button.parentElement.classList.add('teach-student-actions');
+    });
+    body.querySelectorAll('[data-approve]').forEach(btn => btn.onclick = async () => { const rosterId = body.querySelector(`[data-roster-student="${btn.dataset.approve}"]`).value; if (!rosterId) return status('Confirmez l’élève dans le registre.', true); try { await api.invoke('melec-access', {action:'approve', studentId:btn.dataset.approve, rosterId}); await loadClass(); status('Élève validé. Son manuel numérique est accessible sans code supplémentaire.'); } catch (error) { status(error.message, true); } });
+    body.querySelectorAll('[data-code]').forEach(btn => btn.onclick = async () => { try { const result = await api.invoke('melec-access',{action:'issue',studentId:btn.dataset.code}); body.querySelector('#issuedCode').innerHTML = `<div class="teach-code">Code à remettre à l’élève : ${esc(result.code)}<br><small>Valide jusqu’au ${esc(new Date(result.expiresAt).toLocaleString('fr-FR'))}. Cette valeur ne sera plus affichée.</small></div>`; } catch (err) { status(err.message,true); } });
+    body.querySelectorAll('[data-unlock]').forEach(btn => btn.onclick = async () => { if (!confirm('Débloquer cet élève ?')) return; try { await api.invoke('melec-access',{action:'unlock',studentId:btn.dataset.unlock}); await loadClass(); status('Compte débloqué.'); } catch (error) { status(error.message,true); } });
+    body.querySelectorAll('[data-revoke]').forEach(btn => btn.onclick = async () => { if (!confirm('Révoquer immédiatement l’accès de cet élève ?')) return; try { await api.invoke('melec-access',{action:'revoke',studentId:btn.dataset.revoke}); await loadClass(); status('Accès révoqué.'); } catch (error) { status(error.message,true); } });
+    body.querySelectorAll('[data-resend-confirmation]').forEach(btn => btn.onclick = async () => {
+      if (!confirm('Renvoyer le courriel de confirmation à l’adresse affichée ?')) return;
+      btn.disabled = true;
+      try { const result = await api.invoke('melec-access', {action:'resend_confirmation',studentId:btn.dataset.resendConfirmation}); status(result.message || 'Demande de renvoi effectuée.'); }
+      catch (error) { status(error.message,true); }
+      finally { btn.disabled = false; }
+    });
+    body.querySelectorAll('[data-delete-account]').forEach(btn => btn.onclick = async () => {
+      if (!confirm('Supprimer uniquement le compte de connexion ? L’élève du registre et ses évaluations restent conservés. La suppression sera refusée si des travaux TP liés au compte existent.')) return;
+      btn.disabled = true;
+      try { await api.invoke('melec-access', {action:'delete_account',studentId:btn.dataset.deleteAccount}); await loadClass(); status('Compte de connexion supprimé ; élève et évaluations conservés.'); }
+      catch (error) { status(error.message,true); btn.disabled = false; }
+    });
+    // Doublons : un élève déjà validé qui a créé un second compte (autre adresse, mot de passe oublié…).
+    // La validation directe est refusée par le serveur ; on l'explique et on propose les deux issues.
+    body.querySelectorAll('[data-approve]').forEach(btn => {
+      const pendingProfile = students.find(s => s.user_id === btn.dataset.approve);
+      const twin = pendingProfile && duplicateOf(pendingProfile);
+      if (!twin) return;
+      const card = btn.closest('.teach-student');
+      card.classList.add('teach-duplicate');
+      const when = d => d ? new Date(d).toLocaleDateString('fr-FR') : '?';
+      const pick = card.querySelector('[data-roster-student]'); if (pick && twin.roster_student_id && [...pick.options].some(o => o.value === String(twin.roster_student_id))) pick.value = String(twin.roster_student_id);
+      card.insertAdjacentHTML('beforeend', `<p class="teach-duplicate-note"><strong>Doublon</strong> : cet élève a déjà un compte validé (${esc(twin.email || 'adresse inconnue')}, validé le ${when(twin.approved_at)}). Cette nouvelle demande date du ${when(pendingProfile.created_at)}. Demandez-lui quelle adresse il utilise.</p>`);
+      btn.textContent = 'Garder ce nouveau compte';
+      btn.onclick = async () => {
+        const rosterId = card.querySelector('[data-roster-student]').value || twin.roster_student_id || '';
+        if (!rosterId) return status('Confirmez l’élève dans le registre.', true);
+        if (!confirm(`Garder le nouveau compte (${pendingProfile.email}) ?\n\nL’ancien compte (${twin.email}) perd son accès. Les évaluations de l’élève sont conservées.`)) return;
+        btn.disabled = true;
+        try {
+          await api.invoke('melec-access', {action:'revoke', studentId:twin.user_id});
+          try { await api.invoke('melec-access', {action:'approve', studentId:pendingProfile.user_id, rosterId}); }
+          catch (error) { await api.invoke('melec-access', {action:'approve', studentId:twin.user_id, rosterId:twin.roster_student_id || rosterId}).catch(() => {}); throw error; }
+          await loadClass();
+          status('Nouveau compte validé. L’ancien compte n’a plus accès ; vous pouvez le supprimer depuis les demandes s’il y apparaît.');
+        } catch (error) { status(error.message, true); btn.disabled = false; }
+      };
+      const del = card.querySelector('[data-delete-account]');
+      if (del) del.textContent = 'Supprimer ce doublon';
+    });
+  }
+  function renderAlerts() {
+    const body = root.querySelector('#teachBody');
+    const unknown = students.filter(s => !s.approved_at && !s.blocked_at && !rosterNameExists(s));
+    const missingClass = students.filter(s => !s.approved_at && !s.blocked_at && rosterNameExists(s) && !rosterMatches(s).length);
+    const blocked = students.filter(s => s.blocked_at);
+    body.innerHTML = `<div class="teach-card"><h2>Alertes (${unknown.length + missingClass.length})</h2><p class="teach-help">Vérifiez les demandes avant toute suppression. Un compte inconnu ne peut pas être validé.</p><h3>Élèves absents du registre (${unknown.length})</h3><div class="teach-students">${unknown.map(s => `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)} · classe demandée : ${esc(s.requested_class)}</small></div><div class="teach-row"><button type="button" data-block="${s.user_id}" class="warn">Bloquer</button><button type="button" data-delete="${s.user_id}" class="warn">Supprimer le compte</button></div></div>`).join('') || '<p>Aucune demande inconnue.</p>'}</div><h3>Classe du registre non créée (${missingClass.length})</h3><p class="teach-help">Ces noms existent dans le registre, mais leur classe n’est pas encore disponible dans les contenus. Utilisez « Ajouter les classes de l’application » en haut de la page.</p><div class="teach-students">${missingClass.map(s => `<div class="teach-student"><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)} · classe demandée : ${esc(s.requested_class)}</small></div>`).join('') || '<p>Aucun écart de classe.</p>'}</div><h3>Demandes bloquées (${blocked.length})</h3><div class="teach-students">${blocked.map(s => `<div class="teach-student"><div><strong>${esc(s.last_name)} ${esc(s.first_name)}</strong><small>${esc(s.email)}</small></div><button type="button" data-delete="${s.user_id}" class="warn">Supprimer le compte</button></div>`).join('') || '<p>Aucune demande bloquée.</p>'}</div></div>`;
+    body.querySelectorAll('[data-block]').forEach(btn => btn.onclick = async () => { if (!confirm('Bloquer cette demande inconnue ?')) return; try { await api.invoke('melec-access',{action:'block',studentId:btn.dataset.block}); await loadClass(); status('Demande bloquée.'); } catch (error) { status(error.message,true); } });
+    body.querySelectorAll('[data-delete]').forEach(btn => btn.onclick = async () => { if (!confirm('Supprimer définitivement ce compte Supabase et toutes ses données associées ?')) return; try { await api.invoke('melec-access',{action:'delete_unknown',studentId:btn.dataset.delete}); await loadClass(); status('Compte supprimé.'); } catch (error) { status(error.message,true); } });
+  }
+  function renderMessages() {
+    root.querySelector('#teachBody').innerHTML = `<div class="teach-card"><h2>Messages du formulaire</h2>${messages.map(m => `<article class="teach-message"><strong>${esc(m.last_name)} ${esc(m.first_name)}</strong> · ${esc(m.class_name)}<small class="teach-meta">${esc(m.email)} · ${esc(new Date(m.created_at).toLocaleString('fr-FR'))}</small><p>${esc(m.comment)}</p></article>`).join('') || '<p>Aucun message.</p>'}</div>`;
+  }
+  window.addEventListener('melec-reset-selection', () => {
+    classId = ''; tab = 'tp'; selectedChapterId = ''; selectedItemId = '';
+    selectedTpId = ''; requestClassId = ''; editing = null; activeItem = null;
+    previewEpoch++;
+    if (previewCleanup) { previewCleanup(); previewCleanup = null; }
+    document.querySelector('#teachPreview')?.remove();
+    if (root.querySelector('#teachClass')) render();
+  });
+  if (location.hash === '#teaching') setTimeout(() => show('teaching'), 0);
+})();

@@ -1,0 +1,27 @@
+#activitiesView .activity-overview-picker {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+#activitiesView .activity-overview-picker label {
+  font-weight: 700;
+  width: 100%;
+}
+#activitiesView .activity-overview-picker select {
+  flex: 1 1 280px;
+  width: min(100%, 440px);
+  min-width: 0;
+}
+#activitiesView .activity-overview-picker button { flex: 0 0 auto; }
+#activitiesView .activity-card[hidden],
+#activitiesView .activity-group-fold[hidden],
+#activitiesView .activity-class-group[hidden],
+#activitiesView .bottom-stats[hidden] { display: none !important; }
+#activitiesView .activity-overview-empty { padding: 16px; }
+@media (max-width: 600px) {
+  #activitiesView .activity-overview-picker { align-items: stretch; }
+  #activitiesView .activity-overview-picker select,
+  #activitiesView .activity-overview-picker button { width: 100%; flex-basis: 100%; }
+}

@@ -1,0 +1,4 @@
+#resultsView .results-top-scroll{box-sizing:border-box;max-width:100%;height:18px;margin:0 auto 4px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-inline:contain}
+#resultsView .results-top-scroll[hidden],#resultsView .results-follow-scroll[hidden]{display:none}
+#resultsView .results-scroll-track{height:1px}
+#resultsView .results-follow-scroll{position:fixed;bottom:0;z-index:30;box-sizing:border-box;height:20px;max-width:100vw;overflow-x:auto;overflow-y:hidden;background:#e9f5ff;border:1px solid #80b6df;box-shadow:0 -3px 12px #082d4966;overscroll-behavior-inline:contain}
