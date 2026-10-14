@@ -501,7 +501,6 @@ html body:not(#st-a):not(#st-b) .content .view .evaluation-level.selected{color:
 html body:not(#st-a):not(#st-b) .content .view .evaluation-level.level-ne.selected{background:#5c6879!important}
 html body:not(#st-a):not(#st-b) .content .view .evaluation-level.level-n1.selected{background:#e43d30!important}
 html body:not(#st-a):not(#st-b) .content .view .evaluation-level.level-n2.selected{background:#f39c35!important;color:#1a0d00!important}
-html body:not(#st-a):not(#st-b) .content .view .evaluation-level.level-n3.selected{background:#78a82d!important}
 html body:not(#st-a):not(#st-b) .content .view .evaluation-level.level-n4.selected{background:#24713a!important}
 html body:not(#st-a):not(#st-b) .content .view .automatic-score strong{color:var(--st-volt)!important;font-family:var(--st-f-mono)!important}
 html body:not(#st-a):not(#st-b) .content .view .competency-score{color:var(--st-volt)!important;font-family:var(--st-f-mono)!important}
@@ -712,8 +711,8 @@ html body:not(#st-a):not(#st-b).portal-page #studentDashboard #studentContentTab
 html body:not(#st-a):not(#st-b).portal-page #studentDashboard #studentContentTabs button:nth-child(6).active{background:#3d5792!important;border-color:rgba(255,255,255,.85)!important;color:#fff!important;box-shadow:0 0 0 1px #3d5792,0 0 16px #3d579299!important}
 
 /* ==== Effet électrique : réseau de conducteurs animé (melec-circuit.js) ==== */
-canvas.melec-circuit{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;display:block}
-@media print{canvas.melec-circuit{display:none!important}}
+.melec-circuit{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;display:block}
+@media print{.melec-circuit{display:none!important}}
 /* Le contenu passe au-dessus du réseau animé : les traits restent derrière les panneaux */
 body > main.shell,body > .portal-shell{position:relative;z-index:1}
 /* Courant qui parcourt le bas de la barre haute : deux passages à l'ouverture de la page, puis il s'arrête.
@@ -721,7 +720,7 @@ body > main.shell,body > .portal-shell{position:relative;z-index:1}
 html body .topbar{position:relative;overflow-x:clip}
 html body .topbar::after{content:"";position:absolute;left:0;bottom:-1px;width:22%;height:2px;pointer-events:none;will-change:transform;
   background:linear-gradient(90deg,transparent,rgba(120,200,255,.9) 40%,#ff8a1e 50%,rgba(120,200,255,.9) 60%,transparent);
-  transform:translateX(-100%);animation:melec-courant 4.5s linear 2 forwards}
+  transform:translateX(-100%);animation:melec-courant 4.5s steps(54) infinite}
 @keyframes melec-courant{from{transform:translateX(-100%)}to{transform:translateX(460%)}}
 @media (prefers-reduced-motion:reduce){html body .topbar::after{animation:none;opacity:0}}
 
