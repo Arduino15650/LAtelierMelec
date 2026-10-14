@@ -6,7 +6,8 @@
     {view:'activity-list',icon:'☷',title:'Liste des activités',text:'Retrouver les activités classées par niveau.'},
     {view:'students',icon:'♙',title:'Élèves',text:'Gérer les classes et le suivi des élèves.'},
     {view:'results',icon:'▥',title:'Résultats',text:'Consulter les notes et les moyennes par élève.'},
-    {view:'referential',icon:'◎',title:'Référentiel',text:'Consulter les compétences, tâches et connaissances.'}
+    {view:'referential',icon:'◎',title:'Référentiel',text:'Consulter les compétences, tâches et connaissances.'},
+    {view:'quotes',icon:'€',title:'Devis élèves',text:'Consulter, verrouiller ou supprimer les devis de matériel des élèves.'}
   ];
 
   function renderHome(){
