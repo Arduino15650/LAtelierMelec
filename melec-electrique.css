@@ -103,9 +103,12 @@ html body:not(#el-a):not(#el-b):not(#el-c) :is(.pfmp-panel,.student-pane section
 
 /* ───────── 3. Accueil enseignant : 9 rubriques en grille régulière ───────── */
 html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access{
-  grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-auto-rows:1fr!important;gap:16px!important;
-  max-width:1180px;margin-inline:auto!important}
-@media(max-width:980px){html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-auto-rows:1fr!important;gap:14px!important;
+  max-width:1400px;margin-inline:auto!important}
+html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick]{grid-template-columns:minmax(0,1fr)!important;align-content:start!important;justify-items:start!important;gap:10px!important;padding:18px!important;text-align:left!important}
+@media(max-width:1280px){html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick]{grid-template-columns:auto minmax(0,1fr)!important;align-items:center!important}}
+html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-arrow{display:none!important}
+@media(max-width:1280px){html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-width:900px}}
 @media(max-width:600px){html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access{grid-template-columns:minmax(0,1fr)!important;grid-auto-rows:auto!important}}
 /* Couleur propre à chaque rubrique (mêmes teintes que les capsules du menu). */
 html body #homeView .home-access-card{--c:79,179,255}
@@ -118,6 +121,7 @@ html body #homeView .home-access-card[onclick*="'referential'"]{--c:216,138,117}
 html body #homeView .home-access-card[onclick*="'teaching'"]{--c:96,170,240}
 html body #homeView .home-access-card[onclick*="'quotes'"]{--c:242,160,64}
 html body #homeView .home-access-card[onclick*="'pfmp'"]{--c:76,201,140}
+html body #homeView .home-access-card[onclick*="'magasin'"]{--c:240,195,90}
 html body:not(#el-a):not(#el-b):not(#el-c) .content #homeView .home-access .home-access-card[onclick]{
   min-height:118px!important;height:100%;
   background:linear-gradient(140deg,rgba(var(--c),.30),rgba(var(--c),.08) 55%,rgba(8,24,46,.55))!important;
@@ -129,23 +133,23 @@ html body:not(#el-a):not(#el-b):not(#el-c) .content #homeView .home-access .home
 
 /* ───────── 4. Effet électrique au survol ───────── */
 /* Cartes concernées : tuiles cliquables et cartes de l'accueil. */
-html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div){
+html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div,.mg-item,.mg-stat){
   position:relative;--el-a:var(--el-cyan);--el-b:var(--el-volt)}
 html body #homeView .home-access-card[onclick]{--el-a:rgb(var(--c));--el-b:#fff}
 /* Arc : anneau de 2 px découpé dans un dégradé conique qui tourne. */
-html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div)::after{
+html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div,.mg-item,.mg-stat)::after{
   content:"";position:absolute;inset:-1px;border-radius:inherit;padding:2px;pointer-events:none;z-index:2;
   background:conic-gradient(from var(--el-arc),transparent 0 56%,var(--el-a) 68%,#fff 74%,var(--el-b) 80%,transparent 92%);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
   mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
   opacity:0;transition:opacity .2s ease}
 @media (hover:hover){
-  html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div):hover::after{
+  html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div,.mg-item,.mg-stat):hover::after{
     opacity:1;animation:el-arc 1.15s linear infinite,el-gresil 1.4s steps(1,end) infinite}
-  html body:not(#el-a):not(#el-b):not(#el-c) .content :is(#homeView .home-access .home-access-card[onclick],.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card):hover{
+  html body:not(#el-a):not(#el-b):not(#el-c) .content :is(#homeView .home-access .home-access-card[onclick],.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.mg-item):hover{
     box-shadow:0 0 0 1px color-mix(in srgb,var(--el-a) 60%,transparent),0 0 18px color-mix(in srgb,var(--el-a) 45%,transparent),0 0 40px color-mix(in srgb,var(--el-a) 18%,transparent)!important;
     transform:translateY(-2px)}
-  html body.portal-page:not(#el-a):not(#el-b):not(#el-c) :is(.pfmp-company,.devis-entry,.student-tp-card,.student-reference-card,.student-ccf-card):hover{
+  html body.portal-page:not(#el-a):not(#el-b):not(#el-c) :is(.pfmp-company,.devis-entry,.student-tp-card,.student-reference-card,.student-ccf-card,.mg-item):hover{
     box-shadow:0 0 0 1px rgba(79,179,255,.6),0 0 18px rgba(79,179,255,.45)!important}
 }
 @keyframes el-arc{to{--el-arc:360deg}}
@@ -169,7 +173,7 @@ html body:not(#el-a):not(#el-b):not(#el-c) :is(#teacherPrimaryNav .nav,.teach-ta
 html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item):focus-visible::after{opacity:1}
 
 @media (prefers-reduced-motion:reduce){
-  html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div):hover::after{animation:none}
+  html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div,.mg-item,.mg-stat):hover::after{animation:none}
   html body:not(#el-a):not(#el-b):not(#el-c) :is(#teacherPrimaryNav .nav,.teach-tabs>button,#studentContentTabs>button,.portal-actions>button,.portal-button,.devis-primary,button.primary):hover::after{animation:none;opacity:0}
 }
 @media print{
