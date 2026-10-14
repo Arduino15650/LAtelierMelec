@@ -1,0 +1,73 @@
+/* PFMP : annuaire des entreprises, démarches et suivi (espaces enseignant et élève).
+   Couleurs du thème « sous tension » ; seules la mise en page et les états sont définis ici. */
+.pfmp-space,.pfmp-detail-host{display:grid;gap:14px;min-width:0}
+.pfmp-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pfmp-filters select,.pfmp-filters input{min-height:38px;max-width:100%}
+.pfmp-search{flex:1 1 260px;min-width:0}
+.pfmp-search input{width:100%;box-sizing:border-box}
+.pfmp-count{margin:8px 0;font-size:.88rem;opacity:.85}
+.pfmp-company-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+html body .pfmp-company-list>button.pfmp-company{display:grid;gap:3px;justify-items:start;align-content:start;text-align:left;white-space:normal;min-height:0;padding:12px 14px;border-radius:9px;overflow-wrap:anywhere}
+.pfmp-muted{opacity:.75;font-size:.86rem}
+.pfmp-chip{display:inline-block;margin-top:4px;padding:1px 9px;border-radius:99px;font-size:.78rem;font-weight:700}
+html body .pfmp-chip.pfmp-taken{background:rgba(255,138,30,.2)!important;color:#ffb066!important}
+html body .pfmp-chip.pfmp-free{background:rgba(63,224,138,.16)!important;color:#5fe8a0!important}
+.pfmp-pager{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px}
+.pfmp-empty{padding:16px;opacity:.85}
+.pfmp-map{height:min(70vh,560px);min-height:320px;border-radius:10px;overflow:hidden}
+.pfmp-map .leaflet-container{font:inherit}
+.pfmp-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:4px 18px;margin:8px 0 14px}
+.pfmp-line{display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px;padding:4px 0;border-bottom:1px solid rgba(147,171,199,.18);overflow-wrap:anywhere}
+.pfmp-line>span{opacity:.75;font-size:.86rem}
+.pfmp-title{align-items:center}
+.pfmp-title h2,.pfmp-title h3{margin:0;flex:1 1 auto}
+.pfmp-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pfmp-reports{display:grid;gap:10px;margin:8px 0}
+.pfmp-report{display:grid;gap:4px;padding:10px 12px;border:1px solid rgba(147,171,199,.25);border-radius:9px}
+.pfmp-report-head{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.pfmp-report p{margin:0}
+.pfmp-report>button{justify-self:start}
+.pfmp-notes{white-space:pre-wrap}
+.pfmp-status{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;font-weight:800;white-space:nowrap}
+html body .pfmp-s-a-contacter{background:rgba(147,171,199,.2)!important;color:#c9d7e8!important}
+html body .pfmp-s-en-attente{background:rgba(79,179,255,.2)!important;color:#8fd0ff!important}
+html body .pfmp-s-accepte{background:rgba(63,224,138,.2)!important;color:#5fe8a0!important}
+html body .pfmp-s-refuse{background:rgba(255,90,95,.2)!important;color:#ff9a9d!important}
+html body .pfmp-s-a-relancer{background:rgba(255,138,30,.2)!important;color:#ffb066!important}
+.pfmp-form{display:grid;gap:10px;margin-top:8px}
+.pfmp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 14px}
+.pfmp-field{display:grid;gap:4px;min-width:0}
+.pfmp-field>span{font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.85}
+.pfmp-field input,.pfmp-field select,.pfmp-field textarea{width:100%;box-sizing:border-box;min-height:38px}
+.pfmp-field[hidden],.pfmp-grid[hidden]{display:none!important}
+.pfmp-hint{margin:0;font-size:.84rem;opacity:.8}
+.pfmp-message{margin:0;min-height:1.2em;font-weight:600}
+.pfmp-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.pfmp-metrics>div{display:grid;gap:2px;padding:12px 14px;border:1px solid rgba(147,171,199,.25);border-radius:9px}
+.pfmp-metrics b{font-family:var(--st-f-mono,ui-monospace,monospace);font-size:1.5rem;color:var(--st-volt,#ff8a1e)}
+.pfmp-metrics span{font-size:.85rem;opacity:.85}
+.pfmp-table-wrap{overflow-x:auto;min-width:0}
+.pfmp-table{width:100%;min-width:760px;border-collapse:collapse}
+.pfmp-table th,.pfmp-table td{padding:8px;text-align:left;vertical-align:middle}
+.pfmp-table .n{text-align:right}
+.pfmp-columns{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
+.pfmp-columns .teach-card{display:grid;gap:10px}
+.pfmp-panel{display:grid;gap:8px;min-width:0}
+.pfmp-panel h3{margin:0}
+.pfmp-tabs .pfmp-refresh{margin-left:auto}
+#pfmpView .teach-tabs button[data-pfmp-tab]{border-radius:999px;padding:9px 16px;font-weight:800}
+#pfmpView .teach-tabs button.active{background:var(--st-volt,#ff8a1e)!important;color:var(--st-volt-ink,#1a0d00)!important;border-color:var(--st-volt,#ff8a1e)!important}
+/* Bouton « PFMP » de la barre du haut, dans la palette des autres rubriques. */
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="pfmp"],html body.subpage-active:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="pfmp"]:not(.active),.header-nav .nav[data-view="pfmp"]{background:#e3f6ec!important;color:#155a3a!important;border-color:#7cc9a0!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="pfmp"] span{color:#155a3a!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="pfmp"].active,html body.subpage-active:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="pfmp"].active{background:#1f7a50!important;color:#fff!important;border-color:rgba(255,255,255,.85)!important;box-shadow:0 0 0 1px #1f7a50,0 0 16px #1f7a5099!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="pfmp"].active span{color:#fff!important}
+@media(max-width:600px){.pfmp-line{grid-template-columns:1fr}.pfmp-tabs .pfmp-refresh{margin-left:0}}
+/* Vue PFMP de l'espace enseignant : mêmes teintes que l'espace TP. */
+html body:not(#st-a):not(#st-b) .content #pfmpView{
+  color:var(--st-ink)!important;
+  --st-lv1:var(--st-panel);--st-lv2:var(--st-panel-2);--st-lv3:#123257;
+  --teach-page:var(--st-panel);--teach-page-light:var(--st-panel-2);--teach-page-deep:#123257;
+  --teach-page-border:var(--st-wire);--teach-page-ink:var(--st-ink);
+  --line:var(--st-wire);--muted:var(--st-muted);--ink:var(--st-ink);--melec-ink:var(--st-ink);
+}
