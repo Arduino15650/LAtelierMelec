@@ -111,7 +111,8 @@
     button.disabled = true;
     message(authStatus, 'Connexion…');
     try {
-      const captchaToken = window.MelecCaptcha ? window.MelecCaptcha.token(form) : '';
+      const captchaToken = window.MelecCaptcha ? await window.MelecCaptcha.waitToken(form, () => message(authStatus, 'Vérification anti-robot en cours… Si la case « Vérifiez que vous êtes humain » apparaît, cochez-la : l’envoi partira toute seule.')) : '';
+      message(authStatus, 'Connexion…');
       await api.signIn(form.elements.email.value.trim(), form.elements.password.value, captchaToken);
       form.elements.password.value = '';
       await openDashboard();
@@ -125,7 +126,8 @@
     button.disabled = true;
     message(authStatus, 'Création du compte…');
     try {
-      const captchaToken = window.MelecCaptcha ? window.MelecCaptcha.token(form) : '';
+      const captchaToken = window.MelecCaptcha ? await window.MelecCaptcha.waitToken(form, () => message(authStatus, 'Vérification anti-robot en cours… Si la case « Vérifiez que vous êtes humain » apparaît, cochez-la : l’envoi partira toute seule.')) : '';
+      message(authStatus, 'Création du compte…');
       await api.signUp({ lastName: form.elements.lastName.value.trim(), firstName: form.elements.firstName.value.trim(),
         className: form.elements.className.value.trim(), email: form.elements.email.value.trim(),
         password: form.elements.password.value, captchaToken });

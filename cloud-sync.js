@@ -278,7 +278,8 @@
     button.disabled = true;
     gateMessage('Connexion…');
     try {
-      const captchaToken = window.MelecCaptcha ? window.MelecCaptcha.token(form) : '';
+      const captchaToken = window.MelecCaptcha ? await window.MelecCaptcha.waitToken(form, () => gateMessage('Vérification anti-robot en cours… Si la case « Vérifiez que vous êtes humain » apparaît, cochez-la : la connexion partira toute seule.')) : '';
+      gateMessage('Connexion…');
       const value = await window.MelecPortal.signIn(byId('cloudEmail').value.trim(), byId('cloudPassword').value, captchaToken);
       byId('cloudPassword').value = '';
       saveSession(value);
