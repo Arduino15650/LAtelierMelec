@@ -143,7 +143,7 @@
   function render() {
     root.innerHTML = `<div class="teach-head"><div><h1>TP en atelier</h1><p>Créer et publier des travaux pratiques par classe.</p></div></div>
       <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><button type="button" id="teachSyncClasses" class="subtle">Ajouter les classes de l’application</button></div></div>
-      <div class="teach-tabs" role="tablist">${[['tp','Travaux pratiques'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
+      <div class="teach-tabs" role="tablist">${[['tp','Travaux pratiques'],['quotes','Devis élèves'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
       <div id="teachBody"></div><p id="teachStatus" class="teach-status" role="status"></p>`;
     root.querySelector('#teachClass').onchange = e => { classId = e.target.value; selectedChapterId = ''; selectedItemId = ''; selectedTpId = ''; editing = null; loadClass().catch(err => status(err.message, true)); };
     root.querySelector('#teachSyncClasses').onclick = syncClasses;
@@ -160,6 +160,7 @@
     if (tab === 'students') renderStudents();
     else if (tab === 'alerts') renderAlerts();
     else if (tab === 'messages') renderMessages();
+    else if (tab === 'quotes') window.MelecDevis?.renderTeacher(root.querySelector('#teachBody'), {classId, classes, status});
     else if (tab === 'tp') renderTp();
     else { tab = 'tp'; renderTp(); }
   }

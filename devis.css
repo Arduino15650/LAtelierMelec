@@ -1,0 +1,54 @@
+/* Devis de matériel électrique (espace élève et espace enseignant).
+   Les couleurs reprennent le thème « sous tension » du site ; seules la mise en page,
+   les montants et les totaux sont définis ici. */
+.devis-space,.devis-teacher,.devis-teacher-view{display:grid;gap:14px;min-width:0}
+.devis-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.devis-toolbar h2,.devis-toolbar h3{margin:0;flex:1 1 auto}
+.devis-bottom{justify-content:space-between}
+.devis-number{font-family:var(--st-f-mono,ui-monospace,monospace);font-weight:600;letter-spacing:.04em}
+.devis-save{font-size:.85rem;opacity:.85}
+.devis-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+html body .devis-pane .devis-list>button.devis-entry{display:grid;gap:3px;justify-items:start;text-align:left;min-height:0;padding:12px 14px;border-radius:9px;white-space:normal}
+.devis-entry-title{font-weight:700;overflow-wrap:anywhere}
+.devis-entry-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.86rem}
+.devis-entry-meta b{font-family:var(--st-f-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums}
+.devis-chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;font-weight:700;white-space:nowrap}
+html body .devis-chip.devis-locked{background:rgba(255,90,95,.18)!important;color:#ff9a9d!important}
+html body .devis-chip.devis-open{background:rgba(63,224,138,.16)!important;color:#5fe8a0!important}
+.devis-compare h3{margin:0 0 4px;font-size:1rem}
+.devis-compare ul{margin:0;padding-left:1.2em;display:grid;gap:4px}
+.devis-sheet{display:grid;gap:14px;min-width:0}
+.devis-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 14px}
+.devis-field{display:grid;gap:4px;min-width:0}
+.devis-field>span{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.devis-field input,.devis-field select{width:100%;min-height:38px;box-sizing:border-box}
+.devis-table-wrap{overflow-x:auto;min-width:0;border-radius:8px}
+.devis-table{width:100%;min-width:820px;border-collapse:collapse}
+.devis-teacher-table{min-width:900px}
+.devis-table th{text-align:left;white-space:nowrap;padding:8px 7px}
+.devis-table td{padding:4px 5px;vertical-align:middle}
+.devis-table .n{text-align:right}
+.devis-table th:nth-child(1){width:32%}
+.devis-table input,.devis-table select{width:100%;min-height:34px;box-sizing:border-box;padding:4px 7px}
+.devis-table input.n{font-family:var(--st-f-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums}
+html body .devis-table input[aria-invalid="true"]{outline:2px solid #ff5a5f;background:#fdecec!important}
+.devis-amount{font-family:var(--st-f-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums;white-space:nowrap;padding-inline:9px!important}
+.devis-strong{font-weight:700}
+html body .devis-remove{min-width:32px;min-height:32px;padding:0 6px;font-size:18px;line-height:1}
+.devis-under{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.devis-hint{margin:0;font-size:.85rem;opacity:.85}
+.devis-totals{justify-self:end;width:min(100%,360px);border:2px solid var(--st-volt,#ff8a1e);border-radius:8px;overflow:hidden}
+.devis-totals>div{display:flex;justify-content:space-between;gap:12px;padding:9px 14px}
+.devis-totals>div+div{border-top:1px solid var(--st-wire,#1e4569)}
+.devis-totals b{font-family:var(--st-f-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums}
+html body .devis-totals>.devis-grand{background:var(--st-volt,#ff8a1e)}
+html body .devis-totals>.devis-grand :is(span,b){color:var(--st-volt-ink,#1a0d00)!important;-webkit-text-fill-color:var(--st-volt-ink,#1a0d00)!important;font-weight:800}
+html body .devis-totals>.devis-grand b{font-size:1.15rem}
+.devis-actions{display:flex;flex-wrap:wrap;gap:6px}
+html body .devis-pane button.devis-primary,html body .devis-pane .devis-primary{background:var(--st-volt,#ff8a1e)!important;border-color:var(--st-volt,#ff8a1e)!important;color:var(--st-volt-ink,#1a0d00)!important;-webkit-text-fill-color:var(--st-volt-ink,#1a0d00)!important;font-weight:700}
+@media(max-width:600px){.devis-totals{justify-self:stretch}.devis-bottom{justify-content:flex-start}}
+#teachingView .teach-tabs button[data-teach-tab="quotes"] { --tab-color: #9c570e; --tab-border: #f2bd70; }
+.devis-field[hidden]{display:none!important}
+.devis-teacher-table th:nth-child(1){width:auto}
+.devis-teacher-table td:nth-child(4),.devis-teacher-table td:nth-child(5){white-space:nowrap}
+.devis-teacher-table .devis-actions{flex-wrap:nowrap}
