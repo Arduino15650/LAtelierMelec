@@ -137,6 +137,7 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
   <link rel="stylesheet" href="melec-sous-tension.css?v=20261013-pastilles1">
   <link rel="stylesheet" href="devis.css?v=20261014-2">
+  <link rel="stylesheet" href="pfmp.css?v=20261014-1">
   <script src="melec-circuit.js?v=20261012-2" defer></script>
 </head>
 <body class="cloud-locked">
@@ -202,6 +203,7 @@
       <button class="nav" data-view="referential"><span>◎</span> Référentiel</button>
       <button class="nav" data-view="teaching"><span>▣</span> TP en atelier · Élèves</button>
       <button class="nav" data-view="quotes"><span>€</span> Devis élèves</button>
+      <button class="nav" data-view="pfmp"><span>⌖</span> PFMP</button>
       <div class="cloud-toolbar" hidden>
     <details class="cloud-menu">
       <summary>⚙ Mon compte</summary>
@@ -226,6 +228,7 @@
       <div id="referentialView" class="view hidden"></div>
       <div id="editorView" class="view hidden"></div>
       <div id="teachingView" class="view hidden teaching-space"></div>
+      <div id="pfmpView" class="view hidden teaching-space"></div>
     </section>
   </main>
   <div id="toast" class="toast"></div>
@@ -237,7 +240,7 @@
   <script src="student-groups.js?v=20260928-1"></script>
   <script src="ccf-dashboard.js?v=20260930-reset-selection1"></script>
   <script src="ccf-submenus.js?v=20260928-4"></script>
-  <script src="home.js?v=20261014-devis"></script>
+  <script src="home.js?v=20261014-pfmp"></script>
   <script src="portal-api.js?v=20261013-telechargement1"></script>
   <script src="content-render.js?v=20261014-verrou"></script>
   <script src="tp-response-export.js?v=20260927-4"></script>
@@ -245,6 +248,7 @@
   <script src="pdf-compress.js?v=20261013-1"></script>
   <script src="teaching-space.js?v=20261014-devis"></script>
   <script src="devis.js?v=20261014-3"></script>
+  <script src="pfmp.js?v=20261014-1"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script src="melec-captcha.js?v=20261014-captcha"></script>
   <script src="melec-mfa.js?v=20261013-obligatoire1"></script>

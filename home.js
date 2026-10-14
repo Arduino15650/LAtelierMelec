@@ -7,7 +7,8 @@
     {view:'students',icon:'♙',title:'Élèves',text:'Gérer les classes et le suivi des élèves.'},
     {view:'results',icon:'▥',title:'Résultats',text:'Consulter les notes et les moyennes par élève.'},
     {view:'referential',icon:'◎',title:'Référentiel',text:'Consulter les compétences, tâches et connaissances.'},
-    {view:'quotes',icon:'€',title:'Devis élèves',text:'Consulter, verrouiller ou supprimer les devis de matériel des élèves.'}
+    {view:'quotes',icon:'€',title:'Devis élèves',text:'Consulter, verrouiller ou supprimer les devis de matériel des élèves.'},
+    {view:'pfmp',icon:'⌖',title:'PFMP',text:'Annuaire des entreprises, démarches des élèves et suivi pédagogique.'}
   ];
 
   function renderHome(){
