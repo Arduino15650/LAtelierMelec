@@ -106,11 +106,13 @@
     const meta = await api.rest('pfmp_meta?select=revision');
     const revision = meta[0]?.revision ?? 0;
     if (!force && cache.revision === revision) return cache.companies;
+    // Pages de 1000 (limite du serveur) demandées quatre par quatre en parallèle :
+    // l'annuaire complet arrive en un seul aller-retour au lieu de quatre à la suite.
     const all = [];
-    for (let offset = 0; ; offset += 1000) {
-      const rows = await api.rest('pfmp_companies?select=id,data&order=id.asc&limit=1000&offset=' + offset);
-      all.push(...rows);
-      if (rows.length < 1000) break;
+    for (let offset = 0, done = false; !done; offset += 4000) {
+      const pages = await Promise.all([0, 1000, 2000, 3000].map(step =>
+        api.rest('pfmp_companies?select=id,data&order=id.asc&limit=1000&offset=' + (offset + step))));
+      for (const rows of pages) { all.push(...rows); if (rows.length < 1000) { done = true; break; } }
     }
     cache.revision = revision; cache.companies = all; cache.index = new Map();
     for (const c of all) {
@@ -132,10 +134,11 @@
     const list = el('div', { class: 'pfmp-results' });
     const count = el('p', { class: 'pfmp-count', role: 'status' });
     const mapHost = el('div', { class: 'pfmp-map', hidden: true });
+    let typing = 0; // la liste est redessinée quand la frappe marque une courte pause
     const companies = () => cache.companies;
     const sectors = [...new Set(companies().flatMap(c => c.data.secteurs || []))].sort(collator.compare);
     const cities = [...new Set(companies().map(c => c.data.ville).filter(Boolean))].sort(collator.compare);
-    const search = el('input', { type: 'search', placeholder: 'Nom, adresse, ville, métier, SIRET…', 'aria-label': 'Rechercher une entreprise', oninput: event => { state.query = event.target.value; state.page = 1; draw(); } });
+    const search = el('input', { type: 'search', placeholder: 'Nom, adresse, ville, métier, SIRET…', 'aria-label': 'Rechercher une entreprise', oninput: event => { state.query = event.target.value; state.page = 1; clearTimeout(typing); typing = setTimeout(draw, 160); } });
     const sectorSelect = el('select', { 'aria-label': 'Secteur', onchange: event => { state.sector = event.target.value; state.page = 1; draw(); } }, option('', 'Tous les secteurs'), sectors.map(s => option(s)));
     const citySelect = el('select', { 'aria-label': 'Ville', onchange: event => { state.city = event.target.value; state.page = 1; draw(); } }, option('', 'Toutes les villes'), cities.map(s => option(s)));
     const availability = options.teacher ? el('select', { 'aria-label': 'Disponibilité', onchange: event => { state.availability = event.target.value; state.page = 1; draw(); } },
