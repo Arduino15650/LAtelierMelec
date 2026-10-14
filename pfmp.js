@@ -59,6 +59,29 @@
     return Array.from(new Uint8Array(digest)).map(x => x.toString(16).padStart(2, '0')).join('');
   }
 
+  // ───────── Localisation automatique (Géoplateforme IGN, gratuite, sans clé) ─────────
+  // Une adresse non reconnue n'est jamais placée au hasard : l'entreprise reste hors carte.
+  async function geocode(d) {
+    const q = [d.adresse, d.codePostal, d.ville].map(v => String(v || '').trim()).filter(Boolean).join(' ');
+    if (q.length < 3) return null;
+    const ask = async withPostcode => {
+      const params = new URLSearchParams({ q, limit: '1', index: 'address' });
+      if (withPostcode && /^\d{5}$/.test(d.codePostal || '')) params.set('postcode', d.codePostal);
+      const response = await fetch('https://data.geopf.fr/geocodage/search?' + params);
+      if (!response.ok) throw new Error('Service de localisation indisponible (' + response.status + ').');
+      return (await response.json()).features?.[0] || null;
+    };
+    let found = await ask(true);
+    if (!found) found = await ask(false);
+    if (!found || !(found.properties?.score >= 0.5)) return null;
+    const [lon, lat] = found.geometry.coordinates;
+    const type = found.properties.type;
+    return { lat, lon, geoPrecision: type === 'housenumber' ? 'adresse' : type === 'street' ? 'rue' : 'commune', geoLabel: found.properties.label, geoScore: Math.round(found.properties.score * 100) / 100 };
+  }
+  const placeLabel = d => Number.isFinite(d.lat) && Number.isFinite(d.lon)
+    ? 'placée sur la carte' + (d.geoLabel ? ' : ' + d.geoLabel : '') + (d.geoPrecision ? ' (précision : ' + d.geoPrecision + ')' : '')
+    : 'non placée sur la carte';
+
   // ───────── Chargements ─────────
   const scripts = new Map();
   function loadScript(src) {
@@ -208,6 +231,7 @@
       line('E-mail', d.email, d.email ? 'mailto:' + d.email : null),
       line('Site web', d.siteWeb, d.siteWeb ? (/^https?:/i.test(d.siteWeb) ? d.siteWeb : 'https://' + d.siteWeb) : null),
       line('Responsable', [d.contactNom, d.contactFonction].filter(Boolean).join(' · ')), line('Tél. responsable', d.contactTelephone), line('E-mail responsable', d.contactEmail),
+      line('Carte', placeLabel(d)),
       line('Accueil des stagiaires', d.acceptation), line('Capacité', d.capacite ? String(d.capacite) : ''), line('SIRET', d.siret), line('APE', d.ape));
   }
 
@@ -351,20 +375,31 @@
         event.preventDefault();
         try {
           const values = Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, i.value]));
-          const next = normalizeCompany({ ...d, ...values });
-          const moved = c && ['adresse', 'codePostal', 'ville'].some(k => (d[k] || '') !== next[k]) && values.lat === String(d.lat ?? '') && values.lon === String(d.lon ?? '');
-          if (moved) { next.lat = null; next.lon = null; next.geoPrecision = null; }
+          const next = { ...d, ...normalizeCompany({ ...d, ...values }) };
+          // Nouvelle adresse (ou entreprise pas encore placée) : localisation automatique.
+          const moved = !c || ['adresse', 'codePostal', 'ville'].some(k => (d[k] || '') !== next[k]) || !Number.isFinite(d.lat);
+          let note = '';
+          if (moved) {
+            message.textContent = 'Localisation de l’adresse…';
+            for (const k of ['lat', 'lon', 'geoPrecision', 'geoLabel', 'geoScore']) delete next[k];
+            next.lat = null; next.lon = null;
+            try {
+              const place = await geocode(next);
+              if (place) Object.assign(next, place); else note = ' Adresse non reconnue : l’entreprise n’est pas placée sur la carte.';
+            } catch (error) { note = ' ' + error.message + ' L’entreprise sera placée plus tard (« Localiser les entreprises non placées »).'; }
+          }
           if (c) await api.rest('pfmp_companies?id=eq.' + encodeURIComponent(c.id), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: next, updated_at: new Date().toISOString() }) });
           else {
             const result = await api.rest('rpc/pfmp_import_companies', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p_companies: [{ ...next, fingerprint: await fingerprint(next) }] }) });
             if (!result.added) throw new Error('Cette entreprise existe déjà (même SIRET ou même nom et adresse).');
           }
-          await load(true); onDone(c ? 'Fiche modifiée.' : 'Entreprise ajoutée.');
+          await load(true); onDone((c ? 'Fiche modifiée.' : 'Entreprise ajoutée.') + note);
         } catch (error) { message.textContent = error.message; }
       } },
         el('div', { class: 'pfmp-grid' }, input('raisonSociale', 'Raison sociale *', { required: true, maxlength: 200 }), input('denomination', 'Nom commercial'), input('activite', 'Activité'),
           input('metiers', 'Métiers (séparés par des virgules)'), input('secteurs', 'Secteurs (séparés par des virgules)'), input('siret', 'SIRET')),
-        el('div', { class: 'pfmp-grid' }, input('adresse', 'Adresse'), input('codePostal', 'Code postal'), input('ville', 'Ville'), input('lat', 'Latitude'), input('lon', 'Longitude')),
+        el('div', { class: 'pfmp-grid' }, input('adresse', 'Adresse'), input('codePostal', 'Code postal'), input('ville', 'Ville')),
+        el('p', { class: 'pfmp-hint', text: 'Position : ' + (c ? placeLabel(d) : 'calculée automatiquement à partir de l’adresse') + '. Elle est recalculée dès que l’adresse change.' }),
         el('div', { class: 'pfmp-grid' }, input('telephone', 'Téléphone'), input('email', 'E-mail'), input('siteWeb', 'Site web'),
           input('contactNom', 'Responsable'), input('contactFonction', 'Fonction'), input('contactTelephone', 'Téléphone responsable'), input('contactEmail', 'E-mail responsable'),
           input('acceptation', 'Accueil des stagiaires'), input('capacite', 'Capacité', { inputmode: 'numeric' })),
@@ -476,11 +511,42 @@
         } catch (error) { say(error.message, true); }
       };
       const formHost = el('div');
+      const unplaced = () => cache.companies.filter(c => !Number.isFinite(c.data.lat) && [c.data.adresse, c.data.codePostal, c.data.ville].some(v => String(v || '').trim()));
+      const geoStatus = el('p', { class: 'pfmp-message', role: 'status' });
+      let stop = false;
+      const stopButton = el('button', { type: 'button', class: 'subtle', text: 'Arrêter', hidden: true, onclick: () => { stop = true; } });
+      const geoButton = el('button', { type: 'button', class: 'portal-button', text: 'Localiser les entreprises non placées (' + unplaced().length + ')', onclick: async () => {
+        const todo = unplaced();
+        if (!todo.length) { geoStatus.textContent = 'Toutes les entreprises avec une adresse sont déjà placées.'; return; }
+        geoButton.disabled = true; stopButton.hidden = false; stop = false;
+        let placed = 0, missed = 0, done = 0, index = 0;
+        const worker = async () => {
+          while (!stop && index < todo.length) {
+            const c = todo[index++];
+            try {
+              const place = await geocode(c.data);
+              if (place) {
+                await api.rest('pfmp_companies?id=eq.' + encodeURIComponent(c.id), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: { ...c.data, ...place }, updated_at: new Date().toISOString() }) });
+                Object.assign(c.data, place); placed++;
+              } else missed++;
+            } catch { missed++; }
+            done++;
+            geoStatus.textContent = 'Localisation : ' + done + ' / ' + todo.length + ' · ' + placed + ' placée(s) · ' + missed + ' adresse(s) non reconnue(s)';
+          }
+        };
+        await Promise.all([worker(), worker(), worker(), worker()]);
+        geoStatus.textContent = (stop ? 'Arrêté. ' : 'Terminé. ') + placed + ' entreprise(s) placée(s) sur la carte · ' + missed + ' adresse(s) non reconnue(s), à corriger dans leur fiche.';
+        stopButton.hidden = true; geoButton.disabled = false;
+        await load(true); geoButton.textContent = 'Localiser les entreprises non placées (' + unplaced().length + ')';
+      } });
       frame(el('div', { class: 'pfmp-columns' },
         el('section', { class: 'teach-card' }, el('h2', { text: 'Ajouter des entreprises' }),
           el('p', { class: 'teach-help', text: 'Fichier CSV ou Excel avec une colonne « Raison sociale » (et si possible : adresse, code postal, ville, téléphone, e-mail, SIRET, activité, métiers, latitude, longitude). Les doublons (même SIRET, ou même nom et adresse) et les entreprises supprimées sont ignorés.' }),
           file, importButton, progress,
           el('button', { type: 'button', class: 'subtle', text: '＋ Ajouter une entreprise à la main', onclick: () => formHost.replaceChildren(companyForm(null, text => { formHost.replaceChildren(); if (text) say(text); })) }), formHost),
+        el('section', { class: 'teach-card' }, el('h2', { text: 'Carte' }),
+          el('p', { class: 'teach-help', text: 'Les entreprises sont placées automatiquement à partir de leur adresse (Géoplateforme IGN). Une adresse non reconnue n’est jamais placée au hasard.' }),
+          el('div', { class: 'pfmp-actions' }, geoButton, stopButton), geoStatus),
         el('section', { class: 'teach-card' }, el('h2', { text: 'Exporter l’annuaire' }),
           el('p', { class: 'teach-help', text: cache.companies.length.toLocaleString('fr-FR') + ' entreprises, avec l’élève à qui chaque PFMP est attribuée.' }),
           el('div', { class: 'pfmp-actions' }, el('button', { type: 'button', class: 'subtle', text: 'Télécharger Excel', onclick: () => exportList('xlsx') }), el('button', { type: 'button', class: 'subtle', text: 'Télécharger CSV', onclick: () => exportList('csv') })))));
@@ -614,5 +680,5 @@
     new MutationObserver(() => { if (!teacherRoot.classList.contains('hidden')) teacher.open(false); }).observe(teacherRoot, { attributes: true, attributeFilter: ['class'] });
   }
   if (document.getElementById('studentContentTabs')) initStudent();
-  window.MelecPfmp = { normalizeCompany, fingerprint, norm };
+  window.MelecPfmp = { normalizeCompany, fingerprint, norm, geocode };
 })();
