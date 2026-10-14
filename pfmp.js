@@ -158,7 +158,16 @@
         count.textContent = items.length.toLocaleString('fr-FR') + ' entreprise(s) · ' + placed.length.toLocaleString('fr-FR') + ' placée(s) sur la carte. Touchez un repère pour ouvrir la fiche.';
       } catch (error) { mapHost.textContent = error.message; }
     }
+    // Comme dans Gestion PFMP, l'annuaire reste masqué tant qu'aucune recherche n'est lancée :
+    // rien n'est dessiné pour rien. La carte, elle, s'ouvre à la demande.
+    const searching = () => Boolean(state.query.trim() || state.sector || state.city || state.availability);
     function draw() {
+      if (!state.map && !searching()) {
+        mapHost.hidden = true; list.hidden = false;
+        count.textContent = companies().length.toLocaleString('fr-FR') + ' entreprises dans l’annuaire.';
+        list.replaceChildren(el('p', { class: 'pfmp-empty', text: 'Tapez un nom, une ville, un métier ou un SIRET, ou choisissez un secteur ou une ville pour afficher les entreprises.' }));
+        return;
+      }
       const items = filtered();
       if (state.map) return drawMap(items);
       mapHost.hidden = true; list.hidden = false;
