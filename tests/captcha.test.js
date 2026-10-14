@@ -75,3 +75,20 @@ test('les formulaires de connexion et d’inscription contiennent le contrôle',
   assert.match(eleve, /<form id="studentLoginForm"[\s\S]*?data-captcha="eleve_connexion"[\s\S]*?<\/form>/);
   assert.match(eleve, /<form id="studentSignupForm"[\s\S]*?data-captcha="eleve_inscription"[\s\S]*?<\/form>/);
 });
+
+test('un clic sur « Se connecter » avant la validation attend le jeton au lieu d’échouer', async () => {
+  const { captcha, form, rendus } = chargerCaptcha();
+  captcha.mount(form); await attendre();
+  let attente = false;
+  const jeton = captcha.waitToken(form, () => { attente = true; });
+  assert.equal(attente, true, 'message d’attente affiché');
+  rendus[0].options.callback('jeton-tardif');
+  assert.equal(await jeton, 'jeton-tardif');
+  assert.equal(await captcha.waitToken(form), 'jeton-tardif', 'jeton déjà validé rendu immédiatement');
+});
+
+test('sans validation, l’attente finit par un message clair', async () => {
+  const { captcha, form } = chargerCaptcha();
+  captcha.mount(form); await attendre();
+  await assert.rejects(captcha.waitToken(form, null, 20), /Vérifiez que vous êtes humain/);
+});
