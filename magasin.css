@@ -1,0 +1,173 @@
+/* L'Atelier MELEC : magasin (Accès équipe, Administration, Inventaire élève).
+   Reprend la présentation de MELECGEST dans le thème « sous tension » du site. */
+html body:not(#st-a):not(#st-b) .content :is(#magasinView,#adminView){
+  color:var(--st-ink)!important;
+  --st-lv1:var(--st-panel);--st-lv2:var(--st-panel-2);--st-lv3:#123257;
+  --teach-page:var(--st-panel);--teach-page-light:var(--st-panel-2);--teach-page-deep:#123257;
+  --teach-page-border:var(--st-wire);--teach-page-ink:var(--st-ink);
+  --line:var(--st-wire);--muted:var(--st-muted);--ink:var(--st-ink);--melec-ink:var(--st-ink);
+}
+.mg-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px}
+.mg-eyebrow{display:block;font:600 .74rem var(--st-f-mono,ui-monospace,monospace);letter-spacing:.16em;text-transform:uppercase;color:var(--st-volt,#ff8a1e)}
+.mg-head-actions,.mg-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.mg-connection{display:inline-flex;align-items:center;gap:7px;font-size:.84rem;color:#5fe8a0}
+.mg-connection::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.mg-connection.offline{color:#ffb066}
+html body .mg-primary{background:var(--st-volt,#ff8a1e)!important;border:1px solid var(--st-volt,#ff8a1e)!important;color:var(--st-volt-ink,#1a0d00)!important;-webkit-text-fill-color:var(--st-volt-ink,#1a0d00)!important;font-weight:700!important;border-radius:8px;padding:9px 16px;cursor:pointer}
+html body .mg-primary.orange{background:#ff7a3d!important;border-color:#ff7a3d!important}
+html body .mg-primary:disabled{opacity:.55;cursor:not-allowed}
+.mg-sections{margin:12px 0}
+.mg-count-badge{display:inline-grid;place-items:center;min-width:20px;height:20px;margin-left:8px;padding:0 6px;border-radius:99px;background:var(--st-volt,#ff8a1e);color:#1a0d00;font-size:.76rem;font-weight:800}
+.mg-card{display:grid;gap:16px}
+.mg-toast{min-height:1.3em;margin:8px 0 0;font-weight:600;color:#5fe8a0}
+.mg-toast.error,.mg-error{color:#ff9a9d!important}
+.mg-error{margin:6px 0;min-height:1.2em;font-weight:600}
+.mg-help{margin:4px 0;font-size:.86rem;opacity:.82}
+.mg-help-box{padding:10px 12px;border:1px solid rgba(79,179,255,.35);border-radius:8px;background:rgba(79,179,255,.08);font-size:.9rem}
+.mg-hint{margin:0;padding:18px;border:1px dashed rgba(147,171,199,.35);border-radius:10px;text-align:center;opacity:.9}
+
+/* Filtres « Explorer le magasin » */
+.mg-filter-panel{display:grid;gap:12px;padding:16px;border:1px solid rgba(110,190,255,.26);border-radius:12px;background:rgba(8,24,46,.5)}
+.mg-filter-heading{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;align-items:center}
+.mg-filter-heading>span{font-weight:800;display:flex;gap:8px;align-items:center}
+.mg-filter-heading>span b{color:var(--st-arc,#4fb3ff)}
+.mg-filter-heading small{opacity:.75}
+.mg-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.mg-field{display:grid;gap:5px;min-width:0}
+.mg-field>span{font-size:.8rem;font-weight:700;opacity:.88}
+.mg-field :is(input,select,textarea){width:100%;box-sizing:border-box;min-height:40px}
+.mg-field textarea{min-height:84px}
+.mg-search{display:flex;align-items:center;gap:6px;border:1px solid var(--st-wire,#1e4569);border-radius:8px;padding:0 10px;background:var(--st-panel,#0a1c33)}
+.mg-search input{border:0!important;background:transparent!important;box-shadow:none!important;min-height:38px}
+.mg-filter-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center;padding-top:10px;border-top:1px solid rgba(147,171,199,.16)}
+.mg-chip{display:inline-block;margin-right:6px;padding:3px 10px;border:1px solid rgba(79,179,255,.6);border-radius:6px;background:rgba(79,179,255,.14);color:#bfe6ff;font-size:.8rem}
+html body .mg-text-button{background:none!important;border:0!important;box-shadow:none!important;color:var(--st-muted,#93abc7)!important;padding:4px 6px;cursor:pointer}
+html body .mg-text-button:hover{color:#fff!important}
+
+/* Résultats */
+.mg-results{display:grid;gap:14px}
+.mg-results>.mg-field{max-width:260px}
+.mg-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.mg-stat{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid rgba(147,171,199,.24);border-radius:10px;background:rgba(255,255,255,.035)}
+.mg-stat-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:9px;background:rgba(79,179,255,.15);color:#8fd0ff;font-size:1.1rem}
+.mg-stat.green .mg-stat-icon{background:rgba(63,224,138,.16);color:#5fe8a0}
+.mg-stat.orange .mg-stat-icon{background:rgba(255,138,30,.18);color:#ffb066}
+.mg-stat small{display:block;font-size:.78rem;opacity:.8}
+.mg-stat strong{font:800 1.35rem var(--st-f-mono,ui-monospace,monospace)}
+.mg-toolbar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center}
+.mg-tabs,.mg-export{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.mg-tabs button span{display:inline-block;margin-left:6px;padding:0 7px;border-radius:99px;background:rgba(255,255,255,.14);font-size:.78rem}
+html body .mg-tabs button.active,html body .mg-view-toggle button.active{background:var(--st-volt,#ff8a1e)!important;border-color:var(--st-volt,#ff8a1e)!important;color:#1a0d00!important;-webkit-text-fill-color:#1a0d00!important}
+.mg-view-toggle{display:inline-flex;gap:2px}
+.mg-view-toggle button{min-width:38px}
+.mg-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-size:.8rem;opacity:.75}
+.mg-empty{display:grid;justify-items:center;gap:8px;padding:28px 14px;text-align:center;border:1px dashed rgba(147,171,199,.35);border-radius:10px}
+.mg-empty h3,.mg-empty p{margin:0}
+
+/* Fiches articles (vue cartes / liste) */
+.mg-inventory.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.mg-inventory.list{display:grid;gap:8px}
+.mg-item{display:grid;gap:10px;align-content:start;padding:14px;border:1px solid rgba(147,171,199,.24);border-radius:10px;background:rgba(255,255,255,.035);min-width:0}
+.mg-item-top{display:flex;align-items:center;gap:8px}
+.mg-item-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:rgba(255,138,30,.16);color:#ffb066}
+.mg-stock-status{display:inline-flex;align-items:center;gap:6px;margin-right:auto;font-size:.78rem;font-weight:700;color:#5fe8a0}
+.mg-stock-status i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
+.mg-stock-status.low{color:#ffd23f}.mg-stock-status.out{color:#ff9a9d}
+.mg-stock-status:not(.low):not(.out):is(:empty,.archived){color:var(--st-muted)}
+html body .mg-icon-button{min-width:32px;min-height:32px;padding:0;border-radius:8px}
+.mg-item-title h3{margin:2px 0;font-size:1rem;line-height:1.25;overflow-wrap:anywhere}
+.mg-item-title p{margin:0;font-size:.84rem;opacity:.82}
+.mg-item-title small{display:block;margin-top:3px;font-size:.8rem;opacity:.75}
+.mg-reference{font:600 .76rem var(--st-f-mono,ui-monospace,monospace);letter-spacing:.04em;color:var(--st-arc,#4fb3ff)}
+.mg-item-meta{display:flex;flex-wrap:wrap;gap:6px}
+.mg-item-meta span{padding:2px 8px;border-radius:6px;background:rgba(255,255,255,.06);font-size:.78rem}
+.mg-quantity{display:flex;align-items:baseline;gap:10px}
+.mg-quantity strong{font:800 1.7rem var(--st-f-mono,ui-monospace,monospace)}
+.mg-quantity span{font-size:.86rem}
+.mg-quantity small{display:block;opacity:.72;font-size:.76rem}
+.mg-item-counters{display:flex;gap:12px;font-size:.8rem;opacity:.85}
+.mg-item-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mg-archive{justify-self:start;font-size:.8rem}
+.mg-inventory.list .mg-item{grid-template-columns:auto minmax(0,2fr) minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:10px 12px}
+.mg-inventory.list .mg-item-top{order:0}
+.mg-inventory.list :is(.mg-item-counters,.mg-archive){display:none}
+.mg-inventory.list .mg-item-actions{grid-template-columns:auto auto}
+
+/* Historique et tableaux */
+.mg-table-wrap{overflow-x:auto;min-width:0}
+.mg-table{width:100%;border-collapse:collapse;min-width:640px}
+.mg-table th,.mg-table td{padding:8px;text-align:left;vertical-align:middle;border-bottom:1px solid rgba(147,171,199,.16)}
+.mg-table td small{display:block;opacity:.72}
+.mg-table .n{text-align:right;font-variant-numeric:tabular-nums}
+.mg-author{font-size:.82rem;overflow-wrap:anywhere}
+.mg-badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.76rem;font-weight:700;white-space:nowrap}
+html body .mg-badge.green{background:rgba(63,224,138,.18)!important;color:#5fe8a0!important}
+html body .mg-badge.orange{background:rgba(255,138,30,.2)!important;color:#ffb066!important}
+html body .mg-badge.blue{background:rgba(79,179,255,.2)!important;color:#8fd0ff!important}
+.mg-counts{display:grid;gap:12px}
+.mg-counts-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center}
+.mg-counts-head p{margin:0;max-width:70ch}
+
+/* Fenêtres */
+.mg-dialog{width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 32px);padding:22px;border:1px solid rgba(110,190,255,.4);border-radius:14px;background:#0b1f38;color:#e9f1fb;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.mg-dialog::backdrop{background:rgba(2,8,18,.72)}
+.mg-dialog h2{margin:0 36px 4px 0;font-size:1.35rem}
+.mg-subtitle{margin:0 0 14px;opacity:.8}
+.mg-close{position:absolute;top:12px;right:12px;min-width:34px;min-height:34px;border-radius:8px}
+.mg-dialog .mg-table{min-width:560px;font-size:.88rem}
+.mg-dialog .mg-table-wrap{max-height:42vh;overflow:auto;margin-bottom:10px}
+.mg-form{display:grid;gap:12px}
+.mg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.mg-inline{grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;align-items:end}
+.mg-check{display:flex;gap:10px;align-items:flex-start;margin:10px 0}
+.mg-check input{margin-top:3px}
+.mg-movement-stock{padding:10px 12px;border-radius:8px;background:rgba(255,255,255,.06)}
+.mg-dialog :is(input,select,textarea){color:#0b1f38}
+
+/* Administration */
+.mg-admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start;margin-bottom:16px}
+.mg-logo-preview{display:flex;align-items:center;gap:12px}
+.mg-logo-preview img{max-width:120px;max-height:80px;border-radius:6px;background:#fff;padding:4px}
+.mg-members{display:grid;gap:6px;margin-top:10px}
+.mg-member{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(147,171,199,.16);overflow-wrap:anywhere}
+.mg-member small{display:block;opacity:.72}
+
+/* Inventaire élève */
+.mg-space{display:grid;gap:14px;min-width:0}
+.mg-count .mg-count-fields{display:grid;grid-template-columns:minmax(120px,170px) minmax(0,1fr);gap:8px;align-items:end}
+.mg-count-qty{display:grid;gap:4px}
+.mg-count-qty span{font-size:.76rem;opacity:.85}
+.mg-count input{width:100%;box-sizing:border-box;min-height:38px}
+.mg-count-qty input{font:700 1.05rem var(--st-f-mono,ui-monospace,monospace)}
+.mg-inventory.list .mg-count{grid-template-columns:minmax(0,1fr) minmax(300px,1.1fr)}
+html body .mg-item.is-counted{border-color:rgba(63,224,138,.6)!important;box-shadow:inset 3px 0 0 #3fe08a!important}
+.mg-student-bar{position:sticky;bottom:8px;z-index:3;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;padding:10px 14px;border:1px solid rgba(255,138,30,.55);border-radius:10px;background:rgba(8,24,46,.94);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.mg-save{font-size:.8rem;opacity:.75;margin-left:8px}
+
+/* Menus du haut : Accès équipe et Administration dans la palette des autres rubriques. */
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="magasin"]:not(.active),.header-nav .nav[data-view="magasin"]:not(.active){background:#fff3d6!important;color:#7a4b00!important;border-color:#f0c35a!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="magasin"] span{color:inherit!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="magasin"].active{background:#b77a00!important;color:#fff!important;border-color:rgba(255,255,255,.85)!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="admin"]:not(.active),.header-nav .nav[data-view="admin"]:not(.active){background:#e8e3f7!important;color:#3b2a74!important;border-color:#a594d8!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="admin"] span{color:inherit!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="admin"].active{background:#5a43a8!important;color:#fff!important;border-color:rgba(255,255,255,.85)!important}
+html body .header-nav .nav[hidden],html body #teacherPrimaryNav .nav[hidden]{display:none!important}
+
+@media(max-width:900px){.mg-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.mg-inline{grid-template-columns:1fr}.mg-inventory.list .mg-item,.mg-inventory.list .mg-count{grid-template-columns:1fr}}
+@media(max-width:560px){.mg-filters{grid-template-columns:1fr}.mg-count .mg-count-fields{grid-template-columns:1fr}.mg-dialog{padding:16px}}
+@media print{.mg-student-bar,.mg-dialog{display:none!important}}
+
+/* Barre de menus : avec 12 rubriques, elle passe sur deux lignes au lieu de couper les libellés
+   ou de déborder de l'écran. */
+@media(min-width:981px){
+  html body:not(#mg-a):not(#mg-b):not(#mg-c) #teacherPrimaryNav{flex-wrap:wrap!important;row-gap:7px!important}
+  html body:not(#mg-a):not(#mg-b):not(#mg-c) #teacherPrimaryNav .nav{white-space:nowrap!important;flex:0 0 auto!important;width:auto!important;min-width:0!important;max-width:none!important}
+}
+/* Boutons du magasin : passent devant les styles génériques des boutons du site. */
+html body:not(#mg-a):not(#mg-b):not(#mg-c):not(#mg-d) .mg-primary{background:var(--st-volt,#ff8a1e)!important;border:1px solid var(--st-volt,#ff8a1e)!important;color:var(--st-volt-ink,#1a0d00)!important;-webkit-text-fill-color:var(--st-volt-ink,#1a0d00)!important;font-weight:700!important;box-shadow:none}
+html body:not(#mg-a):not(#mg-b):not(#mg-c):not(#mg-d) :is(.mg-tabs,.mg-view-toggle,.mg-sections) button.active{background:var(--st-volt,#ff8a1e)!important;border-color:var(--st-volt,#ff8a1e)!important;color:#1a0d00!important;-webkit-text-fill-color:#1a0d00!important}
+html body:not(#mg-a):not(#mg-b):not(#mg-c):not(#mg-d) .mg-archive{background:none!important;border:0!important;box-shadow:none!important;color:var(--st-muted,#93abc7)!important;-webkit-text-fill-color:var(--st-muted,#93abc7)!important;padding:2px 0!important}
+html body:not(#mg-a):not(#mg-b):not(#mg-c):not(#mg-d) .mg-archive:hover{color:#fff!important;-webkit-text-fill-color:#fff!important}
+/* Espace élève : article compté = repère vert. */
+html body.portal-page:not(#mg-a):not(#mg-b):not(#mg-c):not(#mg-d) #studentDashboard .student-pane .mg-item.is-counted{box-shadow:inset 3px 0 0 #3fe08a!important;padding-left:12px}
+html body.portal-page:not(#mg-a):not(#mg-b):not(#mg-c):not(#mg-d) #studentDashboard .student-pane .mg-item.is-counted .mg-count-qty input{border-color:#3fe08a!important}

@@ -10,7 +10,8 @@
     {view:'referential',icon:'◎',title:'Référentiel',text:'Consulter les compétences, tâches et connaissances.'},
     {view:'teaching',icon:'▣',title:'TP en atelier · Élèves',text:'Publier les TP, gérer les classes et les accès élèves.'},
     {view:'quotes',icon:'€',title:'Devis élèves',text:'Consulter, verrouiller ou supprimer les devis de matériel des élèves.'},
-    {view:'pfmp',icon:'⌖',title:'PFMP',text:'Annuaire des entreprises, démarches des élèves et suivi pédagogique.'}
+    {view:'pfmp',icon:'⌖',title:'PFMP',text:'Annuaire des entreprises, démarches des élèves et suivi pédagogique.'},
+    {view:'magasin',icon:'⚡',title:'Accès équipe',text:'Le magasin électrique : stock, entrées, sorties et inventaires des élèves.'}
   ];
 
   function renderHome(){
