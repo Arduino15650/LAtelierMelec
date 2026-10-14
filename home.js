@@ -6,7 +6,9 @@
     {view:'activity-list',icon:'☷',title:'Liste des activités',text:'Retrouver les activités classées par niveau.'},
     {view:'students',icon:'♙',title:'Élèves',text:'Gérer les classes et le suivi des élèves.'},
     {view:'results',icon:'▥',title:'Résultats',text:'Consulter les notes et les moyennes par élève.'},
+    {view:'ccf',icon:'◉',title:'Récap des CCF',text:'Suivre les situations de CCF et les compétences évaluées.'},
     {view:'referential',icon:'◎',title:'Référentiel',text:'Consulter les compétences, tâches et connaissances.'},
+    {view:'teaching',icon:'▣',title:'TP en atelier · Élèves',text:'Publier les TP, gérer les classes et les accès élèves.'},
     {view:'quotes',icon:'€',title:'Devis élèves',text:'Consulter, verrouiller ou supprimer les devis de matériel des élèves.'},
     {view:'pfmp',icon:'⌖',title:'PFMP',text:'Annuaire des entreprises, démarches des élèves et suivi pédagogique.'}
   ];

@@ -1,0 +1,182 @@
+/* ==========================================================================
+   L'Atelier MELEC — couche « électrique » (chargée en dernier, enseignant et élève)
+   1. Moins de cartes imbriquées : un seul panneau translucide par rubrique, à travers
+      lequel on devine l'atelier du fond ; à l'intérieur, de simples rubriques séparées
+      par un trait, et des tuiles légères (contour fin) pour les éléments cliquables.
+   2. Couleurs : liseré « jeu de barres » en tête de panneau, titres en dégradé.
+   3. Effet électrique au survol : arc qui fait le tour des cartes, courant qui traverse
+      les capsules. Rien ne tourne au repos : aucune charge processeur hors survol.
+   L'arrière-plan (réseau de conducteurs animé et photo des outils) n'est pas modifié.
+   Les :not(#el-…) donnent aux règles le poids nécessaire pour passer devant les
+   feuilles plus anciennes, sans avoir à les modifier.
+   ========================================================================== */
+
+@property --el-arc{syntax:'<angle>';inherits:false;initial-value:0deg}
+
+:root{
+  --el-cyan:#4fb3ff;--el-volt:#ff8a1e;--el-violet:#b18cff;--el-green:#3fe08a;--el-pink:#ff6fae;--el-yellow:#ffd23f;
+  --el-glass:rgba(8,24,46,.64);           /* panneau principal : laisse voir le fond */
+  --el-glass-line:rgba(110,190,255,.26);
+  --el-tile:rgba(255,255,255,.035);       /* tuile cliquable posée dans un panneau */
+  --el-tile-line:rgba(147,171,199,.24);
+  --el-rule:rgba(147,171,199,.16);        /* trait de séparation entre rubriques */
+}
+
+/* ───────── 1. Panneaux : un seul niveau de carte ─────────
+   S = toutes les surfaces « carte » du site (mêmes familles que la couche sous tension). */
+html body:not(#el-a):not(#el-b):not(#el-c) :is(
+  .panel,.teach-card,.activity-class-group,.class-fold,.activity-group-fold,.referential-section,.referential-activity,
+  .block-card,.competence,.evaluation-student,.evaluation-competency,.period-panel,.group-assignment,.excel-import,
+  .dashboard-table-wrap,.student-groups-panel,.activity-reuse-panel,.activity-overview-picker,.ccf-compact-filters,
+  .dashboard-filters,.bo-note,.workplace-empty,.evaluation-welcome,.teach-message,.student-navigation,.cards,
+  .student-pane,.student-reference-fold,.student-reference-subfold,.pfmp-panel,.devis-compare
+):not(:is(
+  .panel,.teach-card,.activity-class-group,.class-fold,.activity-group-fold,.referential-section,.referential-activity,
+  .block-card,.competence,.evaluation-student,.evaluation-competency,.period-panel,.group-assignment,.excel-import,
+  .dashboard-table-wrap,.student-groups-panel,.activity-reuse-panel,.activity-overview-picker,.ccf-compact-filters,
+  .dashboard-filters,.bo-note,.workplace-empty,.evaluation-welcome,.teach-message,.student-navigation,.cards,
+  .student-pane,.student-reference-fold,.student-reference-subfold,.pfmp-panel,.devis-compare,.teach-preview-content,.lesson-content
+) *){
+  background:var(--el-glass)!important;background-image:none!important;
+  border:1px solid var(--el-glass-line)!important;border-radius:12px!important;
+  box-shadow:0 18px 40px rgba(0,0,0,.28)!important}
+
+/* Surfaces posées dans une surface : plus de fond ni de cadre, un simple trait de séparation. */
+html body:not(#el-a):not(#el-b):not(#el-c) :is(
+  .panel,.teach-card,.activity-class-group,.class-fold,.activity-group-fold,.referential-section,.referential-activity,
+  .block-card,.competence,.evaluation-student,.evaluation-competency,.period-panel,.group-assignment,.excel-import,
+  .dashboard-table-wrap,.student-groups-panel,.activity-reuse-panel,.activity-overview-picker,.ccf-compact-filters,
+  .dashboard-filters,.bo-note,.workplace-empty,.evaluation-welcome,.teach-message,.student-navigation,.cards,
+  .student-pane,.student-reference-fold,.student-reference-subfold,.pfmp-panel,.devis-compare
+) :is(
+  .panel,.teach-card,.activity-class-group,.class-fold,.activity-group-fold,.referential-section,.referential-activity,
+  .block-card,.competence,.competence-body,.evaluation-student,.evaluation-competency,.period-panel,.group-assignment,.excel-import,
+  .dashboard-table-wrap,.student-groups-panel,.activity-reuse-panel,.activity-overview-picker,.ccf-compact-filters,
+  .dashboard-filters,.bo-note,.workplace-empty,.evaluation-welcome,.teach-message,.student-navigation,.cards,.empty,
+  .student-reference-fold,.student-reference-subfold,.pfmp-panel,.devis-compare,.task-line,.selection-dropdown,
+  .ccf-student-picker,.activity-reuse-students,.activity-reuse-competencies,.group-member-list
+){
+  background:transparent!important;background-image:none!important;box-shadow:none!important;
+  border:0!important;border-bottom:1px solid var(--el-rule)!important;border-radius:0!important}
+html body:not(#el-a):not(#el-b):not(#el-c) :is(.teach-card,.student-pane,.panel,.pfmp-panel,.student-reference-fold,.referential-section) :is(summary){
+  background:transparent!important;box-shadow:none!important}
+
+/* Tuiles cliquables (entreprise, devis, TP, activité, contenu…) : contour fin, presque sans fond. */
+html body:not(#el-a):not(#el-b):not(#el-c) :is(.teach-card,.student-pane,.panel,.pfmp-panel,.cards,.student-reference-fold,.activity-class-group,.class-fold) :is(
+  .pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,
+  .stat,.pfmp-report,.teach-student,.teach-tp-student
+),
+html body:not(#el-a):not(#el-b):not(#el-c) .pfmp-metrics>div{
+  background:var(--el-tile)!important;background-image:none!important;box-shadow:none!important;
+  border:1px solid var(--el-tile-line)!important;border-radius:10px!important}
+
+/* Espace élève : la couche « sous tension » remplissait chaque bloc d'une rubrique (deux niveaux de bleu).
+   Ici, tout ce qui est posé dans une rubrique devient transparent ; seules les tuiles gardent un contour. */
+html body.portal-page:not(#st-a):not(#st-b):not(#el-s) #studentDashboard .student-pane :is(section,article,details,.portal-list>*,[class*="-card"],[class*="-item"],[class*="-block"]:not(.lesson-block),[class*="-group"],[class*="competenc"],[class*="result"],.pfmp-panel,.devis-sheet,.devis-compare):not(.student-pdf-preview-card):not(:where(.st-doc,.student-pdf-mount,.lesson-content) *){
+  background:transparent!important;background-image:none!important;box-shadow:none!important;
+  border:0!important;border-bottom:1px solid var(--el-rule)!important;border-radius:0!important}
+html body.portal-page:not(#st-a):not(#st-b):not(#el-s):not(#el-t) #studentDashboard .student-pane :is(.student-tp-card,.student-reference-card,.student-ccf-card,.pfmp-company,.devis-entry,.pfmp-report,.student-pdf-preview-card){
+  background:var(--el-tile)!important;background-image:none!important;
+  border:1px solid var(--el-tile-line)!important;border-radius:10px!important}
+html body.portal-page:not(#st-a):not(#st-b):not(#el-s) #studentDashboard .student-pane :is(details>summary){background:transparent!important;border:0!important}
+
+/* Capsules : la barre d'onglets élève et la barre « Actualiser » ne sont plus des boîtes. */
+html body.portal-page:not(#el-a):not(#el-b):not(#el-c) #studentDashboard :is(#studentContentTabs,.student-refresh-actions){
+  background:transparent!important;border:0!important;box-shadow:none!important}
+
+/* ───────── 2. Couleurs ───────── */
+/* Liseré « jeu de barres » en tête des panneaux principaux. */
+html body:not(#el-a):not(#el-b):not(#el-c) :is(.teach-card,.student-pane,.view>.panel):not(:is(.teach-card,.student-pane,.panel) *){position:relative}
+html body:not(#el-a):not(#el-b):not(#el-c) :is(.teach-card,.student-pane,.view>.panel):not(:is(.teach-card,.student-pane,.panel) *)::before{
+  content:"";position:absolute;top:-1px;left:22px;right:22px;height:2px;border-radius:2px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--el-cyan) 18%,var(--el-violet) 50%,var(--el-volt) 82%,transparent)}
+/* Titres de rubrique : dégradé cyan → orange. */
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  html body:not(#el-a):not(#el-b):not(#el-c) :is(.teach-head h1,.page-head h1,#studentDashboard .student-pane>h2){
+    background:linear-gradient(100deg,#ffffff 0%,#bfe6ff 35%,var(--el-cyan) 62%,var(--el-volt) 100%)!important;
+    -webkit-background-clip:text!important;background-clip:text!important;
+    color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important}
+}
+/* Sous-titres de rubrique : bleu clair, petit repère orange. */
+html body:not(#el-a):not(#el-b):not(#el-c) :is(.teach-card,.student-pane,.panel,.pfmp-panel) :is(h3,.pfmp-panel>h3,summary>strong){color:#bfe6ff!important;-webkit-text-fill-color:#bfe6ff!important}
+html body:not(#el-a):not(#el-b):not(#el-c) :is(.pfmp-panel,.student-pane section)>h3::before{content:"";display:inline-block;width:8px;height:8px;margin-right:9px;border-radius:2px;background:var(--el-volt);box-shadow:0 0 8px var(--el-volt);vertical-align:.08em}
+
+/* ───────── 3. Accueil enseignant : 9 rubriques en grille régulière ───────── */
+html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-auto-rows:1fr!important;gap:16px!important;
+  max-width:1180px;margin-inline:auto!important}
+@media(max-width:980px){html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:600px){html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access{grid-template-columns:minmax(0,1fr)!important;grid-auto-rows:auto!important}}
+/* Couleur propre à chaque rubrique (mêmes teintes que les capsules du menu). */
+html body #homeView .home-access-card{--c:79,179,255}
+html body #homeView .home-access-card[onclick*="'activities'"]{--c:217,149,49}
+html body #homeView .home-access-card[onclick*="'activity-list'"]{--c:107,169,223}
+html body #homeView .home-access-card[onclick*="'students'"]{--c:104,177,139}
+html body #homeView .home-access-card[onclick*="'results'"]{--c:163,136,212}
+html body #homeView .home-access-card[onclick*="'ccf'"]{--c:224,110,110}
+html body #homeView .home-access-card[onclick*="'referential'"]{--c:216,138,117}
+html body #homeView .home-access-card[onclick*="'teaching'"]{--c:96,170,240}
+html body #homeView .home-access-card[onclick*="'quotes'"]{--c:242,160,64}
+html body #homeView .home-access-card[onclick*="'pfmp'"]{--c:76,201,140}
+html body:not(#el-a):not(#el-b):not(#el-c) .content #homeView .home-access .home-access-card[onclick]{
+  min-height:118px!important;height:100%;
+  background:linear-gradient(140deg,rgba(var(--c),.30),rgba(var(--c),.08) 55%,rgba(8,24,46,.55))!important;
+  border:1px solid rgba(var(--c),.75)!important;border-radius:12px!important;box-shadow:none!important}
+html body:not(#el-a):not(#el-b):not(#el-c) .content #homeView .home-access .home-access-card[onclick] .home-access-icon{
+  background:rgba(var(--c),.22)!important;border:1px solid rgba(var(--c),.9)!important;color:#fff!important;
+  -webkit-text-fill-color:#fff!important;text-shadow:0 0 8px rgba(var(--c),1)}
+html body:not(#el-a):not(#el-b):not(#el-c) .content #homeView .home-access .home-access-card[onclick] .home-access-arrow{color:rgb(var(--c))!important}
+
+/* ───────── 4. Effet électrique au survol ───────── */
+/* Cartes concernées : tuiles cliquables et cartes de l'accueil. */
+html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div){
+  position:relative;--el-a:var(--el-cyan);--el-b:var(--el-volt)}
+html body #homeView .home-access-card[onclick]{--el-a:rgb(var(--c));--el-b:#fff}
+/* Arc : anneau de 2 px découpé dans un dégradé conique qui tourne. */
+html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div)::after{
+  content:"";position:absolute;inset:-1px;border-radius:inherit;padding:2px;pointer-events:none;z-index:2;
+  background:conic-gradient(from var(--el-arc),transparent 0 56%,var(--el-a) 68%,#fff 74%,var(--el-b) 80%,transparent 92%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  opacity:0;transition:opacity .2s ease}
+@media (hover:hover){
+  html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div):hover::after{
+    opacity:1;animation:el-arc 1.15s linear infinite,el-gresil 1.4s steps(1,end) infinite}
+  html body:not(#el-a):not(#el-b):not(#el-c) .content :is(#homeView .home-access .home-access-card[onclick],.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card):hover{
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--el-a) 60%,transparent),0 0 18px color-mix(in srgb,var(--el-a) 45%,transparent),0 0 40px color-mix(in srgb,var(--el-a) 18%,transparent)!important;
+    transform:translateY(-2px)}
+  html body.portal-page:not(#el-a):not(#el-b):not(#el-c) :is(.pfmp-company,.devis-entry,.student-tp-card,.student-reference-card,.student-ccf-card):hover{
+    box-shadow:0 0 0 1px rgba(79,179,255,.6),0 0 18px rgba(79,179,255,.45)!important}
+}
+@keyframes el-arc{to{--el-arc:360deg}}
+/* Grésillement : sautes d'intensité irrégulières, comme un arc qui crépite. */
+@keyframes el-gresil{0%{opacity:1}8%{opacity:.35}10%{opacity:1}37%{opacity:.7}39%{opacity:1}64%{opacity:.4}65%{opacity:1}67%{opacity:.6}69%{opacity:1}}
+
+/* Capsules : courant lumineux qui les traverse au survol. */
+html body:not(#el-a):not(#el-b):not(#el-c) :is(#teacherPrimaryNav .nav,.teach-tabs>button,#studentContentTabs>button,.portal-actions>button,.portal-button,.devis-primary,button.primary){
+  position:relative;overflow:hidden;isolation:isolate}
+html body:not(#el-a):not(#el-b):not(#el-c) :is(#teacherPrimaryNav .nav,.teach-tabs>button,#studentContentTabs>button,.portal-actions>button,.portal-button,.devis-primary,button.primary)::after{
+  content:"";position:absolute;top:0;bottom:0;left:0;width:45%;pointer-events:none;z-index:1;display:block;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.08) 30%,rgba(190,235,255,.7) 47%,#fff 50%,rgba(255,200,140,.65) 53%,transparent 75%);
+  mix-blend-mode:screen;transform:translateX(-130%) skewX(-18deg);opacity:0}
+@media (hover:hover){
+  html body:not(#el-a):not(#el-b):not(#el-c) :is(#teacherPrimaryNav .nav,.teach-tabs>button,#studentContentTabs>button,.portal-actions>button,.portal-button,.devis-primary,button.primary):not(:disabled):hover::after{
+    opacity:1;animation:el-courant .8s cubic-bezier(.45,.05,.35,1) infinite}
+}
+@keyframes el-courant{0%{transform:translateX(-130%) skewX(-18deg)}70%,100%{transform:translateX(260%) skewX(-18deg)}}
+
+/* Clavier : même repère lumineux que le survol, sans animation. */
+html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item):focus-visible::after{opacity:1}
+
+@media (prefers-reduced-motion:reduce){
+  html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div):hover::after{animation:none}
+  html body:not(#el-a):not(#el-b):not(#el-c) :is(#teacherPrimaryNav .nav,.teach-tabs>button,#studentContentTabs>button,.portal-actions>button,.portal-button,.devis-primary,button.primary):hover::after{animation:none;opacity:0}
+}
+@media print{
+  html body :is(.teach-card,.student-pane,.panel)::before,html body :is(.home-access-card,.activity-card,.stat,.pfmp-company,.devis-entry)::after{content:none!important}
+}
+
+/* ───────── 5. Compteurs (PFMP) : chiffre et libellé sur la même ligne ───────── */
+html body:not(#el-a):not(#el-b):not(#el-c) .pfmp-metrics{gap:10px!important;margin-bottom:10px!important}
+html body:not(#el-a):not(#el-b):not(#el-c) .pfmp-metrics>div{display:flex!important;align-items:baseline;gap:10px;padding:9px 14px!important}
+html body:not(#el-a):not(#el-b):not(#el-c) .pfmp-metrics b{font-size:1.35rem!important;line-height:1}
