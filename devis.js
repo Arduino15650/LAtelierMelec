@@ -187,13 +187,20 @@
       flush();
       pane.hidden = true; button.classList.remove('active');
     }
+    const tpRunning = () => tabs.dataset.tpActive === 'true';
     async function open() {
-      if (tabs.dataset.tpActive === 'true') return;
-      tp.hidden = true;
-      // Les autres onglets (référentiel, CCF) se ferment comme lorsque l'on ouvre les TP.
-      dashboard.querySelectorAll('.student-pane').forEach(other => { if (other !== pane) other.hidden = true; });
-      tabs.querySelectorAll('button').forEach(other => other.classList.toggle('active', other === button));
-      pane.hidden = false;
+      if (tpRunning()) {
+        // TP chronométré en cours : les devis s'ouvrent sous le TP, qui reste affiché.
+        button.classList.add('active');
+        pane.hidden = false;
+        pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        tp.hidden = true;
+        // Les autres onglets (référentiel, CCF) se ferment comme lorsque l'on ouvre les TP.
+        dashboard.querySelectorAll('.student-pane').forEach(other => { if (other !== pane) other.hidden = true; });
+        tabs.querySelectorAll('button').forEach(other => other.classList.toggle('active', other === button));
+        pane.hidden = false;
+      }
       await showList();
     }
     async function loadList() {
@@ -297,17 +304,14 @@
       return saving;
     }
     function flush() { return dirty ? save(false) : saving.catch(() => {}); }
-    button.addEventListener('click', () => { if (pane.hidden) open(); });
+    button.addEventListener('click', () => { if (pane.hidden) open(); else if (tpRunning()) close(); });
     // Un autre onglet ouvert, un TP en cours ou une déconnexion referment les devis.
     tabs.addEventListener('click', event => {
       const target = event.target.closest('button');
-      if (target && target !== button && !pane.hidden) close();
+      if (target && target !== button && !pane.hidden && !tpRunning()) close();
     }, true);
-    new MutationObserver(() => {
-      button.disabled = tabs.dataset.tpActive === 'true';
-      if (button.disabled && !pane.hidden) close();
-    }).observe(tabs, { attributes: true, attributeFilter: ['data-tp-active'] });
-    new MutationObserver(() => { if (!tp.hidden && !pane.hidden) close(); }).observe(tp, { attributes: true, attributeFilter: ['hidden'] });
+    // Les devis restent accessibles pendant un TP chronométré (l'élève peut devoir chiffrer du matériel).
+    new MutationObserver(() => { if (!tp.hidden && !pane.hidden && !tpRunning()) close(); }).observe(tp, { attributes: true, attributeFilter: ['hidden'] });
     new MutationObserver(() => {
       if (dashboard.hidden || tabs.hidden) { close(); content.replaceChildren(); quotes = []; current = null; }
     }).observe(dashboard, { attributes: true, attributeFilter: ['hidden'] });
