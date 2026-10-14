@@ -30,6 +30,9 @@
     children.flat(Infinity).forEach(child => { if (child !== null && child !== undefined && child !== false) node.append(child); });
     return node;
   }
+  // Remplace le contenu d'un bloc en ignorant les parties absentes (null, false) : sans ce filtre,
+  // le navigateur afficherait le mot « null » à leur place.
+  const fill = (node, ...children) => node.replaceChildren(...children.flat(Infinity).filter(child => child !== null && child !== undefined && child !== false));
   const field = (label, control, hint) => el('label', { class: 'pfmp-field' }, el('span', { text: label }), control, hint ? el('small', { text: hint }) : null);
   const option = (value, text, selected) => el('option', { value, text: text ?? value, selected: selected || null });
 
@@ -146,7 +149,7 @@
     const sort = el('select', { 'aria-label': 'Trier', onchange: event => { state.sort = event.target.value; draw(); } },
       option('raisonSociale', 'Raison sociale A → Z'), option('denomination', 'Nom commercial A → Z'), option('ville', 'Ville A → Z'), option('activite', 'Activité A → Z'));
     const mapToggle = el('button', { type: 'button', class: 'subtle', text: '🗺 Carte', onclick: () => { state.map = !state.map; mapToggle.textContent = state.map ? '☰ Liste' : '🗺 Carte'; draw(); } });
-    host.replaceChildren(
+    fill(host, 
       el('div', { class: 'pfmp-filters' }, el('div', { class: 'pfmp-search' }, search), sectorSelect, citySelect, availability, sort, mapToggle),
       count, mapHost, list);
     let map = null, cluster = null;
@@ -191,7 +194,7 @@
       if (!state.map && !searching()) {
         mapHost.hidden = true; list.hidden = false;
         count.textContent = companies().length.toLocaleString('fr-FR') + ' entreprises dans l’annuaire.';
-        list.replaceChildren(el('p', { class: 'pfmp-empty', text: 'Tapez un nom, une ville, un métier ou un SIRET, ou choisissez un secteur ou une ville pour afficher les entreprises.' }));
+        fill(list, el('p', { class: 'pfmp-empty', text: 'Tapez un nom, une ville, un métier ou un SIRET, ou choisissez un secteur ou une ville pour afficher les entreprises.' }));
         return;
       }
       const items = filtered();
@@ -201,7 +204,7 @@
       state.page = Math.min(state.page, pages);
       const shown = items.slice((state.page - 1) * PAGE, state.page * PAGE);
       count.textContent = items.length.toLocaleString('fr-FR') + ' entreprise(s)' + (items.length ? ' · page ' + state.page + ' / ' + pages : '');
-      list.replaceChildren(
+      fill(list, 
         items.length ? el('div', { class: 'pfmp-company-list' }, shown.map(c => {
           const d = c.data, taken = options.reservations.get(c.id);
           return el('button', { type: 'button', class: 'pfmp-company', onclick: () => options.onOpen(c) },
@@ -302,7 +305,7 @@
       loadedAt = Date.now();
     }
     function frame(content) {
-      root.replaceChildren(
+      fill(root, 
         el('div', { class: 'teach-head' }, el('div', {}, el('h1', { text: 'PFMP' }), el('p', { text: 'Annuaire des entreprises, démarches des élèves et suivi pédagogique.' }))),
         el('div', { class: 'teach-tabs pfmp-tabs', role: 'tablist' }, [['companies', 'Entreprises'], ['students', 'Suivi des élèves'], ['reports', 'Comptes rendus'], ['import', 'Ajouter / exporter']].map(([key, label]) =>
           el('button', { type: 'button', class: tab === key ? 'active' : '', 'data-pfmp-tab': key, text: label, onclick: () => { tab = key; render(); } })),
@@ -335,7 +338,7 @@
       const taken = reservations.get(c.id);
       const companyReports = reports.filter(r => r.company_id === c.id);
       const body = el('div');
-      const showReports = () => body.replaceChildren(
+      const showReports = () => fill(body, 
         companyReports.length ? el('div', { class: 'pfmp-reports' }, companyReports.map(r => reportLine(r, studentName(r.student_id), () => editReport(r)))) : el('p', { class: 'pfmp-muted', text: 'Aucune démarche pour cette entreprise.' }),
         el('div', { class: 'pfmp-actions' },
           el('button', { type: 'button', class: 'subtle', text: '＋ Démarche pour un élève', onclick: () => editReport({ company_id: c.id }) }),
@@ -345,7 +348,7 @@
       function editReport(r) {
         const picker = r.id ? null : field('Élève *', el('select', { required: true, id: 'pfmpStudentPick' }, option('', 'Choisir un élève…'),
           students.filter(s => !s.blocked_at).map(s => option(s.user_id, s.last_name + ' ' + s.first_name + (className(s.class_id) ? ' · ' + className(s.class_id) : '')))));
-        body.replaceChildren(reportForm(r, async values => {
+        fill(body, reportForm(r, async values => {
           const student = r.student_id || picker.querySelector('select').value;
           if (!student) throw new Error('Choisissez l’élève.');
           await saveReport({ ...r, student_id: student }, values);
@@ -362,9 +365,9 @@
         try { await api.rest('rpc/pfmp_delete_companies', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p_ids: [c.id] }) }); say('Entreprise supprimée.'); await load(true); render(); }
         catch (error) { say(error.message, true); }
       }
-      host.replaceChildren(el('section', { class: 'teach-card pfmp-company-detail' },
+      fill(host, el('section', { class: 'teach-card pfmp-company-detail' },
         el('div', { class: 'pfmp-actions pfmp-title' }, el('h2', { text: companyName(c) }), taken ? el('span', { class: 'pfmp-chip pfmp-taken', text: 'PFMP attribuée · ' + studentName(taken) }) : el('span', { class: 'pfmp-chip pfmp-free', text: 'Disponible' }),
-          el('button', { type: 'button', class: 'subtle', text: 'Fermer', onclick: () => host.replaceChildren() })),
+          el('button', { type: 'button', class: 'subtle', text: 'Fermer', onclick: () => fill(host) })),
         companyDetails(c), el('h3', { text: 'Démarches' }), body));
       showReports();
       host.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -441,8 +444,8 @@
     }
     function showStudent(s, host) {
       const mine = reports.filter(r => r.student_id === s.user_id);
-      host.replaceChildren(el('section', { class: 'teach-card' },
-        el('div', { class: 'pfmp-actions pfmp-title' }, el('h2', { text: 'Démarches de ' + s.last_name + ' ' + s.first_name }), el('button', { type: 'button', class: 'subtle', text: 'Fermer', onclick: () => host.replaceChildren() })),
+      fill(host, el('section', { class: 'teach-card' },
+        el('div', { class: 'pfmp-actions pfmp-title' }, el('h2', { text: 'Démarches de ' + s.last_name + ' ' + s.first_name }), el('button', { type: 'button', class: 'subtle', text: 'Fermer', onclick: () => fill(host) })),
         mine.length ? el('div', { class: 'pfmp-reports' }, mine.map(r => reportLine(r, companyName(cache.companies.find(c => c.id === r.company_id))))) : el('p', { class: 'pfmp-muted', text: 'Aucune démarche enregistrée.' })));
       host.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -452,8 +455,8 @@
       const appreciation = el('textarea', { rows: 3, maxlength: 3000 }); appreciation.value = f.appreciation || '';
       const note = el('textarea', { rows: 3, maxlength: 5000 }); note.value = f.teacher_note || '';
       const message = el('p', { class: 'pfmp-message', role: 'status' });
-      host.replaceChildren(el('section', { class: 'teach-card' },
-        el('div', { class: 'pfmp-actions pfmp-title' }, el('h2', { text: 'Suivi pédagogique · ' + s.last_name + ' ' + s.first_name }), el('button', { type: 'button', class: 'subtle', text: 'Fermer', onclick: () => host.replaceChildren() })),
+      fill(host, el('section', { class: 'teach-card' },
+        el('div', { class: 'pfmp-actions pfmp-title' }, el('h2', { text: 'Suivi pédagogique · ' + s.last_name + ' ' + s.first_name }), el('button', { type: 'button', class: 'subtle', text: 'Fermer', onclick: () => fill(host) })),
         el('form', { class: 'pfmp-form', onsubmit: async event => {
           event.preventDefault();
           try {
@@ -546,7 +549,7 @@
         el('section', { class: 'teach-card' }, el('h2', { text: 'Ajouter des entreprises' }),
           el('p', { class: 'teach-help', text: 'Fichier CSV ou Excel avec une colonne « Raison sociale » (et si possible : adresse, code postal, ville, téléphone, e-mail, SIRET, activité, métiers, latitude, longitude). Les doublons (même SIRET, ou même nom et adresse) et les entreprises supprimées sont ignorés.' }),
           file, importButton, progress,
-          el('button', { type: 'button', class: 'subtle', text: '＋ Ajouter une entreprise à la main', onclick: () => formHost.replaceChildren(companyForm(null, text => { formHost.replaceChildren(); if (text) say(text); })) }), formHost),
+          el('button', { type: 'button', class: 'subtle', text: '＋ Ajouter une entreprise à la main', onclick: () => fill(formHost, companyForm(null, text => { fill(formHost); if (text) say(text); })) }), formHost),
         el('section', { class: 'teach-card' }, el('h2', { text: 'Carte' }),
           el('p', { class: 'teach-help', text: 'Les entreprises sont placées automatiquement à partir de leur adresse (Géoplateforme IGN). Une adresse non reconnue n’est jamais placée au hasard.' }),
           el('div', { class: 'pfmp-actions' }, geoButton, stopButton), geoStatus),
@@ -614,7 +617,7 @@
     }
     async function show() {
       const current = ++ticket;
-      content.replaceChildren(el('p', { class: 'portal-small', text: 'Chargement de l’annuaire des entreprises…' }));
+      fill(content, el('p', { class: 'portal-small', text: 'Chargement de l’annuaire des entreprises…' }));
       try {
         me = await api.userId();
         const [rep, res, fol] = await Promise.all([
@@ -623,7 +626,7 @@
           api.rest('rpc/pfmp_my_followup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
           loadCompanies(false)]);
         reports = rep; reservation = res[0] || null; followup = fol || {};
-      } catch (error) { if (current === ticket) content.replaceChildren(el('p', { class: 'portal-message', text: 'PFMP indisponible : ' + error.message })); return; }
+      } catch (error) { if (current === ticket) fill(content, el('p', { class: 'portal-message', text: 'PFMP indisponible : ' + error.message })); return; }
       if (current !== ticket || pane.hidden) return;
       render();
     }
@@ -633,7 +636,7 @@
       const accepted = reservation ? reports.find(r => r.id === reservation.report_id) : null;
       const detail = el('div', { class: 'pfmp-detail-host' });
       const host = el('div');
-      content.replaceChildren(
+      fill(content, 
         followup.appreciation || followup.visit_date ? el('section', { class: 'pfmp-panel pfmp-followup' }, el('h3', { text: 'Suivi de votre enseignant' }),
           followup.visit_date ? el('p', { text: 'Visite en entreprise : ' + dateFr(followup.visit_date) }) : null,
           followup.appreciation ? el('p', { class: 'pfmp-notes', text: followup.appreciation }) : null) : null,
@@ -653,15 +656,15 @@
     function openCompany(c, host, editing) {
       const mine = reports.filter(r => r.company_id === c.id);
       const body = el('div');
-      const list = () => body.replaceChildren(
+      const list = () => fill(body, 
         mine.length ? el('div', { class: 'pfmp-reports' }, mine.map(r => reportLine(r, 'Ma démarche', () => form(r)))) : el('p', { class: 'portal-small', text: 'Vous n’avez pas encore contacté cette entreprise.' }),
         el('button', { type: 'button', class: 'portal-button', text: '＋ Noter une démarche', onclick: () => form({ company_id: c.id }) }));
-      const form = r => body.replaceChildren(reportForm(r, async values => {
+      const form = r => fill(body, reportForm(r, async values => {
         await saveReport({ ...r, company_id: c.id }, values);
         await show();
       }, list));
-      host.replaceChildren(el('section', { class: 'pfmp-panel pfmp-company-detail' },
-        el('div', { class: 'pfmp-actions pfmp-title' }, el('h3', { text: companyName(c) }), el('button', { type: 'button', text: 'Fermer', onclick: () => host.replaceChildren() })),
+      fill(host, el('section', { class: 'pfmp-panel pfmp-company-detail' },
+        el('div', { class: 'pfmp-actions pfmp-title' }, el('h3', { text: companyName(c) }), el('button', { type: 'button', text: 'Fermer', onclick: () => fill(host) })),
         companyDetails(c), el('h3', { text: 'Mes démarches avec cette entreprise' }), body));
       if (editing) form(editing); else list();
       host.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -671,7 +674,7 @@
     // Pendant un TP chronométré, l'onglet est indisponible (comme le référentiel).
     new MutationObserver(() => { button.disabled = tpRunning(); if (button.disabled && !pane.hidden) close(); }).observe(tabs, { attributes: true, attributeFilter: ['data-tp-active'] });
     new MutationObserver(() => { if (!tp.hidden && !pane.hidden) close(); }).observe(tp, { attributes: true, attributeFilter: ['hidden'] });
-    new MutationObserver(() => { if (dashboard.hidden || tabs.hidden) { close(); content.replaceChildren(); cache.revision = null; cache.companies = []; } }).observe(dashboard, { attributes: true, attributeFilter: ['hidden'] });
+    new MutationObserver(() => { if (dashboard.hidden || tabs.hidden) { close(); fill(content); cache.revision = null; cache.companies = []; } }).observe(dashboard, { attributes: true, attributeFilter: ['hidden'] });
     document.getElementById('studentRefresh')?.addEventListener('click', () => { if (!pane.hidden) close(); }, true);
   }
 
