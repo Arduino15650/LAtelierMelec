@@ -59,6 +59,9 @@
     children.flat().forEach(child => { if (child !== null && child !== undefined && child !== false) node.append(child); });
     return node;
   }
+  // Remplace le contenu d'un bloc en ignorant les parties absentes (null, false) : sans ce filtre,
+  // le navigateur afficherait le mot « null » à leur place.
+  const fill = (node, ...children) => node.replaceChildren(...children.flat(Infinity).filter(child => child !== null && child !== undefined && child !== false));
   function nextNumber(numbers) {
     const year = new Date().getFullYear();
     const used = numbers.map(number => Number((String(number).match(/-(\d+)$/) || [])[1]) || 0);
@@ -121,7 +124,7 @@
     const hint = readOnly ? null : el('p', { class: 'devis-hint', text: 'Prix : virgule ou point (12,50). Câble : quantité en mètres, unité « m ». Les totaux se calculent automatiquement (TVA 20 %).' });
 
     function drawLines() {
-      body.replaceChildren(...quote.lines.map((entry, index) => {
+      fill(body, ...quote.lines.map((entry, index) => {
         const input = (key, attrs) => el('input', { value: entry[key], disabled: readOnly, 'data-k': key, ...attrs,
           oninput: event => { entry[key] = event.target.value; changed(); } });
         return el('tr', {},
@@ -156,7 +159,7 @@
       quote.total_ht = result.ht; quote.total_ttc = result.ttc;
       return result;
     }
-    container.replaceChildren(el('div', { class: 'devis-sheet' }, head, table, el('div', { class: 'devis-under' }, addLine, hint), totals));
+    fill(container, el('div', { class: 'devis-sheet' }, head, table, el('div', { class: 'devis-under' }, addLine, hint), totals));
     drawLines();
     return { refresh };
   }
@@ -218,7 +221,7 @@
         el('span', { class: 'devis-entry-title', text: quote.project || 'Devis sans objet' }),
         el('span', { class: 'devis-entry-meta', text: (quote.supplier || 'Fournisseur à préciser') + ' · ' + quote.number }),
         el('span', { class: 'devis-entry-meta' }, el('b', { text: euro.format(Number(quote.total_ttc) || 0) + ' TTC' }), quote.locked_at ? el('span', { class: 'devis-chip devis-locked', text: '🔒 Verrouillé par l’enseignant' }) : null))));
-      content.replaceChildren(
+      fill(content, 
         el('div', { class: 'devis-toolbar' }, el('button', { type: 'button', class: 'portal-button devis-primary', text: '＋ Nouveau devis', onclick: () => showQuote(null) })),
         list, ...[comparison()].filter(Boolean));
     }
@@ -266,7 +269,7 @@
         if (current) { dirty = true; save(true); }
         message.textContent = 'Copie créée : mêmes articles et quantités. Complétez les références et les prix du nouveau fournisseur.';
       } });
-      content.replaceChildren(
+      fill(content, 
         el('div', { class: 'devis-toolbar' },
           el('button', { type: 'button', text: '← Mes devis', onclick: () => { flush().then(showList); } }),
           el('span', { class: 'devis-number', text: 'Devis ' + quote.number }), statusLine),
@@ -313,7 +316,7 @@
     // Les devis restent accessibles pendant un TP chronométré (l'élève peut devoir chiffrer du matériel).
     new MutationObserver(() => { if (!tp.hidden && !pane.hidden && !tpRunning()) close(); }).observe(tp, { attributes: true, attributeFilter: ['hidden'] });
     new MutationObserver(() => {
-      if (dashboard.hidden || tabs.hidden) { close(); content.replaceChildren(); quotes = []; current = null; }
+      if (dashboard.hidden || tabs.hidden) { close(); fill(content); quotes = []; current = null; }
     }).observe(dashboard, { attributes: true, attributeFilter: ['hidden'] });
     document.getElementById('studentRefresh')?.addEventListener('click', () => { if (!pane.hidden) close(); }, true);
     window.addEventListener('pagehide', () => { if (dirty) save(false); });
@@ -327,7 +330,7 @@
     const status = context.status || (() => {});
     const ticket = host.dataset.devisTicket = String(Number(host.dataset.devisTicket || 0) + 1);
     const live = () => host.isConnected && host.dataset.devisTicket === ticket;
-    host.replaceChildren(el('div', { class: 'teach-card' }, el('p', { text: 'Chargement des devis…' })));
+    fill(host, el('div', { class: 'teach-card' }, el('p', { text: 'Chargement des devis…' })));
     let students, quotes;
     try {
       const classFilter = context.classId ? '&class_id=eq.' + encodeURIComponent(context.classId) : '';
@@ -335,7 +338,7 @@
       const ids = students.map(student => student.user_id);
       quotes = !ids.length ? [] : await api.rest('student_quotes?select=' + LIST_FIELDS + '&student_id=in.(' + ids.map(encodeURIComponent).join(',') + ')&order=updated_at.desc');
     } catch (error) {
-      if (live()) host.replaceChildren(el('div', { class: 'teach-card' }, el('p', { text: 'Devis indisponibles : ' + error.message })));
+      if (live()) fill(host, el('div', { class: 'teach-card' }, el('p', { text: 'Devis indisponibles : ' + error.message })));
       return;
     }
     if (!live()) return;
@@ -375,20 +378,20 @@
           el('td', {}, el('div', { class: 'devis-actions' }, openButton, lock, remove)));
       }) : el('tr', {}, el('td', { colspan: 8, text: context.classId ? 'Aucun devis dans cette classe pour l’instant.' : 'Aucun devis pour l’instant.' })))));
     async function openQuote(summary, student) {
-      viewer.replaceChildren(el('p', { text: 'Ouverture…' }));
+      fill(viewer, el('p', { text: 'Ouverture…' }));
       try {
         const quote = (await api.rest('student_quotes?id=eq.' + encodeURIComponent(summary.id) + '&select=*'))[0];
-        if (!quote) { viewer.replaceChildren(el('p', { text: 'Ce devis n’existe plus.' })); return; }
+        if (!quote) { fill(viewer, el('p', { text: 'Ce devis n’existe plus.' })); return; }
         const editorHost = el('div');
-        viewer.replaceChildren(el('div', { class: 'teach-card devis-teacher-card' },
+        fill(viewer, el('div', { class: 'teach-card devis-teacher-card' },
           el('div', { class: 'devis-toolbar' }, el('h3', { text: 'Devis ' + quote.number + ' · ' + name(student) }),
-            el('button', { type: 'button', class: 'subtle', text: 'Fermer', onclick: () => viewer.replaceChildren() })),
+            el('button', { type: 'button', class: 'subtle', text: 'Fermer', onclick: () => fill(viewer) })),
           editorHost));
         renderEditor(editorHost, quote, { readOnly: true, studentLabel: name(student) });
         viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } catch (error) { viewer.replaceChildren(el('p', { text: 'Devis indisponible : ' + error.message })); }
+      } catch (error) { fill(viewer, el('p', { text: 'Devis indisponible : ' + error.message })); }
     }
-    host.replaceChildren(el('div', { class: 'teach-card devis-teacher' },
+    fill(host, el('div', { class: 'teach-card devis-teacher' },
       el('div', { class: 'devis-toolbar' }, el('h2', { text: 'Devis des élèves' }), refresh),
       el('p', { class: 'teach-help', text: (context.classId ? 'Classe ' + className(context.classId) + ' · ' : 'Toutes les classes · ') + quotes.length + ' devis. Chaque enregistrement d’un élève apparaît ici. « Verrouiller » empêche l’élève de modifier son devis ; « Supprimer » l’efface définitivement de la base.' }),
       table), viewer);
