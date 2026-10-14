@@ -716,11 +716,12 @@ canvas.melec-circuit{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;p
 @media print{canvas.melec-circuit{display:none!important}}
 /* Le contenu passe au-dessus du réseau animé : les traits restent derrière les panneaux */
 body > main.shell,body > .portal-shell{position:relative;z-index:1}
-/* Courant qui parcourt le bas de la barre haute : animé par transform (calculé par la carte graphique, sans repeindre la page) */
+/* Courant qui parcourt le bas de la barre haute : deux passages à l'ouverture de la page, puis il s'arrête.
+   En boucle permanente, il occupait plus de la moitié d'un cœur de processeur sur les postes sans accélération graphique. */
 html body .topbar{position:relative;overflow-x:clip}
 html body .topbar::after{content:"";position:absolute;left:0;bottom:-1px;width:22%;height:2px;pointer-events:none;will-change:transform;
   background:linear-gradient(90deg,transparent,rgba(120,200,255,.9) 40%,#ff8a1e 50%,rgba(120,200,255,.9) 60%,transparent);
-  transform:translateX(-100%);animation:melec-courant 4.5s linear infinite}
+  transform:translateX(-100%);animation:melec-courant 4.5s linear 2 forwards}
 @keyframes melec-courant{from{transform:translateX(-100%)}to{transform:translateX(460%)}}
 @media (prefers-reduced-motion:reduce){html body .topbar::after{animation:none;opacity:0}}
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v155-captcha';
+const CACHE_NAME = 'bac-pro-melec-v156-fluide';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
 const CORE_FILES = ['./logo-melec-192.webp'];
 
@@ -27,6 +27,12 @@ self.addEventListener('fetch', event => {
     return response;
   });
   const cached = () => caches.match(event.request, {ignoreSearch: true});
+  // Fichiers assemblés (nom contenant leur empreinte, ex. enseignant-2.67defb0a29.js) : leur contenu
+  // ne change jamais, ils sont lus directement dans le cache sans attendre le réseau.
+  if (/-\d+\.[0-9a-f]{10}\.(?:js|css)$/.test(new URL(event.request.url).pathname)) {
+    event.respondWith(cached().then(hit => hit || refresh()));
+    return;
+  }
   const current = event.request.mode === 'navigate'
     || event.request.destination === 'script' || event.request.destination === 'style';
   event.respondWith(current
