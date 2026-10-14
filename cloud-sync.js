@@ -22,6 +22,8 @@
   let conflicted = false;
   let timer = null;
   let serial = 0;
+  // Collègue de l'équipe magasin sans compte enseignant : la page n'ouvre que le magasin.
+  let teamMode = false;
   const originalSave = save;
 
   function status(message, error) {
@@ -108,6 +110,21 @@
       throw new Error('Accès réservé à l’enseignant. Utilisez l’espace élève si vous êtes inscrit comme élève.');
     }
   }
+  // Équipe magasin : le rôle est vérifié par la base (adresse autorisée + Authenticator).
+  async function enterTeamMode() {
+    try { await api('rpc/store_version', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); }
+    catch { return false; }
+    teamMode = true;
+    document.body.classList.add('team-mode');
+    const allowed = new Set(['magasin', 'admin']);
+    const baseShow = window.show;
+    window.show = name => baseShow(allowed.has(name) ? name : 'magasin');
+    window.resetToHome = () => window.show('magasin');
+    unlock();
+    status('Équipe magasin');
+    window.show('magasin');
+    return true;
+  }
   function showImport() {
     document.documentElement.classList.remove('cloud-resuming');
     byId('cloudLoginPane').hidden = true;
@@ -121,13 +138,18 @@
     await identify();
     // Double authentification : si un Authenticator est activé, le code est exigé avant tout accès aux données.
     if (window.MelecMfa) {
-      // Authenticator obligatoire pour l'enseignant : activation guidée s'il n'en a pas encore.
-      await window.MelecMfa.requireSecondFactor(gateMessage, () => ensureTeacher().then(() => true, () => false));
+      // Authenticator obligatoire pour l'enseignant et l'équipe magasin : activation guidée s'il n'en a pas encore.
+      await window.MelecMfa.requireSecondFactor(gateMessage, () => ensureTeacher().then(() => true,
+        () => api('rpc/store_member_check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(Boolean, () => false)));
       session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
       gateMessage('Connexion et vérification des données…');
     }
     // Lire d'abord la petite révision ; la sauvegarde complète n'est nécessaire que si elle a changé.
-    const [, remote] = await Promise.all([ensureTeacher(), cloudRevision()]);
+    const [teacher, remote] = await Promise.all([ensureTeacher().then(() => null, error => error), cloudRevision()]);
+    if (teacher) {
+      if (await enterTeamMode()) return;
+      throw new Error('Accès réservé à l’enseignant et à l’équipe du magasin. Utilisez l’espace élève si vous êtes inscrit comme élève.');
+    }
     if (!remote) {
       showImport();
       return;
@@ -186,7 +208,7 @@
     timer = setTimeout(upload, 700);
   }
   async function upload() {
-    if (!ready || sending || conflicted) return;
+    if (!ready || sending || conflicted || teamMode) return;
     const pending = readPending();
     if (!pending) return;
     if (pending.revision !== revision) {
@@ -228,7 +250,7 @@
     }
   }
   async function refreshFromCloud() {
-    if (!ready || sending || conflicted || refreshing) return;
+    if (!ready || sending || conflicted || refreshing || teamMode) return;
     if (!document.querySelector('#editorView.hidden')) {
       status('Terminez ou annulez l’activité en cours avant d’actualiser.', true);
       return;
@@ -251,6 +273,7 @@
   }
   save = function () {
     try { if (userId) localStorage.removeItem(REVISION_PREFIX + userId); } catch { /* ne pas bloquer la sauvegarde */ }
+    if (teamMode) return;
     if (!ready || !userId) { originalSave(); return; }
     // Une seule sérialisation de l'état : même contenu que originalSave() puis
     // JSON.stringify({ data: state, revision }), deux fois moins de calcul à chaque clic.
@@ -288,6 +311,26 @@
       gateMessage(/captcha/i.test(error.code || error.message) ? 'Le contrôle anti-robot a expiré. Validez-le à nouveau.' : error.message, 'error');
     }
     finally { button.disabled = false; window.MelecCaptcha?.reset(form); }
+  });
+  // Inscription d'un collègue de l'équipe magasin (adresse autorisée par l'administrateur).
+  const teamSignup = byId('teamSignup'), teamForm = byId('teamSignupForm');
+  teamSignup?.addEventListener('toggle', () => { if (teamSignup.open && window.MelecCaptcha) window.MelecCaptcha.mount(teamForm); });
+  teamForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = teamForm.querySelector('button[type=submit]');
+    if (byId('teamPassword').value !== byId('teamPassword2').value) return gateMessage('Les deux mots de passe sont différents.', 'error');
+    button.disabled = true;
+    gateMessage('Création du compte…');
+    try {
+      const captchaToken = window.MelecCaptcha ? await window.MelecCaptcha.waitToken(teamForm, () => gateMessage('Vérification anti-robot en cours… Cochez la case si elle apparaît.')) : '';
+      await window.MelecPortal.signUp({ accountType: 'team', email: byId('teamEmail').value.trim(), password: byId('teamPassword').value,
+        lastName: byId('teamLastName').value.trim(), firstName: byId('teamFirstName').value.trim(), captchaToken });
+      teamForm.reset();
+      teamSignup.open = false;
+      gateMessage('Compte créé. Confirmez votre adresse depuis l’e-mail reçu, puis connectez-vous ci-dessus : l’Authenticator vous sera demandé.', 'success');
+    } catch (error) {
+      gateMessage(/captcha/i.test(error.code || error.message) ? 'Le contrôle anti-robot a expiré. Validez-le à nouveau.' : error.message, 'error');
+    } finally { button.disabled = false; window.MelecCaptcha?.reset(teamForm); }
   });
   byId('cloudImportFile').addEventListener('click', async () => {
     const file = byId('cloudBackupFile').files[0];
