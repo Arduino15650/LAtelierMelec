@@ -24,6 +24,10 @@
     catch { return ''; }
   }
   window.show = show = function (name) {
+    // « Devis élèves » (barre du haut et accueil) : espace TP ouvert directement sur l'onglet des devis.
+    const navName = name;
+    if (name === 'quotes') { name = 'teaching'; if (tab !== 'quotes') { tab = 'quotes'; selectedItemId = ''; editing = null; root.querySelector('#teachClass') && render(); } }
+    else if (name === 'teaching' && tab === 'quotes') { tab = 'tp'; root.querySelector('#teachClass') && render(); }
     if (name !== 'teaching') {
       // Libérer le lecteur PDF (canvas, observateurs et URL) dès que l'on quitte cette vue.
       previewEpoch++;
@@ -37,7 +41,7 @@
     document.body.classList.remove('home-active'); document.body.classList.add('subpage-active');
     document.querySelectorAll('.view').forEach(node => node.classList.add('hidden'));
     root.classList.remove('hidden');
-    document.querySelectorAll('.nav').forEach(node => node.classList.toggle('active', node.dataset.view === name));
+    document.querySelectorAll('.nav').forEach(node => node.classList.toggle('active', node.dataset.view === navName));
     window.scrollTo(0, 0);
     const key = sessionKey();
     if (key && loadedSession === key) {
@@ -141,6 +145,7 @@
     render();
   }
   function render() {
+    if (!root.classList.contains('hidden')) document.querySelectorAll('.nav[data-view="teaching"], .nav[data-view="quotes"]').forEach(node => node.classList.toggle('active', node.dataset.view === (tab === 'quotes' ? 'quotes' : 'teaching')));
     root.innerHTML = `<div class="teach-head"><div><h1>TP en atelier</h1><p>Créer et publier des travaux pratiques par classe.</p></div></div>
       <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><button type="button" id="teachSyncClasses" class="subtle">Ajouter les classes de l’application</button></div></div>
       <div class="teach-tabs" role="tablist">${[['tp','Travaux pratiques'],['quotes','Devis élèves'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>

@@ -52,3 +52,8 @@ html body .devis-pane button.devis-primary,html body .devis-pane .devis-primary{
 .devis-teacher-table th:nth-child(1){width:auto}
 .devis-teacher-table td:nth-child(4),.devis-teacher-table td:nth-child(5){white-space:nowrap}
 .devis-teacher-table .devis-actions{flex-wrap:nowrap}
+/* Bouton « Devis élèves » de la barre du haut, dans la palette des autres rubriques. */
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"],html body.subpage-active:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"]:not(.active),.header-nav .nav[data-view="quotes"]{background:#fff0dc!important;color:#8a4a06!important;border-color:#f2bd70!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"] span{color:#8a4a06!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"].active,html body.subpage-active:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"].active{background:#c46a0c!important;color:#fff!important;border-color:rgba(255,255,255,.85)!important;box-shadow:0 0 0 1px #c46a0c,0 0 16px #c46a0c99!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"].active span{color:#fff!important}
