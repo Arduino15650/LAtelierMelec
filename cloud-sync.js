@@ -112,7 +112,7 @@
   }
   // Équipe magasin : le rôle est vérifié par la base (adresse autorisée + Authenticator).
   async function enterTeamMode() {
-    try { await api('rpc/store_inventory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); }
+    try { await api('rpc/store_version', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); }
     catch { return false; }
     teamMode = true;
     document.body.classList.add('team-mode');

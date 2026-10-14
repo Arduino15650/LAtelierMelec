@@ -526,7 +526,11 @@
         status);
     }
     document.addEventListener('visibilitychange', () => { if (visible()) { load().then(render, () => {}); schedule(); } });
-    return { open, stop: () => clearTimeout(timer), probe: load };
+    // Rôle administrateur : la liste des accès ne répond qu'à un administrateur (réponse légère,
+    // sans télécharger tout l'inventaire à la connexion).
+    const probe = () => rpc('store_admin_members').then(() => true, error => { if (/administrateur/i.test(error.message)) return false; throw error; })
+      .then(admin => document.dispatchEvent(new CustomEvent('melec-store-role', { detail: { admin } })));
+    return { open, stop: () => clearTimeout(timer), probe };
   }
 
   // ───────────────────────────── Administration ─────────────────────────────

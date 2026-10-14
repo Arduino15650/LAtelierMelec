@@ -4,7 +4,8 @@
    - les conducteurs fixes sont dessinés une seule fois sur un calque qui ne change plus ;
    - seules les impulsions sont redessinées, à 14 images par seconde, en n'effaçant que les petites
      zones qu'elles occupaient ;
-   - pause quand l'onglet est caché, pendant le défilement et pendant la saisie ;
+   - pause quand l'onglet est caché, pendant le défilement et pendant la saisie, et arrêt complet
+     après 45 s sans activité (reprise au premier mouvement de souris ou toucher) ;
    - si l'ordinateur peine (images très en retard), le réseau reste affiché sans mouvement ;
      aucune animation si l'utilisateur a demandé moins de mouvement ou sur 2 cœurs ou moins. */
 (function () {
@@ -146,10 +147,19 @@
     advance(dt); paint();
     next();
   }
-  function start() { if (!raf && !timer && !reduce && !document.hidden) { last = 0; raf = requestAnimationFrame(loop); } }
+  function start() { if (!raf && !timer && !reduce && !idle && !document.hidden) { last = 0; raf = requestAnimationFrame(loop); } }
   function stop() { if (raf) cancelAnimationFrame(raf); if (timer) clearTimeout(timer); raf = 0; timer = 0; }
   // Pendant le défilement ou la saisie, le processeur va d'abord au travail de l'utilisateur.
-  function pause() { pausedUntil = performance.now() + 900; }
+  function pause() { pausedUntil = performance.now() + 900; awake(); }
+  // Personne devant l'écran depuis 45 s (lecture d'un document, page laissée ouverte en classe) :
+  // le réseau et le courant de la barre haute s'arrêtent ; ils repartent au premier mouvement.
+  var IDLE_MS = 45000, idleTimer = 0, idle = false;
+  function awake() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(sleep, IDLE_MS);
+    if (idle) { idle = false; document.documentElement.classList.remove('melec-idle'); start(); }
+  }
+  function sleep() { idle = true; document.documentElement.classList.add('melec-idle'); stop(); }
 
   function init() {
     document.body.insertBefore(layer, document.body.firstChild);
@@ -166,7 +176,9 @@
     window.addEventListener('scroll', pause, { passive: true, capture: true });
     document.addEventListener('keydown', pause, true);
     document.addEventListener('input', pause, true);
-    document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); else start(); });
+    ['pointermove', 'pointerdown', 'touchstart', 'wheel'].forEach(function (type) { window.addEventListener(type, awake, { passive: true, capture: true }); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) stop(); else { awake(); if (!idle) start(); } });
+    awake();
   }
   if (document.body) init(); else document.addEventListener('DOMContentLoaded', init);
 })();

@@ -723,6 +723,8 @@ html body .topbar::after{content:"";position:absolute;left:0;bottom:-1px;width:2
   transform:translateX(-100%);animation:melec-courant 4.5s steps(54) infinite}
 @keyframes melec-courant{from{transform:translateX(-100%)}to{transform:translateX(460%)}}
 @media (prefers-reduced-motion:reduce){html body .topbar::after{animation:none;opacity:0}}
+/* Aucune activité depuis 45 s (melec-circuit.js) : le courant de la barre haute s'arrête aussi. */
+html.melec-idle body .topbar::after{animation-play-state:paused}
 
 
 /* Demande en double : signalée en ambre */
