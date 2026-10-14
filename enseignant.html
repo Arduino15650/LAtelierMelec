@@ -138,7 +138,7 @@
   <link rel="stylesheet" href="melec-sous-tension.css?v=20261014-electrique">
   <link rel="stylesheet" href="devis.css?v=20261014-2">
   <link rel="stylesheet" href="pfmp.css?v=20261014-1">
-  <link rel="stylesheet" href="magasin.css?v=20261014-1">
+  <link rel="stylesheet" href="magasin.css?v=20261014-equipe">
   <link rel="stylesheet" href="melec-electrique.css?v=20261014-2">
   <script src="melec-circuit.js?v=20261014-electrique" defer></script>
 </head>
@@ -149,13 +149,26 @@
       <div class="cloud-brand"><img src="logo-melec-192.webp" alt=""><strong>BAC PRO MELEC</strong></div>
       <section id="cloudLoginPane">
         <h1>Espace enseignant</h1>
-        <p>Connectez-vous avec votre compte enseignant Supabase.</p>
+        <p>Enseignants et équipe du magasin : connectez-vous avec votre compte.</p>
         <form id="cloudLoginForm">
           <label for="cloudEmail">Adresse e-mail</label><input id="cloudEmail" type="email" autocomplete="username" required>
           <label for="cloudPassword">Mot de passe</label><input id="cloudPassword" type="password" autocomplete="current-password" required>
           <div class="melec-captcha" data-captcha="enseignant_connexion" style="min-height:65px;margin:12px 0"></div>
           <div class="cloud-actions"><button type="submit">Se connecter</button></div>
         </form>
+        <details id="teamSignup" class="team-signup">
+          <summary>Collègue de l’équipe magasin sans compte ? Créer mon compte</summary>
+          <p class="team-signup-help">Réservé aux adresses autorisées par l’administrateur dans « Accès au magasin ». Après l’inscription, confirmez votre adresse depuis l’e-mail reçu, puis revenez ici : l’application Authenticator vous sera demandée à la première connexion.</p>
+          <form id="teamSignupForm" autocomplete="off">
+            <label for="teamLastName">Nom</label><input id="teamLastName" maxlength="80" autocomplete="family-name" required>
+            <label for="teamFirstName">Prénom</label><input id="teamFirstName" maxlength="80" autocomplete="given-name" required>
+            <label for="teamEmail">Adresse e-mail autorisée</label><input id="teamEmail" type="email" autocomplete="email" required>
+            <label for="teamPassword">Mot de passe (12 caractères au moins)</label><input id="teamPassword" type="password" minlength="12" autocomplete="new-password" required>
+            <label for="teamPassword2">Confirmer le mot de passe</label><input id="teamPassword2" type="password" minlength="12" autocomplete="new-password" required>
+            <div class="melec-captcha" data-captcha="equipe_inscription" style="min-height:65px;margin:12px 0"></div>
+            <div class="cloud-actions"><button type="submit">Créer mon compte équipe</button></div>
+          </form>
+        </details>
       </section>
       <section id="cloudMfaPane" hidden>
         <h1>Code de sécurité</h1>
@@ -247,7 +260,7 @@
   <script src="ccf-dashboard.js?v=20260930-reset-selection1"></script>
   <script src="ccf-submenus.js?v=20260928-4"></script>
   <script src="home.js?v=20261014-magasin"></script>
-  <script src="portal-api.js?v=20261013-telechargement1"></script>
+  <script src="portal-api.js?v=20261014-equipe"></script>
   <script src="content-render.js?v=20261014-verrou"></script>
   <script src="tp-response-export.js?v=20260927-4"></script>
   <script src="student-pdf-viewer.js?v=20261014-rapide"></script>
@@ -255,11 +268,11 @@
   <script src="teaching-space.js?v=20261014-devis"></script>
   <script src="devis.js?v=20261014-4"></script>
   <script src="pfmp.js?v=20261014-5"></script>
-  <script src="magasin.js?v=20261014-1"></script>
+  <script src="magasin.js?v=20261014-equipe"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script src="melec-captcha.js?v=20261014-captcha"></script>
   <script src="melec-mfa.js?v=20261013-obligatoire1"></script>
-  <script src="cloud-sync.js?v=20261014-captcha"></script>
+  <script src="cloud-sync.js?v=20261014-equipe"></script>
   <script src="activity-reuse.js?v=20260930-competences1"></script>
   <script src="activity-overview-filter.js?v=20260930-fin-evaluation1"></script>
   <script src="evaluation-student-filter.js?v=20260928-2"></script>

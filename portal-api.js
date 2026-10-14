@@ -67,11 +67,14 @@
     return data;
   }
   async function signUp(fields) {
-    return boundedDecode(URL + '/auth/v1/signup?redirect_to=' + encodeURIComponent(location.origin + location.pathname.replace(/[^/]*$/, 'eleve.html')), {
+    // Collègue de l'équipe magasin : pas de classe demandée ; le lien de confirmation ramène à l'accueil du site.
+    const team = fields.accountType === 'team';
+    return boundedDecode(URL + '/auth/v1/signup?redirect_to=' + encodeURIComponent(location.origin + location.pathname.replace(/[^/]*$/, team ? '' : 'eleve.html')), {
       method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: fields.email, password: fields.password,
-        data: { last_name: fields.lastName, first_name: fields.firstName, requested_class: fields.className },
+        data: team ? { last_name: fields.lastName, first_name: fields.firstName, account_type: 'team' }
+          : { last_name: fields.lastName, first_name: fields.firstName, requested_class: fields.className },
         ...security(fields.captchaToken)
       })
     }, 30000);

@@ -274,7 +274,7 @@
   function initTeam(root) {
     const state = { type: '', category: '', supplier: '', search: '' };
     let data = { items: [], movements: [], admin: false }, settings = null, settingsVersion = null, online = false, loaded = false;
-    let showArchived = false, tab = 'stock', view = 'cards', section = 'store', timer = 0, busy = false, counts = [], students = [], classes = [];
+    let showArchived = false, tab = 'stock', view = 'cards', section = 'store', timer = 0, busy = false, counts = [], students = [], classes = [], version = '';
     const status = el('p', { class: 'mg-toast', role: 'status' });
     const say = (text, error) => { status.textContent = text; status.classList.toggle('error', Boolean(error)); if (text) setTimeout(() => { if (status.textContent === text) status.textContent = ''; }, 5000); };
     const visible = () => !root.classList.contains('hidden') && document.visibilityState !== 'hidden';
@@ -301,13 +301,19 @@
       if (!visible()) return;
       timer = setTimeout(async () => {
         if (!visible() || busy || document.querySelector('dialog.mg-dialog[open]')) return schedule();
-        try { await load(); render(); } catch { online = false; renderStatus(); }
+        // Synchronisation avec l'administrateur et les autres membres : petit appel de version,
+        // le magasin n'est relu que s'il a changé (article, mouvement, réglage, inventaire d'élève).
+        try {
+          const next = await rpc('store_version');
+          if (next !== version) { await Promise.all([load(), loadCounts()]); version = next; render(); }
+          else if (!online) { online = true; renderStatus(); }
+        } catch { online = false; renderStatus(); }
         schedule();
       }, online ? POLL_MS : POLL_MS * 2);
     }
     async function open() {
       if (!loaded) fill(root, el('div', { class: 'teach-card', text: 'Connexion au magasin…' }));
-      try { await Promise.all([load(), loadCounts()]); }
+      try { await Promise.all([load(), loadCounts(), rpc('store_version').then(v => { version = v; })]); }
       catch (error) { online = false; if (!loaded) { fill(root, el('div', { class: 'teach-card' }, el('h2', { text: 'Accès équipe' }), el('p', { text: 'Magasin indisponible : ' + error.message }))); return; } }
       render(); schedule();
     }
@@ -525,9 +531,25 @@
 
   // ───────────────────────────── Administration ─────────────────────────────
   function initAdmin(root) {
-    let settings = { name: '', address: '', logo: '' }, members = [], items = [];
+    let settings = { name: '', address: '', logo: '' }, members = [], items = [], version = '', timer = 0;
     const status = el('p', { class: 'mg-toast', role: 'status' });
     const say = (text, error) => { status.textContent = text; status.classList.toggle('error', Boolean(error)); };
+    const visible = () => !root.classList.contains('hidden') && document.visibilityState !== 'hidden';
+    // Synchronisation : les articles ajoutés par l'équipe apparaissent ici sans recharger la page.
+    function schedule() {
+      clearTimeout(timer);
+      if (!visible()) return;
+      timer = setTimeout(async () => {
+        try {
+          const next = await rpc('store_version');
+          const editing = root.contains(document.activeElement) && document.activeElement.matches('input,textarea,select');
+          if (next !== version && !editing && !document.querySelector('dialog.mg-dialog[open]')) {
+            const inv = await rpc('store_inventory'); items = inv.items || []; version = next; renderBase();
+          }
+        } catch { /* nouvel essai au prochain passage */ }
+        schedule();
+      }, POLL_MS);
+    }
     let myEmail = '';
     async function load() {
       const [s, m, inv, me] = await Promise.all([api.rest('store_settings?select=name,address,logo&id=eq.1'), rpc('store_admin_members'), rpc('store_inventory'), api.user().catch(() => null)]);
@@ -535,7 +557,7 @@
     }
     async function open() {
       fill(root, el('div', { class: 'teach-card', text: 'Chargement de l’administration…' }));
-      try { await load(); render(); }
+      try { await load(); version = await rpc('store_version').catch(() => ''); render(); schedule(); }
       catch (error) { fill(root, el('div', { class: 'teach-card' }, el('h2', { text: 'Administration' }), el('p', { text: 'Réservée à l’administrateur, avec Authenticator : ' + error.message }))); }
     }
     async function logoFrom(file) {
@@ -545,6 +567,27 @@
       canvas.width = Math.round(img.width * r); canvas.height = Math.round(img.height * r);
       const ctx = canvas.getContext('2d'); ctx.fillStyle = 'white'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); img.close?.();
       return canvas.toDataURL('image/jpeg', 0.85);
+    }
+    const baseCard = el('section', { class: 'teach-card' });
+    function renderBase() {
+      const active = items.filter(i => !i.archived_at);
+      fill(baseCard, el('h2', { text: 'Base du magasin' }),
+          el('div', { class: 'mg-stats' },
+            [['Références actives', active.length, '▦'], ['Archivées', items.length - active.length, '▣'], ['Unités en stock', active.reduce((s, i) => s + i.stock, 0), '⚡'], ['Sous le seuil', active.filter(i => i.stock <= i.threshold).length, '⚠']]
+              .map(([label, value, icon]) => el('div', { class: 'mg-stat neutral' }, el('span', { class: 'mg-stat-icon', 'aria-hidden': 'true', text: icon }), el('div', {}, el('small', { text: label }), el('strong', { text: fr(value) }))))),
+          el('p', { class: 'mg-help', text: 'Synchronisation : chargez l’inventaire complet (Excel des élèves complété par l’équipe, ou tout tableau avec Référence, Désignation, Type, Catégorie, Fournisseur, Unité, Emplacement, Quantité). Les articles inconnus sont créés, les connus complétés, et le stock peut être aligné sur les quantités comptées.' }),
+          el('div', { class: 'mg-actions' },
+            el('button', { type: 'button', class: 'mg-primary', text: '⤒ Charger la base du magasin (Excel)', onclick: () => pickFile('.xlsx,.xls,.csv,.ods', async file => {
+              try { const rows = await readListFile(file); if (!rows.length) throw new Error('Aucune ligne utilisable dans ce fichier.'); importDialog(rows, { title: 'Synchroniser la base du magasin', align: true, items, onApplied: load, onDone: text => { say(text); render(); } }); }
+              catch (error) { say(error.message, true); }
+            }) }),
+            el('button', { type: 'button', class: 'subtle', text: '⤓ Télécharger la base complète (Excel)', onclick: () => exportItemsExcel(items, settings, 'magasin-base-complete-' + today() + '.xlsx').catch(error => say(error.message, true)) }),
+            el('button', { type: 'button', class: 'subtle', text: '⤓ Modèle de liste vide', onclick: async () => {
+              const X = await xlsx(); const wb = X.utils.book_new();
+              X.utils.book_append_sheet(wb, sheet(X, [['Type', 'Catégorie', 'Fournisseur', 'Référence', 'Désignation', 'Unité', 'Emplacement', 'Quantité comptée', 'Seuil d’alerte'],
+                ['Protection électrique', 'Habitat', 'Schneider Electric', 'A9F74216', 'Disjoncteur 16 A — 1P+N', 'pièce', 'Rayon A · Bac 03', 12, 5]], [22, 12, 22, 18, 40, 9, 18, 16, 12]), 'Inventaire');
+              X.writeFile(wb, 'modele-liste-magasin.xlsx');
+            } })));
     }
     function render() {
       const school = { ...settings };
@@ -566,7 +609,7 @@
         event.preventDefault();
         try { await rpc('store_mutate', { b: { action: 'member', email: email.value, role: role.value } }); members = await rpc('store_admin_members'); say('Adresse autorisée.'); render(); } catch (error) { say(error.message, true); }
       };
-      const active = items.filter(i => !i.archived_at);
+      renderBase();
       fill(root,
         el('div', { class: 'teach-head mg-head' }, el('div', {}, el('span', { class: 'mg-eyebrow', text: 'Espace administrateur' }), el('h1', { text: 'Administration' }),
           el('p', { text: 'Établissement, accès au magasin et synchronisation de la base.' }))),
@@ -576,27 +619,13 @@
             el('p', { class: 'mg-help', text: 'Tous les enseignants de L’Atelier MELEC ont l’accès équipe. Autorisez ici d’autres adresses ou un administrateur ; chaque personne crée son compte et configure Authenticator. Aucun mot de passe n’est partagé.' }),
             memberForm,
             el('div', { class: 'mg-members' }, members.map(m => el('div', { class: 'mg-member' },
-              el('span', {}, m.email, el('small', { text: (m.role === 'admin' ? 'Administrateur' : 'Équipe') + ' · ' + (m.active ? 'Actif' : 'Désactivé') })),
+              el('span', {}, m.email, el('small', { text: [(m.role === 'admin' ? 'Administrateur' : 'Équipe'), m.active ? 'Actif' : 'Désactivé',
+                m.teacher ? 'compte enseignant' : !m.account ? 'compte pas encore créé' : !m.confirmed ? 'adresse à confirmer' : 'compte équipe',
+                m.account ? (m.authenticator ? 'Authenticator activé' : 'Authenticator à activer à la 1re connexion') : ''].filter(Boolean).join(' · ') })),
               m.active && m.email !== myEmail ? el('button', { type: 'button', class: 'subtle', text: 'Désactiver', onclick: async () => {
                 try { await rpc('store_mutate', { b: { action: 'remove_member', email: m.email } }); members = await rpc('store_admin_members'); say('Accès désactivé.'); render(); } catch (error) { say(error.message, true); }
               } }) : null))))),
-        el('section', { class: 'teach-card' }, el('h2', { text: 'Base du magasin' }),
-          el('div', { class: 'mg-stats' },
-            [['Références actives', active.length, '▦'], ['Archivées', items.length - active.length, '▣'], ['Unités en stock', active.reduce((s, i) => s + i.stock, 0), '⚡'], ['Sous le seuil', active.filter(i => i.stock <= i.threshold).length, '⚠']]
-              .map(([label, value, icon]) => el('div', { class: 'mg-stat neutral' }, el('span', { class: 'mg-stat-icon', 'aria-hidden': 'true', text: icon }), el('div', {}, el('small', { text: label }), el('strong', { text: fr(value) }))))),
-          el('p', { class: 'mg-help', text: 'Synchronisation : chargez l’inventaire complet (Excel des élèves complété par l’équipe, ou tout tableau avec Référence, Désignation, Type, Catégorie, Fournisseur, Unité, Emplacement, Quantité). Les articles inconnus sont créés, les connus complétés, et le stock peut être aligné sur les quantités comptées.' }),
-          el('div', { class: 'mg-actions' },
-            el('button', { type: 'button', class: 'mg-primary', text: '⤒ Charger la base du magasin (Excel)', onclick: () => pickFile('.xlsx,.xls,.csv,.ods', async file => {
-              try { const rows = await readListFile(file); if (!rows.length) throw new Error('Aucune ligne utilisable dans ce fichier.'); importDialog(rows, { title: 'Synchroniser la base du magasin', align: true, items, onApplied: load, onDone: text => { say(text); render(); } }); }
-              catch (error) { say(error.message, true); }
-            }) }),
-            el('button', { type: 'button', class: 'subtle', text: '⤓ Télécharger la base complète (Excel)', onclick: () => exportItemsExcel(items, settings, 'magasin-base-complete-' + today() + '.xlsx').catch(error => say(error.message, true)) }),
-            el('button', { type: 'button', class: 'subtle', text: '⤓ Modèle de liste vide', onclick: async () => {
-              const X = await xlsx(); const wb = X.utils.book_new();
-              X.utils.book_append_sheet(wb, sheet(X, [['Type', 'Catégorie', 'Fournisseur', 'Référence', 'Désignation', 'Unité', 'Emplacement', 'Quantité comptée', 'Seuil d’alerte'],
-                ['Protection électrique', 'Habitat', 'Schneider Electric', 'A9F74216', 'Disjoncteur 16 A — 1P+N', 'pièce', 'Rayon A · Bac 03', 12, 5]], [22, 12, 22, 18, 40, 9, 18, 16, 12]), 'Inventaire');
-              X.writeFile(wb, 'modele-liste-magasin.xlsx');
-            } }))),
+        baseCard,
         status);
     }
     return { open };

@@ -18,13 +18,13 @@ test.before(async () => {
   db = new PGlite();
   await db.exec(`
     create role anon; create role authenticated;
-    create schema auth; create table auth.users(id uuid primary key, email text, email_confirmed_at timestamptz default now());
+    create schema auth; create table auth.users(id uuid primary key, email text, email_confirmed_at timestamptz default now(), raw_user_meta_data jsonb default '{}'::jsonb); create table auth.mfa_factors(id uuid primary key default gen_random_uuid(), user_id uuid, status text); create schema private;
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('t.uid', true),'')::uuid $$;
     create function auth.jwt() returns jsonb language sql stable as $$ select jsonb_build_object('aal', coalesce(nullif(current_setting('t.aal', true),''),'aal1')) $$;
     grant usage on schema auth to authenticated; grant execute on all functions in schema auth to authenticated;
     create schema melec_security; grant usage on schema melec_security to authenticated;
     create table public.teacher_accounts(user_id uuid primary key);
-    create table public.student_profiles(user_id uuid primary key, class_id uuid, approved_at timestamptz, blocked_at timestamptz);
+    create table public.student_profiles(user_id uuid primary key, class_id uuid, approved_at timestamptz, blocked_at timestamptz, last_name text, first_name text, email text, requested_class text);
     create function melec_security.session_suffisante() returns boolean language sql stable security definer set search_path='' as $$
       select coalesce(auth.jwt()->>'aal','aal1')='aal2' or not exists(select 1 from public.teacher_accounts t where t.user_id=auth.uid()) $$;
     create function melec_security.eleve_actif() returns boolean language sql stable security definer set search_path='' as $$
@@ -34,6 +34,8 @@ test.before(async () => {
     insert into public.teacher_accounts values ('${ADMIN}'),('${PROF}');
     insert into public.student_profiles values ('${ELEVE}', null, now(), null);`);
   await db.exec(fs.readFileSync(path.join(__dirname, '..', 'supabase', 'migrations', '20261014230000_magasin.sql'), 'utf8'));
+  await db.exec(fs.readFileSync(path.join(__dirname, '..', 'supabase', 'migrations', '20261014233000_magasin_equipe.sql'), 'utf8'));
+  await db.exec('create trigger melec_student_profile_created after insert on auth.users for each row execute function private.create_student_profile()');
 });
 
 test('rôles : administrateur, équipe (enseignant), Authenticator obligatoire, élève et inconnu refusés', async () => {
@@ -68,7 +70,9 @@ test('administration : réservée à l’administrateur ; une adresse « équipe
   await one(ADMIN, 'aal2', `select store_mutate('{"action":"settings","name":"Lycée Test","address":"1 rue"}') r`);
   assert.equal((await db.query('select name from store_settings')).rows[0].name, 'Lycée Test');
   assert.equal((await one(ADMIN, 'aal2', `select store_mutate('{"action":"settings","name":"Lycée Professionnel Auguste Bartholdi","address":"142 Rue Denis Papin, 76360 Barentin"}') r`)).ok, true);
-  assert.equal((await one(ADMIN, 'aal2', 'select store_admin_members() r')).length, 3);
+  const liste = await one(ADMIN, 'aal2', 'select store_admin_members() r');
+  assert.equal(liste.length, 3);
+  assert.deepEqual(liste.find(m => m.email === 'collegue@lycee.fr'), { email: 'collegue@lycee.fr', role: 'team', active: true, teacher: false, account: true, confirmed: true, authenticator: false });
   assert.match(String(await one(PROF, 'aal2', 'select store_admin_members() r')), /administrateur/);
 });
 
@@ -103,4 +107,23 @@ test('élève : catalogue sans quantités, inventaire enregistré puis envoyé, 
   assert.match(String(await one(INCONNU, 'aal1', `select store_count_save('[]'::jsonb) r`)), /élèves validés/);
   const id = rows.length && (await db.query('select id from store_counts')).rows[0].id;
   assert.equal(await one(PROF, 'aal2', `select store_count_mark('${id}','loaded') r`), true);
+});
+
+test('collègue de l’équipe sans compte enseignant : inscription sans fiche élève, magasin seulement, version synchronisée', async () => {
+  const NOUVEAU = '66666666-6666-6666-6666-666666666666';
+  await one(ADMIN, 'aal2', `select store_mutate('{"action":"member","email":"technicien@atelier.fr","role":"team"}') r`);
+  await db.exec(`insert into auth.users(id,email,raw_user_meta_data) values ('${NOUVEAU}','technicien@atelier.fr','{"account_type":"team","last_name":"Durand"}')`);
+  assert.equal((await db.query(`select count(*)::int n from public.student_profiles where user_id='${NOUVEAU}'`)).rows[0].n, 0, 'pas inscrit comme élève');
+  await db.exec(`insert into auth.users(id,email) values ('77777777-7777-7777-7777-777777777777','eleve2@lycee.fr')`);
+  assert.equal((await db.query(`select count(*)::int n from public.student_profiles where email='eleve2@lycee.fr'`)).rows[0].n, 1, 'un élève reste inscrit normalement');
+  assert.equal(await one(NOUVEAU, 'aal1', 'select store_member_check() r'), true);
+  assert.equal(await one(INCONNU, 'aal1', 'select store_member_check() r'), false);
+  assert.match(String(await one(NOUVEAU, 'aal1', 'select store_inventory() r')), /Authenticator requis/);
+  const v1 = await one(ADMIN, 'aal2', 'select store_version() r');
+  await one(NOUVEAU, 'aal2', `select store_mutate('{"action":"item","ref":"WAGO221","name":"Borne Wago 221","type":"Appareillage","category":"Habitat","supplier":"Wago","unit":"pièce","threshold":10,"stock":50}') r`);
+  const v2 = await one(ADMIN, 'aal2', 'select store_version() r');
+  assert.notEqual(v1, v2, 'l’administrateur voit que le magasin a changé');
+  assert.ok((await one(ADMIN, 'aal2', 'select store_inventory() r')).items.some(i => i.ref === 'WAGO221'));
+  assert.match(String(await one(NOUVEAU, 'aal2', `select store_mutate('{"action":"settings","name":"X"}') r`)), /non autorisée/);
+  assert.match(String(await one(NOUVEAU, 'aal2', 'select store_admin_members() r')), /administrateur/);
 });
