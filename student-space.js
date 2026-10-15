@@ -144,8 +144,9 @@
     ]);
     if (teacher.length) { location.href = './enseignant.html'; return; }
     if (!profiles.length) throw new Error('Profil élève introuvable. Contactez votre enseignant.');
+    const dashboardWasVisible = Boolean(profile) && !dashboard.hidden;
     profile = profiles[0];
-    const dashboardWasVisible = !dashboard.hidden;
+    rememberView(user.id, profile);
     authPane.hidden = true; dashboard.hidden = false;
     document.documentElement.classList.remove('student-resuming');
     showContact(false);
@@ -324,7 +325,34 @@
       button.textContent = '↻ Actualiser';
     }
   };
+  // Actualisation de la page : l'en-tête de l'élève s'affiche tout de suite à partir de la dernière
+  // visite dans cet onglet, pendant que la session est vérifiée par Supabase. Seuls le prénom, le nom
+  // et l'état d'inscription sont gardés ; tout contenu reste chargé et contrôlé par le serveur.
+  const VIEW_KEY = 'melec-student-view-v1';
+  function sessionSubject() {
+    try {
+      const part = JSON.parse(sessionStorage.getItem('melec-cloud-session-v1') || 'null')?.access_token?.split('.')[1] || '';
+      return JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - part.length % 4) % 4))).sub || '';
+    } catch { return ''; }
+  }
+  function rememberView(id, p) {
+    try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({ id, first_name: p.first_name, last_name: p.last_name, approved: Boolean(p.approved_at && p.class_id && !p.blocked_at) })); } catch { /* stockage indisponible */ }
+  }
+  function forgetView() { try { sessionStorage.removeItem(VIEW_KEY); } catch { /* stockage indisponible */ } }
+  function paintFromLastVisit() {
+    try {
+      const view = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null');
+      if (!view || !view.id || view.id !== sessionSubject()) return;
+      authPane.hidden = true; dashboard.hidden = false;
+      document.documentElement.classList.remove('student-resuming');
+      $('studentProfileStatus').textContent = `Bonjour ${view.first_name} ${view.last_name}.`;
+      $('studentClassName').hidden = !view.approved;
+      if (view.approved) $('studentClassName').textContent = 'Classe attribuée : chargement…';
+      $('studentContentTabs').hidden = true;
+    } catch { /* affichage normal après vérification */ }
+  }
   $('studentLogout').onclick = async () => {
+    forgetView();
     if (cleanupViewer) cleanupViewer();
     clearTpViewer(); clearDocumentCache(); activeTp=null; assignments=[]; tpItems=[]; tpItemsLoadedAt=0; tpItemsKey='';
     await api.signOut();
@@ -378,7 +406,9 @@
   window.addEventListener('pageshow', event => {
     if (event.persisted) refreshStudentAccess();
   });
+  paintFromLastVisit();
   openDashboard().catch(error => {
+    forgetView();
     authPane.hidden = false; dashboard.hidden = true;
     document.documentElement.classList.remove('student-resuming');
     if (api.sessionRejected(error)) {
