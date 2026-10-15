@@ -165,6 +165,9 @@
     } finally { setTimer(0); }
     return new Blob(chunks, { type });
   }
+  // Serveur surchargé : on attend 2 à 4 s (puis 4 à 8 s), avec un délai différent pour chaque poste,
+  // au lieu de relancer aussitôt un gros téléchargement depuis toute la classe à la fois.
+  const pause = attempt => (2000 + Math.random() * 2000) * (attempt + 1);
   async function download(path, options = {}) {
     const url = URL + '/storage/v1/object/authenticated/melec-private/' + path.split('/').map(encodeURIComponent).join('/');
     const attempts = options.retryTransient ? 3 : 1;
@@ -185,13 +188,15 @@
         if (response.ok) return await readBody(response, controller, options.onProgress, next => { clearTimeout(timer); timer = next; });
       } catch (error) {
         if (attempt === attempts - 1) throw controller.signal.aborted ? new Error('Document indisponible : le transfert s’est interrompu (réseau saturé ou coupé). Réessayez dans un instant.') : error;
-        await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
+        await new Promise(resolve => setTimeout(resolve, pause(attempt)));
         continue;
       } finally { clearTimeout(timer); }
       // 544 est un délai dépassé de la passerelle Supabase, pas un refus RLS.
       if (!options.retryTransient || ![304, 429, 500, 502, 503, 504, 544].includes(response.status) || attempt === attempts - 1)
-        throw new Error('Document indisponible ou accès expiré (HTTP ' + response.status + ').');
-      await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
+        throw new Error(response.status === 544 || response.status === 504 || response.status === 503
+          ? 'Le serveur est surchargé (toute la classe télécharge en même temps). Réessayez dans une minute.'
+          : 'Document indisponible ou accès expiré (HTTP ' + response.status + ').');
+      await new Promise(resolve => setTimeout(resolve, pause(attempt)));
     }
   }
   async function removeFiles(paths) {
