@@ -291,7 +291,7 @@
       const [c, s, k] = await Promise.all([
         api.rest('store_counts?select=id,student_id,class_id,lines,submitted_at,loaded_at&submitted_at=not.is.null&order=submitted_at.desc&limit=200'),
         api.rest('student_profiles?select=user_id,last_name,first_name,class_id&order=last_name.asc,first_name.asc'),
-        api.rest('teaching_classes?select=id,name&order=name.asc')]);
+        (window.MelecRegistre ? window.MelecRegistre.ensureClasses() : Promise.resolve()).then(() => api.rest('teaching_classes?select=id,name&order=name.asc'))]);
       counts = c; students = s; classes = k;
     }
     const studentName = id => { const s = students.find(x => x.user_id === id); return s ? (s.last_name + ' ' + s.first_name).trim() : 'Élève'; };

@@ -58,12 +58,6 @@
     const node = root.querySelector('#teachStatus');
     if (node) { node.textContent = text; node.classList.toggle('error', error); }
   }
-  function classNames() {
-    const names = new Set();
-    (state?.students || []).forEach(s => { if (s.className) names.add(s.className.trim()); });
-    (state?.activities || []).forEach(a => { if (a.className) names.add(a.className.trim()); });
-    return [...names].filter(Boolean).sort((a,b) => a.localeCompare(b, 'fr'));
-  }
   function normalized(value) {
     return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
   }
@@ -89,7 +83,7 @@
       const userId = await api.userId();
       const [teachers, nextClasses] = await Promise.all([
         api.rest('teacher_accounts?user_id=eq.' + encodeURIComponent(userId) + '&select=user_id'),
-        api.rest('teaching_classes?select=id,name&order=name.asc')
+        (window.MelecRegistre ? window.MelecRegistre.ensureClasses() : Promise.resolve()).then(() => api.rest('teaching_classes?select=id,name&order=name.asc'))
       ]);
       if (!teachers.length) throw new Error('Accès réservé à l’enseignant.');
       if (sessionKey() !== key) return;
@@ -147,11 +141,10 @@
   function render() {
     if (!root.classList.contains('hidden')) document.querySelectorAll('.nav[data-view="teaching"], .nav[data-view="quotes"]').forEach(node => node.classList.toggle('active', node.dataset.view === (tab === 'quotes' ? 'quotes' : 'teaching')));
     root.innerHTML = `<div class="teach-head"><div><h1>TP en atelier</h1><p>Créer et publier des travaux pratiques par classe.</p></div></div>
-      <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select><button type="button" id="teachSyncClasses" class="subtle">Ajouter les classes de l’application</button></div></div>
+      <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div></div>
       <div class="teach-tabs" role="tablist">${[['tp','Travaux pratiques'],['quotes','Devis élèves'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
       <div id="teachBody"></div><p id="teachStatus" class="teach-status" role="status"></p>`;
     root.querySelector('#teachClass').onchange = e => { classId = e.target.value; selectedChapterId = ''; selectedItemId = ''; selectedTpId = ''; editing = null; loadClass().catch(err => status(err.message, true)); };
-    root.querySelector('#teachSyncClasses').onclick = syncClasses;
     root.querySelectorAll('[data-teach-tab]').forEach(button => button.onclick = () => {
       const nextTab=button.dataset.teachTab;
       if(nextTab!==tab){
@@ -168,15 +161,6 @@
     else if (tab === 'quotes') window.MelecDevis?.renderTeacher(root.querySelector('#teachBody'), {classId, classes, status});
     else if (tab === 'tp') renderTp();
     else { tab = 'tp'; renderTp(); }
-  }
-  async function syncClasses() {
-    try {
-      const existing = new Set(classes.map(c => c.name.toLocaleLowerCase('fr')));
-      const names = classNames().filter(name => !existing.has(name.toLocaleLowerCase('fr')));
-      if (!names.length) { status('Toutes les classes sont déjà présentes.'); return; }
-      await api.rest('teaching_classes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(names.map(name => ({name}))) });
-      await load(); status(names.length + ' classe(s) ajoutée(s).');
-    } catch (error) { status(error.message, true); }
   }
   function tpIsActive(assignment) {
     if (assignment.validated_at) return false;

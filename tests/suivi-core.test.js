@@ -49,5 +49,45 @@ test('fusion sans doublon et nettoyage des références', () => {
   assert.deepEqual([merged.length, merged[0].id, merged[0].birthDate], [1, 'a', '02/02/2008']);
   const s = S.removeStudentReferences(state({ evaluations: { s1: { e2: {} } } }), new Set(['s1']));
   assert.deepEqual([s.students.length, Object.keys(s.pfmps[0].assignments).length, Object.keys(s.evaluations).length], [0, 0, 0]);
-  assert.deepEqual(Object.keys(S.documentOf(s)).sort(), ['activities', 'classes', 'pdfHeader', 'periods', 'pfmps', 'schoolYear', 'students', 'teachers', 'tutors']);
+  assert.deepEqual(Object.keys(S.documentOf(s)).sort(), ['activities', 'classes', 'detachedRoster', 'pdfHeader', 'periods', 'pfmps', 'schoolYear', 'students', 'teachers', 'tutors']);
+});
+
+// Base commune : la liste « Élèves par classe » alimente le suivi sans doublon ni perte d'évaluations.
+test('base commune : relie les élèves existants, ajoute les nouveaux, aucun doublon', () => {
+  const roster = [{ id: 'r1', name: 'MARTIN Léa', className: 'TMELEC' }, { id: 'r2', name: 'DUPONT DE LA TOUR Jean-Marc', className: 'TMELEC' }, { id: 'r3', name: 'NOVAK Ana', className: '1MELEC' }];
+  const s = state({ evaluations: { s1: { e2: { mastery: { C1: 3 } } } } });
+  const linked = S.linkRoster(s, roster);
+  assert.equal(linked.students.length, 3);
+  assert.equal(linked.students.find(x => x.id === 's1').rosterId, 'r1', 'l’élève existant garde son identifiant (évaluations conservées)');
+  const jm = linked.students.find(x => x.rosterId === 'r2');
+  assert.deepEqual([jm.lastName, jm.firstName, jm.className], ['DUPONT DE LA TOUR', 'Jean-Marc', 'TMELEC']);
+  assert.deepEqual(linked.classes, ['TMELEC', '1MELEC']);
+  assert.equal(S.linkRoster(linked, roster), linked, 'deuxième passage : rien ne change');
+  // Accents et casse ignorés
+  const accent = S.linkRoster(S.cleanState({ classes: ['TMELEC'], students: [{ id: 'a', lastName: 'Martin', firstName: 'Lea', className: 'tmelec' }] }), [roster[0]]);
+  assert.equal(accent.students.length, 1);
+  // Correction du nom ou changement de classe dans la liste de référence
+  const moved = S.linkRoster(linked, [{ id: 'r3', name: 'NOVAK Anna', className: 'TMELEC' }]);
+  const ana = moved.students.find(x => x.rosterId === 'r3');
+  assert.deepEqual([ana.firstName, ana.className, moved.students.length], ['Anna', 'TMELEC', 3]);
+  // Élève retiré volontairement du suivi : pas réintroduit
+  const detached = S.linkRoster(S.cleanState({ classes: [], students: [], detachedRoster: ['r3'] }), roster);
+  assert.equal(detached.students.some(x => x.rosterId === 'r3'), false);
+  assert.ok(!detached.classes.includes('1MELEC'));
+  assert.deepEqual(S.documentOf(detached).detachedRoster, ['r3']);
+});
+
+test('import d’une liste : complète INE et date de naissance au lieu de dupliquer', () => {
+  const s = S.cleanState({ classes: ['TMELEC'], students: [{ ...student, rosterId: 'r1' }] });
+  const { state: next, added, updated } = S.enrichStudents(s, [
+    { lastName: 'MARTIN', firstName: 'Léa', className: 'TMELEC', ine: '123456789AB', birthDate: '01/02/2008' },
+    { lastName: 'Petit', firstName: 'Noé', className: 'TMELEC', ine: '', birthDate: '03/04/2008' }]);
+  assert.deepEqual([added, updated, next.students.length], [1, 1, 2]);
+  const lea = next.students.find(x => x.id === 's1');
+  assert.deepEqual([lea.ine, lea.birthDate, lea.rosterId], ['123456789AB', '01/02/2008', 'r1']);
+  // Même INE, nom orthographié différemment : même élève
+  const again = S.enrichStudents(next, [{ lastName: 'MARTIN-X', firstName: 'Lea', className: 'TMELEC', ine: '123456789ab', birthDate: '' }]);
+  assert.deepEqual([again.added, again.updated], [0, 0]);
+  assert.deepEqual(S.splitRosterName('ELEVE2 Test'), { lastName: 'ELEVE2', firstName: 'Test' });
+  assert.deepEqual(S.splitRosterName('martin léa'), { lastName: 'martin', firstName: 'léa' });
 });

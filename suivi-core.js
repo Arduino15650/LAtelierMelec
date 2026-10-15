@@ -136,6 +136,62 @@
     return result;
   }
 
+  // ───────── Base commune : la liste des élèves de L'Atelier MELEC est la référence ─────────
+  // Une personne est reconnue par son nom complet et sa classe (accents, tirets et espaces ignorés),
+  // ou par son numéro INE lorsqu'il est connu des deux côtés.
+  const nameKey = (name, className) => norm(name).replace(/[\s'’-]+/g, ' ') + '|' + norm(className).replace(/\s+/g, '');
+  const studentNameKey = s => nameKey(`${s.lastName || ''} ${s.firstName || ''}`, s.className);
+  // « DUPONT DE LA TOUR Jean-Marc » → nom « DUPONT DE LA TOUR », prénom « Jean-Marc ».
+  function splitRosterName(name) {
+    const tokens = String(name || '').trim().split(/\s+/).filter(Boolean);
+    let i = 0;
+    while (i < tokens.length - 1 && /\p{L}/u.test(tokens[i]) && tokens[i] === tokens[i].toLocaleUpperCase('fr')) i++;
+    if (i === 0) i = Math.min(1, tokens.length);
+    return { lastName: tokens.slice(0, i).join(' '), firstName: tokens.slice(i).join(' ') };
+  }
+  // Ajoute au suivi les élèves et classes de la liste de référence, sans jamais en retirer ni créer de doublon.
+  function linkRoster(state, roster, extraClasses = []) {
+    const students = [...state.students], used = new Set(), detached = new Set(state.detachedRoster || []);
+    const byRoster = new Map(), byName = new Map();
+    students.forEach((s, i) => { if (s.rosterId) byRoster.set(s.rosterId, i); const k = studentNameKey(s); if (!byName.has(k)) byName.set(k, i); });
+    let changed = false;
+    (roster || []).forEach(r => {
+      const name = String(r?.name || '').trim(), className = String(r?.className || '').trim();
+      if (!r?.id || !name || !className || detached.has(r.id)) return;
+      let i = byRoster.get(r.id);
+      const sameId = i != null && !used.has(i);
+      if (!sameId) i = byName.get(nameKey(name, className));
+      if (i != null && !used.has(i)) {
+        used.add(i);
+        const s = students[i];
+        // Nom ou classe corrigés dans la liste de référence : le suivi suit la correction.
+        const renamed = sameId && studentNameKey(s) !== nameKey(name, className) ? splitRosterName(name) : null;
+        if (renamed && norm(`${s.lastName} ${s.firstName}`).replace(/[\s'’-]+/g, ' ') === norm(name).replace(/[\s'’-]+/g, ' ')) renamed.lastName = s.lastName, renamed.firstName = s.firstName;
+        if (renamed || s.rosterId !== r.id || norm(s.className) !== norm(className)) { students[i] = { ...s, ...(renamed || {}), rosterId: r.id, className }; changed = true; }
+        return;
+      }
+      students.push({ id: uid(), ...splitRosterName(name), className, birthDate: '', ine: '', rosterId: r.id });
+      used.add(students.length - 1); changed = true;
+    });
+    const classes = mergeClassNames(state.classes, (roster || []).filter(r => !detached.has(r?.id)).map(r => r?.className), extraClasses);
+    if (classes.length !== state.classes.length) changed = true;
+    return changed ? { ...state, students, classes } : state;
+  }
+  // Import d'une liste : complète les élèves déjà connus (INE, date de naissance) et ajoute les autres.
+  function enrichStudents(state, incoming) {
+    const students = [...state.students];
+    let added = 0, updated = 0;
+    incoming.forEach(item => {
+      const ine = norm(item.ine), key = studentNameKey(item);
+      const i = students.findIndex(s => (ine && norm(s.ine) === ine) || studentNameKey(s) === key);
+      if (i < 0) { students.push({ ...item, id: item.id || uid() }); added++; return; }
+      const s = students[i], next = { ...s };
+      for (const field of ['ine', 'birthDate']) if (item[field] && norm(item[field]) !== norm(s[field])) next[field] = item[field];
+      if (next.ine !== s.ine || next.birthDate !== s.birthDate) { students[i] = next; updated++; }
+    });
+    return { state: { ...state, students, classes: mergeClassNames(state.classes, incoming.map(s => s.className)) }, added, updated };
+  }
+
   // ───────── Imports Excel (lignes déjà lues par XLSX.utils.sheet_to_json) ─────────
   function studentsFromRows(rows, defaultClass) {
     const keys = Object.keys(rows[0] || {});
@@ -222,11 +278,12 @@
       periods: saved.periods || [], activities: saved.activities || [],
       pfmps: (saved.pfmps || []).map(p => ({ ...p, assignments: p.assignments || {} })),
       pdfHeader: { ...emptyHeader(), ...(saved.pdfHeader || {}) },
+      detachedRoster: Array.isArray(saved.detachedRoster) ? saved.detachedRoster : [],
       evaluations: saved.evaluations || {}, attestations: saved.attestations || [], selected: '', selectedActivity: '', selectedPfmp: '' };
   }
   // Document enregistré côté serveur : sans les évaluations, attestations ni sélections d'écran.
   const documentOf = s => ({ schoolYear: s.schoolYear, classes: s.classes, students: s.students, teachers: s.teachers, tutors: s.tutors,
-    periods: s.periods, activities: s.activities, pfmps: s.pfmps, pdfHeader: s.pdfHeader });
+    periods: s.periods, activities: s.activities, pfmps: s.pfmps, pdfHeader: s.pdfHeader, detachedRoster: s.detachedRoster || [] });
 
   // ───────── Notes ─────────
   const criterionFactor = value => levels.find(l => l.code === value)?.factor;
@@ -286,6 +343,7 @@
   const pdfName = value => String(value).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
 
   return { levels, levelDescriptions, exams, uid, formatBirthDate, norm, header, studentKey, teacherKey, tutorKey, mergeUnique, mergeClassNames,
+    nameKey, studentNameKey, splitRosterName, linkRoster, enrichStudents,
     studentsFromRows, teachersFromRows, reconcileImportedTeachers, tutorsFromRows, removeStudentReferences, removeTeacherReferences,
     emptyHeader, emptyEval, emptyAttestationFields, cleanState, documentOf, criterionFactor, evaluationSlot, pfmpEvaluationSlot,
     competencyResult, score, completion, examFullyCompleted, attestationIsReady, getOrCreateAttestation, activityScore, pdfName };
