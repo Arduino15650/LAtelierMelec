@@ -92,6 +92,30 @@
     S = { ...K.cleanState({ ...(data.state || {}), evaluations, attestations: data.attestations || [] }), ...(keepPage ? keep : {}) };
     if (role !== 'admin' && !['pfmp', 'attestations', 'exam'].includes(page)) page = 'pfmp';
     loaded = true;
+    linkFromRoster();
+  }
+  // ───────── Base commune : élèves et classes de « Élèves par classe » ─────────
+  const registre = () => window.MelecRegistre;
+  function linkFromRoster() {
+    if (role !== 'admin' || !registre()) return false;
+    const next = K.linkRoster(S, registre().roster());
+    if (next === S) return false;
+    S = next; scheduleDoc(); return true;
+  }
+  window.addEventListener('melec-roster-change', () => {
+    if (!loaded || !linkFromRoster() || root.classList.contains('hidden')) return;
+    const active = document.activeElement;
+    if (!(active && root.contains(active) && /INPUT|TEXTAREA|SELECT/.test(active.tagName))) render();
+  });
+  // Élèves saisis ou importés ici : ajoutés aussi à la liste de référence, puis reliés.
+  function shareStudents(list) {
+    // Un élève ressaisi volontairement est de nouveau suivi s'il avait été retiré.
+    const keys = new Set(list.map(K.studentNameKey));
+    const back = new Set((registre()?.roster() || []).filter(r => keys.has(K.nameKey(r.name, r.className))).map(r => r.id));
+    if (back.size && (S.detachedRoster || []).some(id => back.has(id))) S = { ...S, detachedRoster: S.detachedRoster.filter(id => !back.has(id)) };
+    const added = registre()?.addStudents(list) || 0;
+    if (added || back.size) S = K.linkRoster(S, registre().roster());
+    return added;
   }
   function ensureLoaded() {
     if (loaded) return Promise.resolve();
@@ -201,14 +225,12 @@
   let teacherClass = '';
   function importStudents(file) {
     readRows(file).then(rows => {
-      const added = K.mergeUnique([], K.studentsFromRows(rows, S.classes[0] || ''), K.studentKey), affected = new Set(added.map(a => K.norm(a.className)));
-      const previous = S.students.filter(s => affected.has(K.norm(s.className))), keys = new Set(added.map(K.studentKey));
-      const synchronized = K.mergeUnique(previous, added, K.studentKey).filter(s => keys.has(K.studentKey(s)));
-      const kept = new Set(synchronized.map(s => s.id)), removed = new Set(previous.filter(s => !kept.has(s.id)).map(s => s.id));
-      if (removed.size) rpc('suivi_purge_students', { p_ids: [...removed] }).catch(error => say(error.message, true));
-      mutate(x => { const c = K.removeStudentReferences(x, removed);
-        return { ...c, students: [...c.students.filter(s => !affected.has(K.norm(s.className))), ...synchronized], classes: K.mergeClassNames(c.classes, added.map(s => s.className)), selected: '' }; });
-      alert(`${plural(added.length, 'élève')} importé${added.length > 1 ? 's' : ''} sans doublon.`);
+      // Les élèves déjà connus (même nom et même classe, ou même INE) sont complétés, jamais dupliqués ni effacés.
+      const incoming = K.mergeUnique([], K.studentsFromRows(rows, S.classes[0] || ''), K.studentKey);
+      const result = K.enrichStudents(S, incoming);
+      S = result.state; shareStudents(incoming);
+      mutate(x => ({ ...x, selected: '' }));
+      alert(`Importation terminée sans doublon : ${result.added} nouvel(s) élève(s), ${result.updated} fiche(s) complétée(s) (INE, date de naissance).`);
     }).catch(error => alert(error.message || 'Importation impossible.'));
   }
   function importTeachers(file) {
@@ -229,8 +251,9 @@
     pfmps.forEach(p => rpc('suivi_purge', { p_kind: 'pfmp', p_id: p.id }).catch(() => {}));
     acts.forEach(a => rpc('suivi_purge', { p_kind: 'activity', p_id: a.id }).catch(() => {}));
     if (removedStudents.size) rpc('suivi_purge_students', { p_ids: [...removedStudents] }).catch(() => {});
+    const detached = students.map(s => s.rosterId).filter(Boolean);
     mutate(x => { const cl = K.removeTeacherReferences(K.removeStudentReferences(x, removedStudents), new Set(teachers.map(t => t.id)));
-      return { ...cl, classes: cl.classes.filter(n => n !== c), activities: cl.activities.filter(a => a.className !== c), pfmps: cl.pfmps.filter(p => p.className !== c),
+      return { ...cl, detachedRoster: [...new Set([...(cl.detachedRoster || []), ...detached])], classes: cl.classes.filter(n => n !== c), activities: cl.activities.filter(a => a.className !== c), pfmps: cl.pfmps.filter(p => p.className !== c),
         tutors: cl.tutors.filter(t => t.className !== c), attestations: cl.attestations.filter(a => !pfmps.some(p => p.id === a.pfmpId)) }; });
   }
   function classesPage() {
@@ -266,14 +289,14 @@
           el('button', { type: 'button', class: 'su-primary', text: '+ Ajouter l’élève', onclick: () => {
             if (!f.lastName.value.trim() || !f.firstName.value.trim() || !cls.value) return;
             const st = { id: K.uid(), lastName: f.lastName.value.trim(), firstName: f.firstName.value.trim(), className: cls.value, birthDate: K.formatBirthDate(f.birthDate.value), ine: f.ine.value.trim() };
-            studentsClass = cls.value; mutate(x => ({ ...x, students: K.mergeUnique(x.students, [st], K.studentKey) }));
+            studentsClass = cls.value; S = K.enrichStudents(S, [st]).state; shareStudents([st]); mutate(x => x);
           } }))),
       el('section', { class: 'su-filter' }, field('Afficher la liste de la classe', classSelect(studentsClass, v => { studentsClass = v; render(); })), studentsClass ? el('small', { text: plural(visible.length, 'élève') }) : null),
       studentsClass ? table(['Nom', 'Prénom', 'Classe', 'Date de naissance', 'Numéro INE', ''], visible.map(st => [st.lastName, st.firstName, st.className, K.formatBirthDate(st.birthDate), st.ine || '',
         el('button', { type: 'button', class: 'su-icon danger', 'aria-label': 'Supprimer ' + st.lastName, text: '🗑', onclick: () => {
-          if (!confirm(`Supprimer ${st.lastName} ${st.firstName} et ses évaluations ?`)) return;
+          if (!confirm(`Retirer ${st.lastName} ${st.firstName} du suivi et supprimer ses évaluations ?${st.rosterId ? '\nL’élève reste dans la liste « Élèves par classe » du site.' : ''}`)) return;
           rpc('suivi_purge_students', { p_ids: [st.id] }).catch(error => say(error.message, true));
-          mutate(x => K.removeStudentReferences(x, new Set([st.id])));
+          mutate(x => ({ ...K.removeStudentReferences(x, new Set([st.id])), detachedRoster: st.rosterId ? [...new Set([...(x.detachedRoster || []), st.rosterId])] : (x.detachedRoster || []) }));
         } })])) : null);
   }
 
@@ -314,12 +337,39 @@
       X.utils.book_append_sheet(wb, sheet, 'Tuteurs PFMP'); X.writeFile(wb, 'modele-tuteurs-pfmp.xlsx');
     };
     const members = accessCache;
+    // Entreprise choisie dans l'annuaire PFMP du site : coordonnées et contact repris sans ressaisie.
+    let companyPick = null;
+    if (isTutor) {
+      const list = el('datalist', { id: 'suCompanyList' }), search = el('input', { type: 'search', list: 'suCompanyList', placeholder: 'Raison sociale, ville… (annuaire PFMP)' });
+      let rows = [];
+      search.addEventListener('change', () => {
+        const d = rows.find(r => r.label === search.value)?.data;
+        if (!d) return;
+        const set = (k, v) => { if (v) inputs[k].value = v; };
+        set('company', d.raisonSociale); set('hostStructure', d.denomination || d.raisonSociale);
+        set('companyAddress', [d.adresse, [d.codePostal, d.ville].filter(Boolean).join(' ')].filter(Boolean).join(', '));
+        set('companyPhone', d.telephone || d.portable);
+        if (String(d.contactNom || '').trim()) { const n = K.splitRosterName(d.contactNom); set('lastName', n.lastName); set('firstName', n.firstName); }
+        set('email', d.contactEmail); set('phone', d.contactTelephone);
+      });
+      companyPick = field('Choisir dans l’annuaire des entreprises', el('span', {}, search, list));
+      window.MelecPfmp?.companies?.().then(all => {
+        rows = all.map(c => ({ data: c.data, label: [c.data.raisonSociale, c.data.ville].filter(Boolean).join(' — ') }));
+        rows.forEach(r => { r.key = K.norm(r.label + ' ' + (r.data.codePostal || '')); });
+        // Suggestions limitées aux 40 meilleures correspondances : liste fluide même avec un gros annuaire.
+        search.addEventListener('input', () => {
+          const q = K.norm(search.value).split(/\s+/).filter(Boolean);
+          fill(list, q.length ? rows.filter(r => q.every(w => r.key.includes(w))).slice(0, 40).map(r => option(r.label, r.label)) : []);
+        });
+      }).catch(() => { search.placeholder = 'Annuaire indisponible : saisie manuelle'; });
+    }
     return el('div', { class: 'su-page' },
       heading(isTutor ? 'PAGE 05' : 'PAGE 04', isTutor ? 'Entreprises & tuteurs' : 'Professeurs', isTutor ? 'Entreprises partenaires et coordonnées des tuteurs liés aux périodes en entreprise.' : 'L’adresse e-mail permet d’autoriser le professeur à évaluer ses élèves en PFMP (rubrique Accès des enseignants).'),
-      el('section', { class: 'su-card su-form' }, el('div', { class: 'su-fields' }, keys.map(([k, label]) => field(label, inputs[k])),
+      el('section', { class: 'su-card su-form' }, el('div', { class: 'su-fields' }, companyPick, keys.map(([k, label]) => field(label, inputs[k])),
         isTutor ? [field('Classe des élèves', tutorClass), field('Période PFMP', pfmpSel), el('details', { class: 'su-multi' }, el('summary', { text: (personDraft.studentIds || []).length ? plural(personDraft.studentIds.length, 'élève') + ' sélectionné(s)' : 'Choisir les élèves' }), el('div', {}, picks.length ? picks : el('small', { text: 'Choisissez d’abord une classe' })))]
           : field('Classe associée', classSelect(personDraft.className || '', v => { personDraft.className = v; }, 'Toutes les classes')),
         el('button', { type: 'button', class: 'su-primary', text: isTutor ? '+ Ajouter le tuteur' : '+ Ajouter', onclick: add }))),
+      isTutor ? null : knownColleagues(),
       isTutor ? el('section', { class: 'su-card su-import' }, el('div', {}, el('h4', { text: 'Importer les entreprises et tuteurs' }),
           el('p', { text: 'Colonnes reconnues : Structure d’accueil, Raison sociale, Adresse entreprise, Téléphone entreprise, Nom du tuteur, Prénom du tuteur, Email du tuteur, Téléphone du tuteur, Classe, PFMP et INE. Le nom et le prénom de l’élève peuvent remplacer l’INE.' })),
           el('button', { type: 'button', text: '⤓ Modèle Excel', onclick: () => template().catch(error => alert(error.message)) }),
@@ -637,7 +687,28 @@
   }
 
   // ───────── Accès des enseignants ─────────
-  let accessCache = null;
+  let accessCache = null, storeMembers = null;
+  // Collègues déjà enregistrés ailleurs sur le site (accès SUIVI, équipe du Magasin) : ajout en un clic, sans doublon.
+  function personFromEmail(email, name) {
+    if (name) { const parts = name.trim().split(/\s+/), upper = parts.findIndex(p => p.length > 1 && p === p.toLocaleUpperCase('fr'));
+      if (upper > 0) return { firstName: parts.slice(0, upper).join(' '), lastName: parts.slice(upper).join(' ') };
+      return K.splitRosterName(name); }
+    const [first = '', ...rest] = email.split('@')[0].split('.'), cap = w => w.replace(/(^|[-\s])\p{L}/gu, m => m.toLocaleUpperCase('fr'));
+    return { firstName: cap(first), lastName: rest.join(' ').toLocaleUpperCase('fr') || first.toLocaleUpperCase('fr') };
+  }
+  function knownColleagues() {
+    if (role !== 'admin') return null;
+    if (!accessCache) refreshAccess().then(render).catch(() => {});
+    if (storeMembers === null) { storeMembers = []; rpc('store_admin_members').then(m => { storeMembers = m || []; render(); }).catch(() => {}); }
+    const have = new Set(S.teachers.map(t => K.norm(t.email)).filter(Boolean)), seen = new Set();
+    const list = [...(accessCache || []).map(m => ({ email: m.email, name: m.name })), ...storeMembers.map(m => ({ email: m.email, name: '' }))]
+      .filter(m => m.email && !have.has(K.norm(m.email)) && !seen.has(K.norm(m.email)) && seen.add(K.norm(m.email)));
+    if (!list.length) return null;
+    return el('section', { class: 'su-card' }, el('h4', { text: 'Collègues déjà enregistrés sur le site' }),
+      el('p', { class: 'su-help', text: 'Accès SUIVI&PFMP et équipe du Magasin. Un clic les ajoute à la liste des professeurs.' }),
+      el('div', { class: 'su-actions' }, list.map(m => el('button', { type: 'button', text: '+ ' + (m.name || m.email), title: m.email, onclick: () =>
+        mutate(x => ({ ...x, teachers: K.mergeUnique(x.teachers, [{ id: K.uid(), ...personFromEmail(m.email, m.name), email: m.email.toLowerCase(), phone: '', subject: '', className: '' }], K.teacherKey) })) }))));
+  }
   async function refreshAccess() { if (role === 'admin') accessCache = await rpc('suivi_members_list'); }
   function accessPage() {
     if (!accessCache) { refreshAccess().then(render).catch(error => say(error.message, true)); return el('p', { class: 'su-empty', text: 'Chargement des accès…' }); }

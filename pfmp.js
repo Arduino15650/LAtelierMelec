@@ -327,7 +327,7 @@
     async function load(force) {
       const [s, cl, rep, res, fol] = await Promise.all([
         api.rest('student_profiles?select=user_id,last_name,first_name,class_id,approved_at,blocked_at&approved_at=not.is.null&order=last_name.asc,first_name.asc'),
-        api.rest('teaching_classes?select=id,name&order=name.asc'),
+        (window.MelecRegistre ? window.MelecRegistre.ensureClasses() : Promise.resolve()).then(() => api.rest('teaching_classes?select=id,name&order=name.asc')),
         api.rest('pfmp_reports?select=*&order=updated_at.desc'),
         api.rest('pfmp_reservations?select=company_id,student_id,report_id'),
         api.rest('pfmp_followups?select=*'),
@@ -719,5 +719,6 @@
     new MutationObserver(() => { if (!teacherRoot.classList.contains('hidden')) teacher.open(false); }).observe(teacherRoot, { attributes: true, attributeFilter: ['class'] });
   }
   if (document.getElementById('studentContentTabs')) initStudent();
-  window.MelecPfmp = { normalizeCompany, fingerprint, norm, geocode };
+  // companies() : annuaire partagé (copie locale tenue à jour), utilisé par SUIVI&PFMP pour les tuteurs.
+  window.MelecPfmp = { normalizeCompany, fingerprint, norm, geocode, companies: () => loadCompanies(false) };
 })();
