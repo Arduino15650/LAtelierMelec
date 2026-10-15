@@ -29,10 +29,31 @@
     documentCache.clear();
     documentCacheBytes = 0;
   }
+  // Documents gardés sur le poste entre deux actualisations : un dossier de 10 Mo n'est téléchargé
+  // qu'une fois, au lieu de l'être à chaque rechargement de page par chaque élève. Le document n'est
+  // relu sur le poste que si le serveur vient d'autoriser cet élève à le voir (liste des fichiers du
+  // TP lue sous ses droits). Effacés à la déconnexion.
+  const DOCUMENTS = 'melec-documents-v1', MAX_STORED_BYTES = 120 * 1024 * 1024;
+  const storedUrl = path => new URL('./__documents/' + encodeURIComponent(path), location.href).href;
+  async function storedDocument(path) {
+    try { const hit = await (await caches.open(DOCUMENTS)).match(storedUrl(path)); return hit ? await hit.blob() : null; }
+    catch { return null; }
+  }
+  async function storeDocument(path, blob) {
+    try {
+      const box = await caches.open(DOCUMENTS);
+      const keys = await box.keys();
+      let total = 0; const sizes = [];
+      for (const key of keys) { const size = Number((await box.match(key))?.headers.get('x-size')) || 0; sizes.push([key, size]); total += size; }
+      while (sizes.length && total + blob.size > MAX_STORED_BYTES) { const [key, size] = sizes.shift(); await box.delete(key); total -= size; }
+      await box.put(storedUrl(path), new Response(blob, { headers: { 'Content-Type': blob.type || 'application/pdf', 'x-size': String(blob.size) } }));
+    } catch { /* stockage indisponible ou plein : le document reste en mémoire pour cette visite */ }
+  }
+  function forgetStoredDocuments() { try { caches.delete(DOCUMENTS); } catch { /* rien à effacer */ } }
   async function loadDocument(asset, onProgress) {
     const cached = documentCache.get(asset.object_path);
     if (cached) return cached;
-    const pending = api.download(asset.object_path, {retryTransient:true, onProgress});
+    const pending = storedDocument(asset.object_path).then(stored => stored || api.download(asset.object_path, {retryTransient:true, onProgress}).then(blob => { storeDocument(asset.object_path, blob); return blob; }));
     documentCache.set(asset.object_path, pending);
     try {
       const blob = await pending;
@@ -352,7 +373,7 @@
     } catch { /* affichage normal après vérification */ }
   }
   $('studentLogout').onclick = async () => {
-    forgetView();
+    forgetView(); forgetStoredDocuments(); window.MelecPfmpForget?.();
     if (cleanupViewer) cleanupViewer();
     clearTpViewer(); clearDocumentCache(); activeTp=null; assignments=[]; tpItems=[]; tpItemsLoadedAt=0; tpItemsKey='';
     await api.signOut();

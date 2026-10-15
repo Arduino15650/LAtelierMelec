@@ -357,6 +357,7 @@
   function signOut(force) {
     if (!force && readPending()) return alert('Des modifications ne sont pas encore synchronisées. Attendez la confirmation « Synchronisé ».');
     clearSession();
+    window.MelecPfmpForget?.();
     userId = '';
     revision = 0;
     conflicted = false;

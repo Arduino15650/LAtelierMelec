@@ -571,7 +571,10 @@ html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane{
 html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane *:not(input):not(select):not(textarea):not(option){-webkit-text-fill-color:currentColor!important}
 html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane h2{color:var(--st-ink)!important}
 html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(h3,h4,h5,strong,b,label,summary,dt,th,legend){color:var(--st-ink)!important}
-html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(p,li,td,dd,span,em){color:inherit}
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(p,li,td,dd,span,em):not(:where(.student-pdf-mount) *){color:inherit}
+/* Couche de texte des PDF : invisible (elle sert seulement à sélectionner le texte). Visible, elle
+   doublait chaque ligne du document avec une police de substitution, d'où l'aspect flou et dédoublé. */
+html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane .student-pdf-text-layer :is(span,br){color:transparent!important;-webkit-text-fill-color:transparent!important}
 html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(small,.portal-small){color:var(--st-muted)!important}
 html body.portal-page:not(#st-a):not(#st-b) #studentDashboard .student-pane :is(section,article,details,.student-tp-card,.portal-list>*,[class*="-card"],[class*="-item"],[class*="-block"]:not(.lesson-block),[class*="-group"],[class*="competenc"],[class*="result"]):not(.student-pdf-preview-card){
   background:var(--st-panel-2)!important;background-image:none!important;

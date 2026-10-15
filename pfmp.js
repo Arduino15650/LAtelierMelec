@@ -103,26 +103,59 @@
     if (!window.L.markerClusterGroup) await loadScript('vendor/leaflet/leaflet.markercluster.js');
     return window.L;
   }
-  // L'annuaire (plus de 3 000 entreprises) n'est retéléchargé que si son numéro de version a changé.
+  // L'annuaire (plus de 8 000 entreprises, environ 5 Mo) n'est téléchargé qu'une fois par poste :
+  // il est gardé dans le navigateur avec son numéro de version et n'est retéléchargé qu'après une
+  // vraie modification de l'annuaire (pas à chaque réservation d'élève, ni à chaque actualisation).
+  // En classe, cela évite que trente postes saturent le serveur en rechargeant la même liste.
   const cache = { revision: null, companies: [], index: new Map() };
-  async function loadCompanies(force) {
-    const meta = await api.rest('pfmp_meta?select=revision');
-    const revision = meta[0]?.revision ?? 0;
-    if (!force && cache.revision === revision) return cache.companies;
-    // Pages de 1000 (limite du serveur) demandées quatre par quatre en parallèle :
-    // l'annuaire complet arrive en un seul aller-retour au lieu de quatre à la suite.
-    const all = [];
-    for (let offset = 0, done = false; !done; offset += 4000) {
-      const pages = await Promise.all([0, 1000, 2000, 3000].map(step =>
-        api.rest('pfmp_companies?select=id,data&order=id.asc&limit=1000&offset=' + (offset + step))));
-      for (const rows of pages) { all.push(...rows); if (rows.length < 1000) { done = true; break; } }
-    }
+  const STORE_DB = 'melec-pfmp', STORE = 'annuaire';
+  function idb(mode, work) {
+    return new Promise(resolve => {
+      try {
+        const open = indexedDB.open(STORE_DB, 1);
+        open.onupgradeneeded = () => open.result.createObjectStore(STORE);
+        open.onerror = () => resolve(null);
+        open.onsuccess = () => {
+          const db = open.result;
+          try {
+            const tx = db.transaction(STORE, mode); const req = work(tx.objectStore(STORE));
+            tx.oncomplete = () => { db.close(); resolve(req?.result ?? null); };
+            tx.onerror = tx.onabort = () => { db.close(); resolve(null); };
+          } catch { db.close(); resolve(null); }
+        };
+      } catch { resolve(null); }
+    });
+  }
+  const readStored = () => idb('readonly', store => store.get('companies'));
+  const writeStored = value => idb('readwrite', store => store.put(value, 'companies'));
+  // Déconnexion : l'annuaire gardé sur le poste est effacé.
+  window.MelecPfmpForget = () => { cache.revision = null; cache.companies = []; cache.index = new Map(); try { indexedDB.deleteDatabase(STORE_DB); } catch { /* rien à effacer */ } };
+  function adopt(revision, all) {
     cache.revision = revision; cache.companies = all; cache.index = new Map();
     for (const c of all) {
       const d = c.data;
       cache.index.set(c.id, norm([d.raisonSociale, d.denomination, d.adresse, d.codePostal, d.ville, d.activite, (d.metiers || []).join(' '), (d.secteurs || []).join(' '), d.siret].join(' ')));
     }
     return all;
+  }
+  async function loadCompanies(force) {
+    const meta = await api.rest('pfmp_meta?select=companies_revision');
+    const revision = meta[0]?.companies_revision ?? 0;
+    if (!force && cache.revision === revision) return cache.companies;
+    if (!force) {
+      const stored = await readStored();
+      if (stored && stored.revision === revision && Array.isArray(stored.rows)) return adopt(revision, stored.rows);
+    }
+    // Pages de 1000 (limite du serveur), deux à la fois : rapide sans engorger le serveur
+    // quand toute une classe ouvre l'onglet en même temps.
+    const all = [];
+    for (let offset = 0, done = false; !done; offset += 2000) {
+      const pages = await Promise.all([0, 1000].map(step =>
+        api.rest('pfmp_companies?select=id,data&order=id.asc&limit=1000&offset=' + (offset + step))));
+      for (const rows of pages) { all.push(...rows); if (rows.length < 1000) { done = true; break; } }
+    }
+    writeStored({ revision, rows: all });
+    return adopt(revision, all);
   }
   function download(content, filename, type) {
     const url = URL.createObjectURL(new Blob([content], { type }));
