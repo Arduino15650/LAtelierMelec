@@ -139,6 +139,7 @@
   <link rel="stylesheet" href="devis.css?v=20261014-2">
   <link rel="stylesheet" href="pfmp.css?v=20261014-1">
   <link rel="stylesheet" href="magasin.css?v=20261014-equipe">
+  <link rel="stylesheet" href="suivi.css?v=20261015-suivi">
   <link rel="stylesheet" href="melec-electrique.css?v=20261014-2">
   <script src="melec-circuit.js?v=20261014-veille" defer></script>
 </head>
@@ -149,7 +150,7 @@
       <div class="cloud-brand"><img src="logo-melec-192.webp" alt=""><strong>BAC PRO MELEC</strong></div>
       <section id="cloudLoginPane">
         <h1>Espace enseignant</h1>
-        <p>Enseignants et équipe du magasin : connectez-vous avec votre compte.</p>
+        <p>Enseignants, équipe du magasin et collègues évaluateurs PFMP : connectez-vous avec votre compte.</p>
         <form id="cloudLoginForm">
           <label for="cloudEmail">Adresse e-mail</label><input id="cloudEmail" type="email" autocomplete="username" required>
           <label for="cloudPassword">Mot de passe</label><input id="cloudPassword" type="password" autocomplete="current-password" required>
@@ -157,8 +158,8 @@
           <div class="cloud-actions"><button type="submit">Se connecter</button></div>
         </form>
         <details id="teamSignup" class="team-signup">
-          <summary>Collègue de l’équipe magasin sans compte ? Créer mon compte</summary>
-          <p class="team-signup-help">Réservé aux adresses autorisées par l’administrateur dans « Accès au magasin ». Après l’inscription, confirmez votre adresse depuis l’e-mail reçu, puis revenez ici : l’application Authenticator vous sera demandée à la première connexion.</p>
+          <summary>Collègue sans compte enseignant (magasin ou suivi PFMP) ? Créer mon compte</summary>
+          <p class="team-signup-help">Réservé aux adresses autorisées dans « Accès au magasin » ou dans SUIVI&amp;PFMP › « Accès des enseignants ». Après l’inscription, confirmez votre adresse depuis l’e-mail reçu, puis revenez ici : l’application Authenticator vous sera demandée à la première connexion.</p>
           <form id="teamSignupForm" autocomplete="off">
             <label for="teamLastName">Nom</label><input id="teamLastName" maxlength="80" autocomplete="family-name" required>
             <label for="teamFirstName">Prénom</label><input id="teamFirstName" maxlength="80" autocomplete="given-name" required>
@@ -218,7 +219,7 @@
       <button class="nav" data-view="referential"><span>◎</span> Référentiel</button>
       <button class="nav" data-view="teaching"><span>▣</span> TP en atelier · Élèves</button>
       <button class="nav" data-view="quotes"><span>€</span> Devis élèves</button>
-      <button class="nav" data-view="pfmp"><span>⌖</span> PFMP</button>
+      <button class="nav" data-view="suivi"><span>⌖</span> SUIVI&amp;PFMP</button>
       <button class="nav" data-view="magasin"><span>⚡</span> Accès équipe</button>
       <button class="nav" data-view="admin" hidden><span>🔒</span> Administration</button>
       <div class="cloud-toolbar" hidden>
@@ -245,6 +246,7 @@
       <div id="referentialView" class="view hidden"></div>
       <div id="editorView" class="view hidden"></div>
       <div id="teachingView" class="view hidden teaching-space"></div>
+      <div id="suiviView" class="view hidden teaching-space su-root"></div>
       <div id="pfmpView" class="view hidden teaching-space"></div>
       <div id="magasinView" class="view hidden teaching-space"></div>
       <div id="adminView" class="view hidden teaching-space"></div>
@@ -268,6 +270,8 @@
   <script src="teaching-space.js?v=20261014-devis"></script>
   <script src="devis.js?v=20261014-4"></script>
   <script src="pfmp.js?v=20261015-charge"></script>
+  <script src="suivi-core.js?v=20261015-suivi"></script>
+  <script src="suivi.js?v=20261015-suivi"></script>
   <script src="magasin.js?v=20261014-veille"></script>
   <script src="pdf-generator-v2.js?v=20260911-1"></script>
   <script src="melec-captcha.js?v=20261015-widget"></script>
