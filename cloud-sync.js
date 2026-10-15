@@ -379,9 +379,9 @@
   retryButton.addEventListener('click', () => {retryButton.hidden = true;begin().catch(handleResumeError);});
   function handleResumeError(error) {
     document.documentElement.classList.remove('cloud-resuming');
-    const invalid = [400, 401].includes(error.status) && /refresh|token|session|grant|jwt|expir/i.test(error.code || error.message);
+    const invalid = window.MelecPortal.sessionRejected(error);
     if (invalid) {
-      clearSession();
+      clearSession(); window.MelecPortal.forget();
       byId('cloudLoginPane').hidden = false;
       retryButton.hidden = true;
       mountLoginCaptcha();
