@@ -381,9 +381,13 @@
   openDashboard().catch(error => {
     authPane.hidden = false; dashboard.hidden = true;
     document.documentElement.classList.remove('student-resuming');
-    mountCaptcha();
-    if (sessionStorage.getItem('melec-cloud-session-v1'))
+    if (api.sessionRejected(error)) {
+      // Session illisible ou expirée : on l'oublie et on revient simplement au formulaire de connexion.
+      api.forget();
+      message(authStatus, 'Votre session a expiré. Reconnectez-vous.', true);
+    } else if (sessionStorage.getItem('melec-cloud-session-v1'))
       message(authStatus, 'Le serveur ne répond pas correctement : ' + error.message + ' Votre session est conservée ; actualisez pour réessayer.', true);
+    mountCaptcha();
   });
 })();
 

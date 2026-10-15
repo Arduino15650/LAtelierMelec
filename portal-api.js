@@ -254,10 +254,19 @@
   async function mfaUnenroll(factorId) {
     return authFetch('factors/' + encodeURIComponent(factorId), { method: 'DELETE' });
   }
+  // Session refusée par le serveur (jeton illisible, révoqué ou expiré sans renouvellement possible) :
+  // il faut revenir au formulaire de connexion plutôt que de proposer de réessayer indéfiniment.
+  // Une simple panne réseau ou un serveur lent ne sont pas concernés : la session est alors conservée.
+  function sessionRejected(error) {
+    if (!error || ![400, 401, 403].includes(error.status)) return false;
+    const text = String(error.code || '') + ' ' + String(error.message || '');
+    return /PGRST30[123]|bad_jwt|invalid.?jwt|jwt|refresh_token|invalid_grant|session_not_found|session.?expired|token.?(is )?(expired|malformed|invalid)/i.test(text);
+  }
+  function forget() { current = null; sessionStorage.removeItem(SESSION_KEY); }
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   }
-  window.MelecPortal = { URL, KEY, signIn, signUp, token, user, userId, rest, invoke, upload, download, removeFiles, signOut, escapeHtml,
+  window.MelecPortal = { URL, KEY, signIn, signUp, token, user, userId, rest, invoke, upload, download, removeFiles, signOut, escapeHtml, sessionRejected, forget,
     assuranceLevel, mfaFactors, mfaEnroll, mfaVerify, mfaUnenroll };
 })();
 
