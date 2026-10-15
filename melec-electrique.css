@@ -184,3 +184,46 @@ html body:not(#el-a):not(#el-b):not(#el-c) :is(.home-access-card,.pfmp-company,.
 html body:not(#el-a):not(#el-b):not(#el-c) .pfmp-metrics{gap:10px!important;margin-bottom:10px!important}
 html body:not(#el-a):not(#el-b):not(#el-c) .pfmp-metrics>div{display:flex!important;align-items:baseline;gap:10px;padding:9px 14px!important}
 html body:not(#el-a):not(#el-b):not(#el-c) .pfmp-metrics b{font-size:1.35rem!important;line-height:1}
+
+/* ───────── Accueil enseignant : capsules compactes sur téléphone et tablette ─────────
+   10 rubriques en grille régulière, sans espace vide : 2 colonnes × 5 sur téléphone et tablette en portrait,
+   5 colonnes × 2 sur tablette en paysage. Hauteur réglée sur le contenu, textes limités à 2 lignes. */
+html body #homeView .home-access-card[onclick*="'suivi'"]{--c:76,201,140}
+@media (max-width:1280px){
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-hero{padding-block:clamp(8px,2vw,18px)!important;margin-bottom:clamp(10px,2vw,16px)!important;min-height:0!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-intro h1{font-size:clamp(2rem,7vw,3.4rem)!important;line-height:.95!important;margin:4px 0 8px!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-intro p{font-size:.95rem!important;margin:6px 0 0!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-values{display:none!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access{grid-auto-rows:1fr!important;gap:10px!important;max-width:1100px!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) .content #homeView .home-access .home-access-card[onclick]{min-height:0!important;padding:12px 14px!important;gap:12px!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-icon{width:38px!important;height:38px!important;min-width:38px!important;font-size:1.05rem!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-copy{display:grid!important;gap:3px!important;min-width:0}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-copy strong{font-size:.98rem!important;line-height:1.2!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-copy small{font-size:.8rem!important;line-height:1.3!important;margin:0!important;
+    display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+}
+/* Tablette en paysage : 5 colonnes × 2, icône au-dessus du titre. */
+@media (min-width:900px) and (max-width:1280px){
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick]{grid-template-columns:minmax(0,1fr)!important;align-content:start!important;justify-items:start!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-copy small{-webkit-line-clamp:3}
+}
+/* Téléphone et tablette en portrait : 2 colonnes. */
+@media (max-width:899px){
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+/* Téléphone : capsules carrées compactes, icône et titre sur la même ligne, description courte en dessous. */
+@media (max-width:600px){
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access{gap:8px!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) .content #homeView .home-access .home-access-card[onclick]{
+    display:grid!important;grid-template-columns:30px minmax(0,1fr)!important;grid-template-rows:auto 1fr;align-items:center!important;align-content:start!important;
+    column-gap:8px!important;row-gap:6px!important;padding:10px!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-icon{width:30px!important;height:30px!important;min-width:30px!important;font-size:.9rem!important;grid-row:1}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-copy{display:contents!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-copy strong{grid-column:2;grid-row:1;font-size:.86rem!important;line-height:1.15!important}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-copy small{grid-column:1 / -1;grid-row:2;align-self:start;font-size:.74rem!important;-webkit-line-clamp:3}
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-intro{text-align:center!important}
+}
+@media (max-width:899px){
+  html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-hero,html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-intro{text-align:center!important;margin-inline:auto!important;justify-content:center!important}
+}
