@@ -174,7 +174,8 @@ html body.portal-page:not(#mg-a):not(#mg-b):not(#mg-c):not(#mg-d) #studentDashbo
 
 /* Collègue de l'équipe magasin (sans compte enseignant) : seuls le magasin et, pour un
    administrateur, l'administration sont proposés. Les données restent protégées par la base. */
-html body.team-mode :is(#teacherPrimaryNav,.header-nav) .nav:not([data-view="magasin"]):not([data-view="admin"]){display:none!important}
+html body.team-mode :is(#teacherPrimaryNav,.header-nav) .nav{display:none!important}
+html body.team-store :is(#teacherPrimaryNav,.header-nav) .nav:is([data-view="magasin"],[data-view="admin"]),html body.team-suivi :is(#teacherPrimaryNav,.header-nav) .nav[data-view="suivi"]{display:revert!important}
 html body.team-mode #homeView,html body.team-mode .home-access,html body.team-mode #cloudSyncNow{display:none!important}
 /* Inscription d'un collègue, sous le formulaire de connexion */
 #cloudGate .team-signup{margin-top:18px;padding-top:14px;border-top:1px solid rgba(147,171,199,.25)}

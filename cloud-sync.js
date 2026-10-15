@@ -110,19 +110,24 @@
       throw new Error('Accès réservé à l’enseignant. Utilisez l’espace élève si vous êtes inscrit comme élève.');
     }
   }
-  // Équipe magasin : le rôle est vérifié par la base (adresse autorisée + Authenticator).
+  // Collègue sans compte enseignant (équipe magasin ou évaluateur PFMP) : le rôle est vérifié par la
+  // base (adresse autorisée + Authenticator) ; seuls les menus correspondants restent accessibles.
   async function enterTeamMode() {
-    try { await api('rpc/store_version', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); }
-    catch { return false; }
+    const probe = name => api('rpc/' + name, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(() => true, () => false);
+    const [store, suivi] = await Promise.all([probe('store_version'), probe('suivi_version')]);
+    if (!store && !suivi) return false;
     teamMode = true;
     document.body.classList.add('team-mode');
-    const allowed = new Set(['magasin', 'admin']);
+    document.body.classList.toggle('team-store', store);
+    document.body.classList.toggle('team-suivi', suivi);
+    const allowed = new Set([...(store ? ['magasin', 'admin'] : []), ...(suivi ? ['suivi'] : [])]);
+    const home = suivi && !store ? 'suivi' : 'magasin';
     const baseShow = window.show;
-    window.show = name => baseShow(allowed.has(name) ? name : 'magasin');
-    window.resetToHome = () => window.show('magasin');
+    window.show = name => baseShow(allowed.has(name) ? name : home);
+    window.resetToHome = () => window.show(home);
     unlock();
-    status('Équipe magasin');
-    window.show('magasin');
+    status(store && suivi ? 'Équipe magasin · Suivi PFMP' : store ? 'Équipe magasin' : 'Suivi PFMP');
+    window.show(home);
     return true;
   }
   function showImport() {
