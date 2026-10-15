@@ -1,8 +1,16 @@
-name: Lecture quotidienne Supabase
+# Maintien en éveil de la base Supabase (offre gratuite : un projet inactif est mis en pause).
+# Cycle : deux passages par jour, tous les jours, plus un passage à chaque modification de ce fichier.
+# Chaque passage écrit un horodatage en base (fonction melec_veille, migration 20261015180000_veille.sql),
+# vérifie le service de connexion, puis confirme à GitHub que la tâche reste active
+# (GitHub désactive les tâches planifiées d'un dépôt sans activité depuis 60 jours).
+# En cas d'échec, GitHub envoie un e-mail au propriétaire du dépôt.
+name: Maintien en éveil Supabase
 
 on:
   schedule:
-    - cron: "19 8 * * *"
+    - cron: "19 7 * * *"
+      timezone: Europe/Paris
+    - cron: "47 19 * * *"
       timezone: Europe/Paris
   workflow_dispatch:
   # Validate changes to this automation immediately, without a daily commit.
@@ -21,11 +29,11 @@ jobs:
   daily-read:
     if: github.repository == 'Arduino15650/LAtelierMelec'
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 6
     permissions:
       actions: write
     steps:
-      - name: Lecture de disponibilité de la base
+      - name: Réveil de la base (écriture d'un horodatage)
         shell: bash
         env:
           SUPABASE_URL: https://bcvhuziwdwaorkxqsrch.supabase.co
@@ -37,18 +45,26 @@ jobs:
           trap 'rm -f "$response_file"' EXIT
           curl --fail --silent --show-error \
             --proto '=https' --connect-timeout 10 --max-time 30 \
-            --retry 2 --retry-delay 5 --retry-max-time 100 \
+            --retry 4 --retry-delay 15 --retry-all-errors --retry-max-time 200 \
             --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
             --header 'Accept: application/json' \
             --header 'Cache-Control: no-cache' \
+            --header 'Content-Type: application/json' \
+            --request POST --data '{}' \
             --output "$response_file" \
-            "$SUPABASE_URL/rest/v1/rpc/github_daily_health"
-          if [ "$(cat "$response_file")" != '"ok"' ]; then
-            echo '::error::La base ne renvoie pas la confirmation attendue.'
+            "$SUPABASE_URL/rest/v1/rpc/melec_veille"
+          if ! grep -q '"etat": *"ok"' "$response_file"; then
+            echo '::error::La base ne renvoie pas la confirmation attendue (projet en pause ?).'
+            cat "$response_file"
             exit 1
           fi
-          echo 'Lecture Supabase réussie. Aucune donnée du site lue ou modifiée.'
-          echo '### Lecture Supabase réussie' >> "$GITHUB_STEP_SUMMARY"
+          echo "Base active : $(cat "$response_file")"
+          # Service de connexion (Auth) : même cycle.
+          curl --fail --silent --show-error --proto '=https' --connect-timeout 10 --max-time 30 \
+            --retry 2 --retry-delay 5 --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            --output /dev/null "$SUPABASE_URL/auth/v1/health"
+          echo 'Connexion (Auth) active.'
+          echo "### Supabase actif — $(cat "$response_file")" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Réactiver
         # Run even if Supabase is temporarily unavailable.
