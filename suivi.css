@@ -137,6 +137,24 @@ html body .su-master button.sel,html body .su-choice button.sel{background:var(-
   .su-exam-nav{grid-template-columns:1fr}
   .su-exam-nav>:last-child{justify-self:stretch}
 }
+/* Téléphone et tablette : rubriques en grille régulière, boutons d'action à taille normale, compteurs côte à côte. */
+html body .su-primary{min-height:40px;padding:8px 16px;line-height:1.2}
+@media (max-width:900px){
+  #suiviView .su-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+  html body:not(#st-a):not(#st-b):not(#el-a) #suiviView .su-tabs button{word-break:normal!important;overflow-wrap:normal!important;hyphens:manual;min-height:34px!important;padding:4px 6px!important;border-radius:8px!important;font-size:.78rem!important;line-height:1.15!important;white-space:normal}
+  #suiviView .su-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  #suiviView .su-kpis article{padding:10px 12px}
+  #suiviView .su-kpis b{font-size:1.6rem}
+  #suiviView .su-fields{grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr))}
+  #suiviView .su-fields>.su-primary{grid-column:1/-1}
+}
+@media (max-width:560px){#suiviView .su-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}html body:not(#st-a):not(#st-b):not(#el-a) #suiviView .su-tabs button{font-size:.68rem!important;padding:3px 4px!important;letter-spacing:0!important}}
 @media print{
   .su-tabs,.su-top,.su-actions,.su-exam-nav,.su-banner{display:none!important}
 }
+
+/* Pastille du menu SUIVI&PFMP : même vert que l’ancienne rubrique PFMP. */
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="suivi"],html body.subpage-active:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="suivi"]:not(.active),.header-nav .nav[data-view="suivi"]{background:#e3f6ec!important;color:#155a3a!important;border-color:#7cc9a0!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="suivi"] span{color:#155a3a!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="suivi"].active,html body.subpage-active:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="suivi"].active{background:#1f7a50!important;color:#fff!important;border-color:rgba(255,255,255,.85)!important;box-shadow:0 0 0 1px #1f7a50,0 0 16px #1f7a5099!important}
+html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="suivi"].active span{color:#fff!important}

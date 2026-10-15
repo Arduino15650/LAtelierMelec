@@ -5,13 +5,13 @@
     {view:'activities',icon:'▦',title:'Activités',text:'Créer et évaluer les activités en atelier.'},
     {view:'activity-list',icon:'☷',title:'Liste des activités',text:'Retrouver les activités classées par niveau.'},
     {view:'students',icon:'♙',title:'Élèves',text:'Gérer les classes et le suivi des élèves.'},
-    {view:'results',icon:'▥',title:'Résultats',text:'Consulter les notes et les moyennes par élève.'},
-    {view:'ccf',icon:'◉',title:'Récap des CCF',text:'Suivre les situations de CCF et les compétences évaluées.'},
-    {view:'referential',icon:'◎',title:'Référentiel',text:'Consulter les compétences, tâches et connaissances.'},
-    {view:'teaching',icon:'▣',title:'TP en atelier · Élèves',text:'Publier les TP, gérer les classes et les accès élèves.'},
-    {view:'quotes',icon:'€',title:'Devis élèves',text:'Consulter, verrouiller ou supprimer les devis de matériel des élèves.'},
-    {view:'suivi',icon:'⌖',title:'SUIVI&PFMP',text:'PFMP, évaluations E2 · E31 · E32, attestations de stage signées et annuaire des entreprises.'},
-    {view:'magasin',icon:'⚡',title:'Accès équipe',text:'Le magasin électrique : stock, entrées, sorties et inventaires des élèves.'}
+    {view:'results',icon:'▥',title:'Résultats',text:'Notes et moyennes par élève.'},
+    {view:'ccf',icon:'◉',title:'Récap des CCF',text:'Situations de CCF et compétences évaluées.'},
+    {view:'referential',icon:'◎',title:'Référentiel',text:'Compétences, tâches et connaissances.'},
+    {view:'teaching',icon:'▣',title:'TP en atelier · Élèves',text:'Publier les TP et gérer les accès élèves.'},
+    {view:'quotes',icon:'€',title:'Devis élèves',text:'Consulter et verrouiller les devis des élèves.'},
+    {view:'suivi',icon:'⌖',title:'SUIVI&PFMP',text:'PFMP, évaluations E2 · E31 · E32 et attestations.'},
+    {view:'magasin',icon:'⚡',title:'Accès équipe',text:'Magasin : stock, mouvements et inventaires.'}
   ];
 
   function renderHome(){
