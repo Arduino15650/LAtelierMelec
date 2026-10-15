@@ -5,7 +5,7 @@
    uniquement dans Supabase. */
 (function () {
   'use strict';
-  const SITE_KEY = '0x4AAAAAAFV50u8jm1HFS_z6';
+  const SITE_KEY = '0x4AAAAAAFXPbSWCHXjXSleH';
   const SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
   let loading = null;
   const widgets = new Map();
