@@ -185,7 +185,17 @@
   const annuaire = document.getElementById('pfmpView');
   fill(root, el('header', { class: 'su-top' }, el('div', {}, el('p', { class: 'su-kicker', text: 'Suivi & certification' }), el('h2', { text: 'SUIVI&PFMP' }))), tabs, banner, main);
   if (annuaire) { annuaire.classList.remove('view'); annuaire.classList.add('hidden'); root.append(annuaire); }
-  function go(next, exam) { page = next; examKey = exam || ''; render(); root.scrollIntoView({ block: 'start' }); }
+  // Pages déjà visitées dans SUIVI&PFMP : utilisées par le bouton « Retour » flottant (retour.js).
+  const visited = [];
+  function go(next, exam) {
+    if (next !== page || (exam || '') !== examKey) { visited.push([page, examKey]); if (visited.length > 30) visited.shift(); }
+    page = next; examKey = exam || ''; render(); root.scrollIntoView({ block: 'start' });
+  }
+  function back() {
+    if (root.classList.contains('hidden') || !visited.length) return false;
+    [page, examKey] = visited.pop(); render(); root.scrollIntoView({ block: 'start' });
+    return true;
+  }
   function heading(kicker, title, copy, action) {
     return el('section', { class: 'su-heading' }, el('div', {}, kicker ? el('em', { text: kicker }) : null, el('h3', { text: title }), copy ? el('p', { text: copy }) : null), action || null);
   }
@@ -797,10 +807,11 @@
 
   // ───────── Ouverture du menu ─────────
   async function open() {
+    visited.length = 0;
     if (!loaded) fill(main, el('p', { class: 'su-empty', text: 'Chargement du suivi…' }));
     try { await ensureLoaded(); if (role === 'admin' && !accessCache) refreshAccess().catch(() => {}); render(); }
     catch (error) { fill(tabs); fill(main, el('p', { class: 'su-error', text: 'SUIVI&PFMP indisponible : ' + error.message })); }
   }
   new MutationObserver(() => { if (!root.classList.contains('hidden')) open(); }).observe(root, { attributes: true, attributeFilter: ['class'] });
-  window.MelecSuivi = { open, flush: flushAll, get state() { return S; }, get role() { return role; } };
+  window.MelecSuivi = { open, back, flush: flushAll, get state() { return S; }, get role() { return role; } };
 })();
