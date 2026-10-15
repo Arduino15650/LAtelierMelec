@@ -86,8 +86,12 @@
         if (!dirty) status.textContent = 'Réponses enregistrées.';
       }).catch(error => {
         dirty = true;
-        status.textContent = 'Échec de l’enregistrement : ' + error.message + (retryCount < 3 ? ' — nouvel essai automatique.' : ' — modifiez une réponse pour réessayer.');
-        if (retryCount++ < 3 && mayRead()) timer = setTimeout(() => persist().catch(() => {}),3000 * retryCount);
+        // Serveur saturé (toute la classe en même temps) : nouvelles tentatives espacées jusqu'à
+        // environ dix minutes, avec un délai différent pour chaque poste. Les réponses restent aussi
+        // gardées sur ce poste tant qu'elles ne sont pas enregistrées.
+        const again = retryCount < 12;
+        status.textContent = 'Échec de l’enregistrement : ' + error.message + (again ? ' — nouvel essai automatique (réponses gardées sur ce poste).' : ' — modifiez une réponse pour réessayer.');
+        if (again && mayRead()) { retryCount++; timer = setTimeout(() => persist().catch(() => {}), Math.min(60000, 3000 * 2 ** (retryCount - 1)) + Math.random() * 2000); }
         throw error;
       });
       return saving;

@@ -301,23 +301,31 @@
                 tpPdfCleanup = await MelecStudentPdf.render(blob,mount,mayRead);
               } else {
                 const responsePath = 'tp_document_responses?student_id=eq.' + encodeURIComponent(profile.user_id) + '&asset_id=eq.' + encodeURIComponent(asset.id);
+                // Copie de secours sur ce poste tant que le serveur n'a pas confirmé l'enregistrement :
+                // une actualisation ou une coupure pendant une saturation ne fait rien perdre.
+                const draftKey = 'melec-tp-reponses:' + profile.user_id + ':' + asset.id;
+                const readDraft = () => { try { return JSON.parse(localStorage.getItem(draftKey) || 'null'); } catch { return null; } };
+                const writeDraft = entries => { try { localStorage.setItem(draftKey, JSON.stringify({ entries, at: Date.now() })); } catch { /* stockage plein ou indisponible */ } };
+                const clearDraft = () => { try { localStorage.removeItem(draftKey); } catch { /* rien */ } };
                 const existing = await api.rest(responsePath + '&select=answers');
-                let hasResponse = existing.length > 0;
-                const formOptions = {
-                  entries: existing[0]?.answers?.entries || [],
-                  save: async entries => {
-                    if (!activeTp || activeTp.tp_id !== item.id || tpEnd(activeTp) <= Date.now()) throw new Error('Le temps du TP est écoulé.');
-                    const answers = {entries};
-                    if (hasResponse) {
-                      const updated = await api.rest(responsePath + '&select=asset_id', {method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({answers})});
-                      if (updated.length !== 1) throw new Error('Réponse non enregistrée : accès refusé ou document introuvable.');
-                    } else {
-                      const created = await api.rest('tp_document_responses?select=asset_id', {method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({student_id:profile.user_id,tp_id:item.id,asset_id:asset.id,answers})});
-                      if (created.length !== 1) throw new Error('Réponse non enregistrée.');
-                      hasResponse = true;
-                    }
-                  }
+                const draft = readDraft();
+                const saveEntries = async entries => {
+                  if (!activeTp || activeTp.tp_id !== item.id || tpEnd(activeTp) <= Date.now()) throw new Error('Le temps du TP est écoulé.');
+                  writeDraft(entries);
+                  // Une seule écriture « créer ou remplacer » : pas de conflit si l'élève a ouvert le
+                  // document dans deux onglets. Chaque élève n'écrit que sa propre ligne (règles RLS).
+                  const saved = await api.rest('tp_document_responses?on_conflict=student_id,asset_id&select=asset_id', {method:'POST',
+                    headers:{'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=representation'},
+                    body:JSON.stringify({student_id:profile.user_id,tp_id:item.id,asset_id:asset.id,answers:{entries}})});
+                  if (saved.length !== 1) throw new Error('Réponse non enregistrée : accès refusé ou document introuvable.');
+                  if (JSON.stringify(readDraft()?.entries) === JSON.stringify(entries)) clearDraft();
                 };
+                const formOptions = {
+                  entries: draft?.entries || existing[0]?.answers?.entries || [],
+                  save: saveEntries
+                };
+                // Réponses restées sur ce poste lors d'une précédente coupure : renvoyées tout de suite.
+                if (draft?.entries) saveEntries(draft.entries).catch(() => {});
                 tpPdfCleanup = await MelecStudentPdf.render(blob,mount,mayRead,formOptions);
               }
             } catch (error) { mount.remove(); throw error; }
