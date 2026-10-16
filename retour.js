@@ -1,10 +1,11 @@
-// Bouton « Retour » flottant, discret, commun aux espaces enseignant et élève.
+// Bouton « Retour » en haut de page, commun aux espaces enseignant et élève.
 //
 // Règles :
 //  - il ramène à la tâche ou à la page précédente, jamais à l'accueil (du site ou de l'espace) ;
 //  - il n'apparaît que lorsqu'il existe une étape précédente ;
 //  - un clic sur le menu, sur le titre ou sur une rubrique efface l'historique (le bouton disparaît) ;
 //  - revenir soi-même à la page d'origine (lien « Annuler », « ← Retour à… ») consomme l'étape.
+// Enseignant : bouton « ← Retour » de la barre haute. Élève : même bouton, dans l'en-tête.
 // Les autres modules alimentent l'historique avec window.MelecRetour (push / arrived / reset).
 (function () {
   'use strict';
@@ -13,10 +14,11 @@
   const teacher = page.startsWith('enseignant'), student = page.startsWith('eleve');
 
   const stack = [];
-  let restoring = false, button = null;
+  let restoring = false;
+  // body.retour-actif affiche le bouton (la feuille melec-interactions.css s'en charge).
   const sync = () => {
-    if (!button) return;
-    button.hidden = !stack.length || document.body.classList.contains('cloud-locked');
+    const show = stack.length > 0 && !document.body.classList.contains('cloud-locked');
+    if (document.body.classList.contains('retour-actif') !== show) document.body.classList.toggle('retour-actif', show);
   };
   const api = {
     // origin : identifiant de la page quittée ; undo : fonction qui y ramène.
@@ -36,32 +38,24 @@
   window.MelecRetour = api;
   if (!teacher && !student) return; // Accueil du site : aucune page précédente, pas de bouton.
 
-  const style = document.createElement('style');
-  style.textContent = `
-#melecRetour{position:fixed;z-index:880;left:max(12px,env(safe-area-inset-left));bottom:max(30px,calc(env(safe-area-inset-bottom) + 18px));
-  display:grid;place-items:center;width:38px;height:38px;padding:0;margin:0;border-radius:50%;
-  border:1px solid rgba(140,200,255,.38);background:rgba(6,20,40,.55);color:#d6ebff;
-  font:600 18px/1 system-ui,sans-serif;cursor:pointer;opacity:.55;box-shadow:0 2px 10px rgba(0,0,0,.25);
-  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:opacity .2s,transform .2s,background .2s;-webkit-tap-highlight-color:transparent}
-@media (hover:hover){#melecRetour:hover{opacity:1;background:rgba(10,32,62,.9);border-color:#ff8a1e}}
-#melecRetour:focus-visible{opacity:1;background:rgba(10,32,62,.9);border-color:#ff8a1e;outline:2px solid #ff8a1e;outline-offset:2px}
-#melecRetour:active{transform:scale(.92)}
-#melecRetour[hidden]{display:none!important}
-@media (hover:none){#melecRetour{opacity:.7}}
-@media (prefers-reduced-motion:reduce){#melecRetour{transition:none}}
-@media print{#melecRetour{display:none!important}}
-/* Un seul bouton retour : l'ancien bouton de la barre haute est remplacé par celui-ci. */
-html body .topbar #appBackButton,html body #appBackButton{display:none!important}`;
-  document.head.append(style);
-
-  button = document.createElement('button');
-  button.id = 'melecRetour';
-  button.type = 'button';
-  button.textContent = '←';
-  button.title = 'Revenir à l’étape précédente';
+  let button = document.getElementById('appBackButton');
+  if (button) {
+    // L'ancien comportement (retour à la rubrique précédente, puis à l'accueil) est remplacé.
+    button.removeAttribute('onclick');
+    button.removeAttribute('hidden');
+  } else {
+    // Espace élève : même bouton, placé dans l'en-tête.
+    button = document.createElement('button');
+    button.id = 'appBackButton';
+    button.type = 'button';
+    button.className = 'app-back-button';
+    button.innerHTML = '← <span>Retour</span>';
+    (document.querySelector('.portal-header') || document.body).prepend(button);
+  }
   button.setAttribute('aria-label', 'Revenir à l’étape précédente');
-  button.addEventListener('click', () => api.back());
-  document.body.append(button);
+  button.title = 'Revenir à l’étape précédente';
+  button.addEventListener('click', event => { event.stopImmediatePropagation(); api.back(); }, true);
+
   // Connexion ou déconnexion : l'historique repart de zéro.
   let locked = document.body.classList.contains('cloud-locked');
   new MutationObserver(() => {
