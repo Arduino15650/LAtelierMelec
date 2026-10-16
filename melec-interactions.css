@@ -66,3 +66,8 @@ html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(.su-master,.su-choice) button.sel
 .nav[data-view="results"]{--c:163,136,212}.nav[data-view="ccf"]{--c:224,110,110}.nav[data-view="referential"]{--c:216,138,117}
 .nav[data-view="teaching"]{--c:96,170,240}.nav[data-view="quotes"]{--c:242,160,64}.nav[data-view="suivi"]{--c:76,201,140}
 .nav[data-view="magasin"],.nav[data-view="admin"]{--c:240,195,90}.nav[data-view="home"]{--c:255,138,30}
+
+/* Effet électrique conservé : l'arc qui tourne autour des cartes cliquables prend la couleur de la rubrique
+   (les capsules de l'accueil gardent chacune leur propre couleur). */
+html body:not(#ia-a):not(#ia-b):not(#ia-c):not(#ia-d) :is(.view,.portal-dashboard) :is(.pfmp-company,.devis-entry,.student-tp-card,.activity-card,.teach-item,.student-reference-card,.student-ccf-card,.stat,.pfmp-metrics>div,.mg-item,.mg-stat){
+  --el-a:rgb(var(--ia));--el-b:#fff}
