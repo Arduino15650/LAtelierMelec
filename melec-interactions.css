@@ -24,7 +24,7 @@ html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(.view,.portal-dashboard,.portal-a
 html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(.view,.portal-dashboard) :is(.panel,.teach-card,.su-card,.pfmp-panel,.student-pane)>:is(h2,h3,h4):first-child{color:rgb(var(--ia))!important;-webkit-text-fill-color:rgb(var(--ia))!important}
 
 /* ───────── 2. Auto-brillance au survol et au clic ───────── */
-html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(button,.button,a.button,[role=tab],summary,select,.nav,.home-access-card,.activity-card,.pfmp-company,.devis-entry,.student-tp-card,.teach-item,.mg-item,.su-link,.su-exam-link,#melecRetour){
+html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(button,.button,a.button,[role=tab],summary,select,.nav,.home-access-card,.activity-card,.pfmp-company,.devis-entry,.student-tp-card,.teach-item,.mg-item,.su-link,.su-exam-link,#appBackButton){
   transition:box-shadow .18s ease,filter .18s ease,border-color .18s ease,background-color .18s ease}
 @media (hover:hover){
   html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(button,.button,a.button,[role=tab],summary,select,.nav,.home-access-card,.activity-card,.pfmp-company,.devis-entry,.student-tp-card,.teach-item,.mg-item,.su-link,.su-exam-link):not(:disabled):not([aria-disabled=true]):hover{
@@ -109,8 +109,8 @@ html body.team-mode:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .space-badge::befor
   html body:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .brand{gap:8px!important;padding-left:0!important;min-width:0}
 }
 @media (max-width:600px){
-  /* L'ancien bouton retour de la barre étant masqué, le titre récupère sa place à gauche. */
-  html body:not(#ia-a):not(#ia-b):not(#ia-c) .topbar{grid-template-columns:4px minmax(0,1fr) 52px!important}
+  /* Bouton retour affiché seulement au besoin : quand il est caché, le titre récupère sa place à gauche. */
+  html body:not(#ia-a):not(#ia-b):not(#ia-c) .topbar{grid-template-columns:auto minmax(0,1fr) auto!important;column-gap:8px!important}
   html body:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .brand{justify-self:start!important;justify-content:flex-start!important;width:auto!important;max-width:100%!important}
 }
 @media (max-width:350px){
@@ -118,5 +118,31 @@ html body.team-mode:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .space-badge::befor
   html body:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .brand-logo,html body:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .brand-logo img{width:38px!important;height:38px!important;min-width:38px!important;flex-basis:38px!important}
   html body:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .space-badge{font-size:.52rem!important;padding:2px 5px;letter-spacing:.04em}
 }
-/* Un seul bouton retour (le bouton flottant) : l'ancien bouton de la barre haute reste masqué sur toutes les pages. */
+/* Bouton « ← Retour » en haut de page : visible seulement s'il existe une étape précédente (retour.js). */
 html body:not(#ia-a):not(#ia-b):not(#ia-c) #appBackButton{display:none!important}
+html body.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) #appBackButton{display:inline-flex!important}
+/* Espace élève : même apparence que dans l'espace enseignant. */
+html body.portal-page:not(#ia-a):not(#ia-b):not(#ia-c) .portal-header #appBackButton{
+  align-items:center;gap:6px;flex:0 0 auto;min-height:40px;padding:7px 14px;border:1px solid rgba(140,200,255,.45);border-radius:6px;
+  background:rgba(10,28,51,.92);color:#e8f3ff;font:600 .9rem/1 system-ui,sans-serif;cursor:pointer}
+@media (max-width:600px){html body.portal-page:not(#ia-a):not(#ia-b):not(#ia-c) .portal-header #appBackButton{padding:7px 10px}html body.portal-page .portal-header #appBackButton span{display:none}}
+/* Grand écran : le bouton retour se place à droite de la ligne du titre, bien visible. */
+@media (min-width:901px){
+  html body:not(#ia-a):not(#ia-b):not(#ia-c) .topbar{position:relative}
+  html body.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .topbar #appBackButton{position:absolute!important;top:22px!important;right:24px!important;left:auto!important;margin:0!important}
+}
+/* Téléphone, bouton retour affiché : titre un peu plus petit pour garder tout sur une ligne. */
+@media (max-width:600px){
+  html body.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .brand-copy strong,html body.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .brand-copy strong span{font-size:12px!important;letter-spacing:0!important}
+  html body.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .space-badge{font-size:.5rem!important;padding:2px 5px;letter-spacing:.03em}
+  html body.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .brand-logo,html body.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .brand-logo img{width:38px!important;height:38px!important;min-width:38px!important;flex-basis:38px!important}
+  html body.portal-page:not(#ia-a):not(#ia-b):not(#ia-c) .space-title h1{white-space:nowrap!important}
+  html body.portal-page.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .space-title h1{font-size:clamp(.95rem,4.3vw,1.2rem)!important}
+  html body.portal-page.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .portal-header img{width:38px}
+}
+@media (max-width:400px){
+  /* Très petit écran : pendant qu'un retour est possible, le lien « Accueil » laisse la place (il revient après le retour). */
+  html body.portal-page.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .portal-header .portal-top-link{display:none!important}
+  html body.portal-page.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .portal-header{padding-right:0}
+}
+@media (max-width:350px){html body.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .space-badge{display:none!important}}
