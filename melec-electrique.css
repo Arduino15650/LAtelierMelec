@@ -227,3 +227,19 @@ html body #homeView .home-access-card[onclick*="'suivi'"]{--c:76,201,140}
 @media (max-width:899px){
   html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-hero,html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-intro{text-align:center!important;margin-inline:auto!important;justify-content:center!important}
 }
+
+/* ───────── Capsules de l'accueil, tous écrans : icône et titre sur la même ligne, description dessous ─────────
+   Même disposition que sur téléphone, à toutes les largeurs : une à deux lignes gagnées par capsule. */
+html body:not(#el-a):not(#el-b):not(#el-c) .content #homeView .home-access .home-access-card[onclick]{
+  display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;grid-template-rows:auto 1fr;
+  align-items:center!important;align-content:start!important;justify-items:stretch!important;
+  column-gap:clamp(8px,1vw,14px)!important;row-gap:clamp(6px,.7vw,10px)!important;
+  min-height:0!important;padding:clamp(10px,1.2vw,18px)!important}
+html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-copy{display:contents!important}
+html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-icon{
+  grid-column:1;grid-row:1;width:clamp(30px,3vw,46px)!important;height:clamp(30px,3vw,46px)!important;min-width:0!important;font-size:clamp(.9rem,1.2vw,1.2rem)!important}
+html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-copy strong{
+  grid-column:2;grid-row:1;font-size:clamp(.86rem,1.15vw,1.12rem)!important;line-height:1.15!important}
+html body:not(#el-a):not(#el-b):not(#el-c) #homeView .home-access .home-access-card[onclick] .home-access-copy small{
+  grid-column:1 / -1;grid-row:2;align-self:start;margin:0!important;font-size:clamp(.74rem,.85vw,.9rem)!important;line-height:1.3!important;
+  display:-webkit-box!important;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
