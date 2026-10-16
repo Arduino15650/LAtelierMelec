@@ -147,12 +147,23 @@ html body.portal-page:not(#ia-a):not(#ia-b):not(#ia-c) .portal-header #appBackBu
 }
 @media (max-width:350px){html body.retour-actif:not(#ia-a):not(#ia-b):not(#ia-c) .topbar .space-badge{display:none!important}}
 
-/* ───────── Référentiel : domaines de connaissances du BO en grille compacte ───────── */
+/* ───────── Référentiel : domaines de connaissances du BO en pastilles numérotées ─────────
+   Chaque domaine prend la largeur de son nom ; les pastilles se suivent et passent à la ligne au besoin :
+   ni colonnes vides, ni hauteurs inégales. */
 html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid{
-  display:grid!important;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))!important;gap:8px!important;margin:0!important;padding:0!important}
-@media (max-width:600px){html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid>.knowledge-card{padding:8px!important}html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-card strong{font-size:.8rem!important}}
+  display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin:0!important;padding:0!important;counter-reset:domaine}
 html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid>.knowledge-card{
-  display:grid!important;align-content:start;gap:6px;min-height:0!important;margin:0!important;padding:10px 12px!important;border-radius:8px!important;
-  border:1px solid rgba(var(--ia),.45)!important;border-left:3px solid rgb(var(--ia))!important;box-shadow:none!important}
-html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-card strong{font-size:.92rem!important;line-height:1.25!important}
-html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-reference-section>.referential-section-body{padding:10px!important}
+  counter-increment:domaine;display:inline-flex!important;align-items:center;gap:9px;flex:1 1 auto;min-height:0!important;width:auto!important;
+  margin:0!important;padding:7px 14px 7px 7px!important;border-radius:99px!important;
+  border:1px solid rgba(var(--ia),.5)!important;background:rgba(var(--ia),.1)!important;background-image:none!important;box-shadow:none!important}
+html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid>.knowledge-card::before{
+  content:counter(domaine);display:grid;place-items:center;flex:0 0 auto;width:24px;height:24px;border-radius:50%;
+  background:rgb(var(--ia));color:#1a0d00;font:700 .74rem/1 var(--st-f-mono,ui-monospace,monospace)}
+html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-card strong{font-size:.9rem!important;line-height:1.2!important;white-space:nowrap}
+html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-reference-section>.referential-section-body{padding:12px!important}
+@media (max-width:600px){
+  html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid{gap:6px!important}
+  html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-card strong{white-space:normal;font-size:.8rem!important}
+  html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid>.knowledge-card{padding:5px 11px 5px 5px!important;gap:7px}
+  html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid>.knowledge-card::before{width:20px;height:20px;font-size:.66rem}
+}
