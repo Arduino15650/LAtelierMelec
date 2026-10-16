@@ -384,9 +384,10 @@
     forgetView(); forgetStoredDocuments(); window.MelecPfmpForget?.();
     if (cleanupViewer) cleanupViewer();
     clearTpViewer(); clearDocumentCache(); activeTp=null; assignments=[]; tpItems=[]; tpItemsLoadedAt=0; tpItemsKey='';
-    await api.signOut();
+    try { await api.signOut(); } catch { /* session déjà fermée : on quitte quand même */ }
     dashboard.hidden = true; authPane.hidden = false; profile = null; tpListSignature = '';
-    switchTab('login');
+    // Déconnexion : retour immédiat à l'accueil du site.
+    window.location.replace('./index.html');
   };
   setInterval(() => {
     if (!activeTp) return;

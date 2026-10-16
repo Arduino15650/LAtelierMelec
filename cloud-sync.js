@@ -366,19 +366,9 @@
     userId = '';
     revision = 0;
     conflicted = false;
-    if (!force) {
-      ready = false;
-      window.location.replace('./index.html');
-      return;
-    }
-    lock();
-    document.documentElement.classList.remove('cloud-resuming');
-    byId('cloudLoginPane').hidden = false;
-    byId('cloudImportPane').hidden = true;
-    if (byId('cloudMfaPane')) byId('cloudMfaPane').hidden = true;
-    byId('cloudSignOutGate').hidden = true;
-    gateMessage('Vous êtes déconnecté.');
-    mountLoginCaptcha();
+    // Déconnexion : retour immédiat à l'accueil du site, y compris depuis l'écran de connexion.
+    ready = false;
+    window.location.replace('./index.html');
   }
   byId('cloudSignOut').addEventListener('click', () => signOut(false));
   byId('cloudSignOutGate').addEventListener('click', () => signOut(true));

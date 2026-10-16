@@ -1,0 +1,68 @@
+/* L'Atelier MELEC — couleurs des rubriques et réactions au survol / au clic (chargé en dernier).
+   1. Chaque rubrique teinte légèrement ses cartes de sa propre couleur : le bleu n'est plus partout.
+   2. Tout ce qui se clique s'illumine au survol (auto-brillance, comme les cartes de l'accueil)
+      et brille un instant au clic.
+   3. Niveaux NE · N1 · N2 · N3 · N4 : la couleur du niveau apparaît au survol et reste au clic.
+   Les sélecteurs :not(#ia-…) donnent la priorité sur les feuilles précédentes sans les modifier. */
+
+/* ───────── 1. Couleur propre à chaque rubrique ───────── */
+:root{--ia:79,179,255}
+#activitiesView,#editorView{--ia:217,149,49}
+#activity-listView{--ia:107,169,223}
+#studentsView{--ia:104,177,139}
+#resultsView{--ia:163,136,212}
+#ccfView{--ia:224,110,110}
+#referentialView{--ia:216,138,117}
+#teachingView{--ia:96,170,240}
+#suiviView,#pfmpView{--ia:76,201,140}
+#magasinView,#adminView{--ia:240,195,90}
+body.portal-page{--ia:255,150,60}
+
+html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(.view,.portal-dashboard,.portal-auth,.contact-panel) :is(.panel,.teach-card,.su-card,.su-kpis article,.su-exam-cards article,.activity-card,.referential-section,.activity-class-group,.bo-note,.student-reference-card,.student-ccf-card,.pfmp-panel,.pfmp-company,.devis-entry,.student-pane,.student-tp-card,.mg-item,.mg-stat,.stat,.teach-item,.evaluation-competency){
+  background-image:linear-gradient(150deg,rgba(var(--ia),.24),rgba(var(--ia),.08) 45%,rgba(var(--ia),.02) 80%)!important;
+  border-color:rgba(var(--ia),.5)!important}
+html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(.view,.portal-dashboard) :is(.panel,.teach-card,.su-card,.pfmp-panel,.student-pane)>:is(h2,h3,h4):first-child{color:rgb(var(--ia))!important;-webkit-text-fill-color:rgb(var(--ia))!important}
+
+/* ───────── 2. Auto-brillance au survol et au clic ───────── */
+html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(button,.button,a.button,[role=tab],summary,select,.nav,.home-access-card,.activity-card,.pfmp-company,.devis-entry,.student-tp-card,.teach-item,.mg-item,.su-link,.su-exam-link,#melecRetour){
+  transition:box-shadow .18s ease,filter .18s ease,border-color .18s ease,background-color .18s ease}
+@media (hover:hover){
+  html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(button,.button,a.button,[role=tab],summary,select,.nav,.home-access-card,.activity-card,.pfmp-company,.devis-entry,.student-tp-card,.teach-item,.mg-item,.su-link,.su-exam-link):not(:disabled):not([aria-disabled=true]):hover{
+    box-shadow:0 0 0 1px rgba(var(--c,var(--ia)),.85),0 0 18px rgba(var(--c,var(--ia)),.5),inset 0 0 14px rgba(var(--c,var(--ia)),.18)!important;
+    filter:brightness(1.1) saturate(1.1)}
+}
+html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(button,.button,a.button,[role=tab],.nav,.home-access-card,.activity-card,.student-tp-card,.su-exam-link):not(:disabled):active{
+  box-shadow:0 0 0 2px rgba(var(--c,var(--ia)),1),0 0 26px rgba(var(--c,var(--ia)),.75)!important;filter:brightness(1.25)}
+html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(button,.button,[role=tab],.nav,summary):focus-visible{
+  outline:2px solid rgb(var(--c,var(--ia)))!important;outline-offset:2px}
+
+/* ───────── 3. Niveaux d'acquisition ───────── */
+.evaluation-level.level-ne{--lv:113,128,150}
+.evaluation-level.level-n1{--lv:228,61,48}
+.evaluation-level.level-n2{--lv:243,156,53}
+.evaluation-level.level-n3{--lv:120,170,40}
+.evaluation-level.level-n4{--lv:36,140,70}
+@media (hover:hover){
+  html body:not(#ia-a):not(#ia-b):not(#ia-c) .evaluation-level:not(:disabled):not(.selected):hover{
+    background:rgba(var(--lv),.55)!important;border-color:rgb(var(--lv))!important;color:#fff!important;-webkit-text-fill-color:#fff!important;
+    box-shadow:0 0 14px rgba(var(--lv),.7)!important;filter:none}
+  html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(.su-master,.su-choice) button:not(:disabled):not(.sel):hover{
+    background:color-mix(in srgb,var(--level,#718096) 55%,transparent)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;
+    box-shadow:0 0 14px color-mix(in srgb,var(--level,#718096) 70%,transparent)!important;filter:none}
+}
+/* Niveau choisi : couleur pleine qui reste, avec un léger halo. */
+html body:not(#ia-a):not(#ia-b):not(#ia-c) .evaluation-level.selected{box-shadow:0 0 0 2px rgba(255,255,255,.35),0 0 16px rgba(var(--lv),.75)!important}
+html body:not(#ia-a):not(#ia-b):not(#ia-c) :is(.su-master,.su-choice) button.sel{box-shadow:0 0 0 2px rgba(255,255,255,.35),0 0 16px color-mix(in srgb,var(--level,#718096) 75%,transparent)!important}
+
+@media (prefers-reduced-motion:reduce){
+  html body :is(button,.button,[role=tab],summary,select,.nav,.home-access-card,.activity-card){transition:none!important}
+}
+@media print{
+  html body :is(.panel,.teach-card,.su-card,.student-pane){background-image:none!important}
+}
+
+/* Pastilles du menu : chacune brille de la couleur de sa rubrique. */
+.nav[data-view="activities"]{--c:217,149,49}.nav[data-view="activity-list"]{--c:107,169,223}.nav[data-view="students"]{--c:104,177,139}
+.nav[data-view="results"]{--c:163,136,212}.nav[data-view="ccf"]{--c:224,110,110}.nav[data-view="referential"]{--c:216,138,117}
+.nav[data-view="teaching"]{--c:96,170,240}.nav[data-view="quotes"]{--c:242,160,64}.nav[data-view="suivi"]{--c:76,201,140}
+.nav[data-view="magasin"],.nav[data-view="admin"]{--c:240,195,90}.nav[data-view="home"]{--c:255,138,30}
