@@ -1,9 +1,8 @@
 // Bouton « Retour » en haut de page, commun aux espaces enseignant et élève.
 //
 // Règles :
-//  - il ramène à la tâche ou à la page précédente, jamais à l'accueil (du site ou de l'espace) ;
-//  - il n'apparaît que lorsqu'il existe une étape précédente ;
-//  - un clic sur le menu, sur le titre ou sur une rubrique efface l'historique (le bouton disparaît) ;
+//  - il ramène à la page ou à l'étape précédente, jusqu'à l'accueil de l'espace, jamais à l'accueil du site ;
+//  - il apparaît dès qu'on a quitté l'accueil de l'espace (capsule, menu ou lien) et disparaît sur cet accueil ;
 //  - revenir soi-même à la page d'origine (lien « Annuler », « ← Retour à… ») consomme l'étape.
 // Enseignant : bouton « ← Retour » de la barre haute. Élève : même bouton, dans l'en-tête.
 // Les autres modules alimentent l'historique avec window.MelecRetour (push / arrived / reset).
@@ -66,23 +65,18 @@
   sync();
 
   if (teacher) {
-    // Menu principal, menu mobile, titre du site, capsules de l'accueil, rubriques de SUIVI&PFMP : l'historique repart de zéro.
-    // Le bouton ne ramène jamais à l'accueil : aucune étape n'a l'accueil pour origine.
-    let menuClick = false;
-    document.addEventListener('click', event => {
-      if (!event.target.closest?.('button.nav, .header-nav .nav, .topbar .brand, #mobileMenuToggle, .home-access-card')) return;
-      menuClick = true; api.reset();
-      setTimeout(() => { menuClick = false; });
-    }, true);
+    // Chaque changement de page (capsule, menu, lien interne) mémorise la page quittée, accueil enseignant compris.
+    // Revenir sur l'accueil enseignant (titre, pastille Accueil, retour) vide l'historique : le bouton y est masqué.
+    // Le bouton ne quitte jamais l'espace : il ne ramène pas à l'accueil du site.
     window.addEventListener('melec-reset-selection', () => api.reset());
-
     let editorOpen = false;
     const current = () => editorOpen ? 'editor' : (location.hash.slice(1) || 'home');
     const baseShow = window.show;
     if (typeof baseShow === 'function') {
       window.show = function (name) {
         const from = current();
-        if (!restoring && !menuClick && name !== from && !api.arrived(name) && from !== 'editor' && from !== 'home') api.push(from, () => window.show(from));
+        if (name === 'home') api.reset();
+        else if (!restoring && name !== from && !api.arrived(name) && from !== 'editor') api.push(from, () => window.show(from));
         editorOpen = false;
         return baseShow.apply(this, arguments);
       };
@@ -92,7 +86,7 @@
       window.showRaw = function (name) {
         if (name === 'editor' && !editorOpen) {
           const from = current();
-          if (!restoring && !menuClick && from !== 'home') api.push(from, () => window.show(from));
+          if (!restoring) api.push(from, () => window.show(from));
           editorOpen = true;
         }
         return baseRaw.apply(this, arguments);
