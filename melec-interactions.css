@@ -149,18 +149,10 @@ html body.portal-page:not(#ia-a):not(#ia-b):not(#ia-c) .portal-header #appBackBu
 
 /* ───────── Référentiel : domaines de connaissances du BO en grille compacte ───────── */
 html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid{
-  display:grid!important;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr))!important;gap:8px!important;margin:0!important;padding:0!important}
+  display:grid!important;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))!important;gap:8px!important;margin:0!important;padding:0!important}
 @media (max-width:600px){html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid>.knowledge-card{padding:8px!important}html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-card strong{font-size:.8rem!important}}
 html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-grid>.knowledge-card{
   display:grid!important;align-content:start;gap:6px;min-height:0!important;margin:0!important;padding:10px 12px!important;border-radius:8px!important;
   border:1px solid rgba(var(--ia),.45)!important;border-left:3px solid rgb(var(--ia))!important;box-shadow:none!important}
 html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-card strong{font-size:.92rem!important;line-height:1.25!important}
-html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-card small{display:flex;flex-wrap:wrap;gap:3px}
-html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-card small span{padding:1px 5px;border:1px solid rgba(var(--ia),.55);border-radius:4px;background:rgba(var(--ia),.14);
-  font:600 .66rem/1.3 var(--st-f-mono,ui-monospace,monospace)!important;color:#ffd9c9!important;-webkit-text-fill-color:#ffd9c9!important}
 html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-reference-section>.referential-section-body{padding:10px!important}
-html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-card em{display:none;font:600 .7rem/1.2 var(--st-f-mono,ui-monospace,monospace);font-style:normal;color:#ffd9c9}
-@media (max-width:600px){
-  html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-card small{display:none!important}
-  html body:not(#ia-a):not(#ia-b):not(#ia-c) #referentialView .knowledge-card em{display:block}
-}
