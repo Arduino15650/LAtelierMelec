@@ -74,6 +74,14 @@ renderReferential=function(){
   const body=document.createElement('div');
   body.className='referential-section-body';
   heading.replaceWith(fold);fold.append(summary,body);body.append(cards);
+  // Grille compacte : chaque domaine indique les compétences qui le mobilisent.
+  cards.classList.add('knowledge-grid');
+  Object.keys(MELEC.knowledge).forEach((key,index)=>{
+    const card=cards.children[index];if(!card)return;
+    const used=MELEC.competencies.filter(c=>(c.knowledge||[]).includes(key)).map(c=>c.id);
+    card.classList.add('knowledge-card');
+    card.insertAdjacentHTML('beforeend',`<small title="Compétences qui mobilisent ce domaine">${used.map(id=>`<span>${esc(id)}</span>`).join('')}</small><em>${used.length} compétence${used.length>1?'s':''}</em>`);
+  });
   groupCompetenciesByUnit();
 };
 // Compétences rangées dans une liste déroulante, puis par unité (U2, U31, U32),
