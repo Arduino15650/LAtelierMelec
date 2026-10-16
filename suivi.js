@@ -186,14 +186,13 @@
   fill(root, el('header', { class: 'su-top' }, el('div', {}, el('p', { class: 'su-kicker', text: 'Suivi & certification' }), el('h2', { text: 'SUIVI&PFMP' }))), tabs, banner, main);
   if (annuaire) { annuaire.classList.remove('view'); annuaire.classList.add('hidden'); root.append(annuaire); }
   // Historique des pages de SUIVI&PFMP pour le bouton « Retour » commun (retour.js).
-  // Un clic sur une rubrique (menu) efface l'historique ; les autres enchaînements l'alimentent.
-  function go(next, exam, fromMenu) {
+  // Chaque changement de page (rubrique ou lien) l'alimente.
+  function go(next, exam) {
     const from = [page, examKey];
     if (next === page && (exam || '') === examKey) return render();
     const R = window.MelecRetour;
     if (R) {
-      if (fromMenu) R.reset();
-      else if (!R.arrived('suivi:' + next + ':' + (exam || ''))) R.push('suivi:' + from.join(':'), () => { page = from[0]; examKey = from[1]; render(); root.scrollIntoView({ block: 'start' }); });
+      if (!R.arrived('suivi:' + next + ':' + (exam || ''))) R.push('suivi:' + from.join(':'), () => { page = from[0]; examKey = from[1]; render(); root.scrollIntoView({ block: 'start' }); });
     }
     page = next; examKey = exam || ''; render(); root.scrollIntoView({ block: 'start' });
   }
@@ -203,7 +202,7 @@
   function render() {
     // L'annuaire des entreprises reste réservé aux enseignants de L'Atelier MELEC (règles de la base).
     const pages = role === 'admin' ? ADMIN_PAGES : TEACHER_PAGES;
-    fill(tabs, [...new Map(pages).entries()].map(([id, label]) => el('button', { type: 'button', class: (page === id || (page === 'exam' && id === (S.selectedActivity ? 'activites' : 'pfmp'))) ? 'active' : '', text: label, onclick: () => go(id, '', true) })));
+    fill(tabs, [...new Map(pages).entries()].map(([id, label]) => el('button', { type: 'button', class: (page === id || (page === 'exam' && id === (S.selectedActivity ? 'activites' : 'pfmp'))) ? 'active' : '', text: label, onclick: () => go(id) })));
     const showDirectory = page === 'annuaire';
     main.hidden = showDirectory;
     if (annuaire) annuaire.classList.toggle('hidden', !showDirectory);
