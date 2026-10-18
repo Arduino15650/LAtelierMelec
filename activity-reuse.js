@@ -36,8 +36,28 @@
       if(activity)card.dataset.tone=String(tone(familyId(activity)));
     });
   }
+  function templateLabels(available){
+    const groups=new Map(),labels=new Map();
+    for(const item of available){
+      const label=item.activity.title+' · '+((item.activity.competencies||[]).join(', ')||'compétences non précisées');
+      if(!groups.has(label))groups.set(label,[]);
+      groups.get(label).push(item);
+    }
+    for(const [label,items] of groups){
+      // L'ordre des modèles reste stable même si la liste des activités est réordonnée.
+      items.sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+      items.forEach((item,index)=>{
+        const details=items.length>1
+          ? ' · '+(item.activity.className||'Classe non précisée')+(item.activity.date?' · '+item.activity.date:'')+' · Modèle '+(index+1)+'/'+items.length
+          : '';
+        labels.set(item.id,label+details);
+      });
+    }
+    return labels;
+  }
   function render(){
     const available=templates(),template=available.find(item=>item.id===choice.familyId)?.activity;
+    const labels=templateLabels(available);
     const classes=[...new Set(state.students.map(student=>student.className).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr',{numeric:true}));
     if(choice.className&&!classes.includes(choice.className)){choice.className='';choice.groupId='';choice.studentIds.clear()}
     if(choice.familyId&&!template){choice.familyId='';choice.studentIds.clear()}
@@ -49,7 +69,7 @@
     view.innerHTML='<div class="page-head"><div><h1>Liste des activités</h1><p>Réutilisez une activité existante pour une classe, un groupe et les élèves de votre choix.</p></div></div>'+
       '<section class="panel activity-reuse-panel"><div class="activity-reuse-fields">'+
       '<div class="field"><label for="reuseActivity">1. Activité créée</label><select id="reuseActivity"><option value="">Choisir une activité…</option>'+
-      available.map(item=>'<option value="'+esc(item.id)+'"'+(choice.familyId===item.id?' selected':'')+'>'+esc(item.activity.title)+' · '+esc((item.activity.competencies||[]).join(', ')||'compétences non précisées')+'</option>').join('')+'</select></div>'+
+      available.map(item=>'<option value="'+esc(item.id)+'"'+(choice.familyId===item.id?' selected':'')+'>'+esc(labels.get(item.id))+'</option>').join('')+'</select></div>'+
       '<div class="field"><label for="reuseClass">2. Classe</label><select id="reuseClass"'+(!choice.familyId?' disabled':'')+'><option value="">Choisir une classe…</option>'+
       classes.map(name=>'<option value="'+esc(name)+'"'+(choice.className===name?' selected':'')+'>'+esc(name)+'</option>').join('')+'</select></div>'+
       '<div class="field"><label for="reuseGroup">3. Groupe</label><select id="reuseGroup"'+(!choice.className?' disabled':'')+'><option value="">Choisir un groupe…</option><option value="__all__"'+(choice.groupId==='__all__'?' selected':'')+'>Toute la classe</option>'+

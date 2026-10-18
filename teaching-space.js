@@ -74,9 +74,14 @@
     return students.find(other => other.user_id !== profile.user_id && other.approved_at && !other.blocked_at
       && (rosterIds.includes(String(other.roster_student_id)) || normalized(other.last_name + other.first_name) === normalized(profile.last_name + profile.first_name))) || null;
   }
+  function pageHeading() {
+    return tab === 'quotes'
+      ? '<div class="teach-head"><div><h1>Devis des élèves</h1><p>Consulter et gérer les devis des élèves par classe.</p></div></div>'
+      : '<div class="teach-head"><div><h1>TP en atelier</h1><p>Créer et publier des travaux pratiques par classe.</p></div></div>';
+  }
   async function load(background = false) {
     if (loadInFlight) return loadInFlight;
-    if (!background) root.innerHTML = '<div class="teach-head"><div><h1>TP en atelier</h1><p>Contenus de classe et accès élèves</p></div></div><div class="teach-card">Chargement… <span id="teachStatus"></span></div>';
+    if (!background) root.innerHTML = pageHeading() + '<div class="teach-card">Chargement… <span id="teachStatus"></span></div>';
     const key = sessionKey();
     loadInFlight = (async () => {
       // La base applique les règles d'accès : aucune donnée n'est affichée avant contrôle du compte.
@@ -140,7 +145,7 @@
   }
   function render() {
     if (!root.classList.contains('hidden')) document.querySelectorAll('.nav[data-view="teaching"], .nav[data-view="quotes"]').forEach(node => node.classList.toggle('active', node.dataset.view === (tab === 'quotes' ? 'quotes' : 'teaching')));
-    root.innerHTML = `<div class="teach-head"><div><h1>TP en atelier</h1><p>Créer et publier des travaux pratiques par classe.</p></div></div>
+    root.innerHTML = pageHeading() + `
       <div class="teach-card"><div class="teach-row"><label for="teachClass">Classe</label><select id="teachClass"><option value="">Choisir une classe</option>${classes.map(c => `<option value="${c.id}" ${c.id === classId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div></div>
       <div class="teach-tabs" role="tablist">${[['tp','Travaux pratiques'],['quotes','Devis élèves'],['students','Accès élèves'],['alerts','Alertes'],['messages','Messages']].map(([key,label]) => `<button type="button" data-teach-tab="${key}" class="${tab === key ? 'active' : ''}">${label}${key === 'students' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at).length})` : ''}${key === 'alerts' ? ` (${students.filter(s => !s.approved_at && !s.blocked_at && !rosterMatches(s).length).length})` : ''}</button>`).join('')}</div>
       <div id="teachBody"></div><p id="teachStatus" class="teach-status" role="status"></p>`;
