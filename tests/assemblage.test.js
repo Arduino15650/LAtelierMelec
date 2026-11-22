@@ -34,7 +34,7 @@ test('assemblage des pages', { skip: !esbuildPresent && 'esbuild non installé (
     const bundle = locaux(fs.readFileSync(path.join(dist, 'enseignant.html'), 'utf8')).filter(f => f.endsWith('.js'));
     const code = bundle.map(f => fs.readFileSync(path.join(dist, f), 'utf8')).join('\n');
     // Repères présents dans les fichiers d'origine, dans leur ordre de chargement.
-    const reperes = ['melec-evaluation-v1', 'window.MelecPortal', 'window.MelecCaptcha', 'window.MelecMfa', 'melec-cloud-pending-v1-'];
+    const reperes = ['melec-evaluation-v1', 'window.MelecPortal', 'window.MelecMfa', 'melec-cloud-pending-v1-'];
     const positions = reperes.map(r => code.indexOf(r));
     for (const [i, p] of positions.entries()) assert.ok(p >= 0, `repère absent : ${reperes[i]}`);
     assert.deepEqual([...positions].sort((a, b) => a - b), positions, 'ordre de chargement conservé');

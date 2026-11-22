@@ -54,7 +54,6 @@
   <link rel="stylesheet" href="student-dashboard-background.css?v=20261012-webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://challenges.cloudflare.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..700&family=Big+Shoulders+Display:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
   <link rel="stylesheet" href="melec-sous-tension.css?v=20261015-pdf">
   <link rel="stylesheet" href="devis.css?v=20261014-1">
@@ -74,7 +73,6 @@
         <form id="studentLoginForm" class="portal-form">
           <label>Adresse e-mail<input name="email" type="email" autocomplete="username" required></label>
           <label>Mot de passe<input name="password" type="password" autocomplete="current-password" required></label>
-          <div class="melec-captcha" data-captcha="eleve_connexion" style="min-height:65px;margin:4px 0 8px"></div>
           <button class="portal-button" type="submit">Se connecter</button>
         </form>
         <form id="studentSignupForm" class="portal-form" autocomplete="off" hidden>
@@ -83,7 +81,6 @@
           <label>Adresse e-mail<input name="email" type="email" maxlength="254" autocomplete="email" required></label>
           <label>Mot de passe<input name="password" type="password" minlength="12" autocomplete="new-password" required></label>
           <p class="portal-small">Après l’inscription, confirmez votre adresse e-mail. L’enseignant validera ensuite votre classe.</p>
-          <div class="melec-captcha" data-captcha="eleve_inscription" style="min-height:65px;margin:4px 0 8px"></div>
           <button class="portal-button" type="submit">Demander mon inscription</button>
         </form>
         <p id="studentAuthStatus" class="form-status" role="status" aria-live="polite"></p>
@@ -111,7 +108,6 @@
     </main>
   </div>
   <script src="portal-api.js?v=20261015-charge"></script>
-  <script src="melec-captcha.js?v=20261015-widget"></script>
   <script src="content-render.js?v=20261014-verrou"></script>
   <script src="portal-contact.js?v=20260925-1"></script>
   <script src="student-pdf-forms.js?v=20261015-reponses"></script>
