@@ -339,7 +339,14 @@ section.row-sec{padding-block:clamp(36px,4.5vw,56px)}
 .contact-grid{display:block}
 .cform{max-width:none;padding:clamp(16px,2.4vw,24px);gap:12px}
 .cform textarea{min-height:96px}
-.site-foot{border-top:1px solid var(--wire);padding-block:18px;font-family:var(--f-mono);font-size:.75rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between}
+.site-foot{border-top:1px solid var(--wire);padding-block:18px;font-family:var(--f-mono);font-size:.75rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:12px 18px;justify-content:space-between;align-items:center}
+.site-links{display:flex;flex-wrap:wrap;gap:10px}
+.site-link{--acc:217,149,49;display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 16px;box-sizing:border-box;border-radius:8px;border:1px solid rgba(var(--acc),.75);background:linear-gradient(140deg,rgba(var(--acc),.26),rgba(var(--acc),.06) 60%,rgba(8,24,46,.55));color:#fff;font-family:'Archivo',system-ui,sans-serif;font-size:.95rem;font-weight:700;text-decoration:none}
+.site-link.sl-blue{--acc:107,169,223}
+.site-link span{font-family:var(--f-mono);font-size:1.25rem;color:rgb(var(--acc))}
+.site-link:hover{box-shadow:0 0 0 2px rgba(255,138,30,.3);color:#fff}
+.site-link:focus-visible{outline:2px solid #f39a13;outline-offset:2px}
+@media (max-width:520px){.site-links,.site-link{width:100%}.site-link{justify-content:space-between}}
 @media (min-width:1000px){.cgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .hero h1 .l1{line-height:1;margin-bottom:.06em}
 .hero h1 .l2{line-height:.86}
@@ -511,7 +518,10 @@ section.row-sec{padding-block:clamp(36px,4.5vw,56px)}
 </main>
 
 <footer class="wrap site-foot">
-  <span>L’Atelier MELEC · Bac Pro MELEC</span>
+  <nav class="site-links" aria-label="Autres sites MELEC">
+    <a class="site-link sl-amber" href="https://www.melec-addict.fr">Aller à MELEC-Addict <span aria-hidden="true">›</span></a>
+    <a class="site-link sl-blue" href="https://www.habil-melec.fr">Aller à Habil-MELEC <span aria-hidden="true">›</span></a>
+  </nav>
   <span>Référentiel : arrêté du 1er mars 2024</span>
 </footer>
 
