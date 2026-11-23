@@ -102,3 +102,5 @@ html body:not(#cx-a):not(#cx-b):not(#cx-c) #studentAuth::before { content: none 
 html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate .cx-head { align-items: flex-start !important; height: 20px; overflow: visible; margin-bottom: 0 !important; }
 html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate .cx-kicker { padding-top: 3px; }
 html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate section > h1 { margin-top: 0 !important; margin-bottom: 14px !important; }
+/* La ligne d'état vide ne doit pas laisser d'espace en bas de la fenêtre */
+html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate .cloud-status:empty { display: none !important; }
