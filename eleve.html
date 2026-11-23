@@ -61,6 +61,7 @@
   <link rel="stylesheet" href="magasin.css?v=20261014-equipe">
   <link rel="stylesheet" href="melec-electrique.css?v=20261016-icone">
   <link rel="stylesheet" href="melec-interactions.css?v=20261016-pastilles">
+  <link rel="stylesheet" href="connexion-melec.css?v=20261123-1">
   <script src="melec-circuit.js?v=20261014-veille" defer></script>
 </head>
 <body class="portal-page">
@@ -68,7 +69,7 @@
     <header class="portal-header"><img src="logo-melec-192.webp" alt="Logo BAC PRO MELEC" width="92" height="92"><div><div class="space-title"><h1>BAC PRO MELEC</h1><span class="space-badge">Élève</span></div><p>Consulter les contenus pédagogiques de votre classe.</p></div><a class="portal-top-link" href="./index.html">← Accueil</a></header>
     <main>
       <section id="studentAuth" class="portal-panel portal-auth" aria-labelledby="studentAuthTitle">
-        <h2 id="studentAuthTitle">Connexion élève</h2>
+        <div class="cx-head"><span class="cx-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><p class="cx-kicker">Espace élève</p><h2 id="studentAuthTitle">Se connecter</h2></div>
         <div class="portal-tabs auth-tabs"><button id="studentLoginTab" class="active" type="button">Se connecter</button><button id="studentSignupTab" type="button">Inscription</button><button id="studentContactTab" type="button">Contacter l’enseignant</button></div>
         <form id="studentLoginForm" class="portal-form">
           <label>Adresse e-mail<input name="email" type="email" autocomplete="username" required></label>
