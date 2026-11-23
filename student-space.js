@@ -117,7 +117,7 @@
     $('studentSignupForm').hidden = tab !== 'signup';
     $('studentLoginTab').classList.toggle('active', tab === 'login');
     $('studentSignupTab').classList.toggle('active', tab === 'signup');
-    $('studentAuthTitle').textContent = tab === 'signup' ? 'Créer un compte élève' : tab === 'contact' ? 'Besoin d’aide ?' : 'Connexion élève';
+    $('studentAuthTitle').textContent = tab === 'signup' ? 'Créer un compte élève' : tab === 'contact' ? 'Besoin d’aide ?' : 'Se connecter';
     showContact(tab === 'contact');
     message(authStatus, '');
     mountCaptcha();
