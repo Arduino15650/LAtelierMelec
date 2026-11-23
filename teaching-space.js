@@ -103,6 +103,11 @@
     try { await loadInFlight; }
     finally { loadInFlight = null; }
   }
+  // Après une suppression : aucune liste gardée en mémoire, tout est relu depuis le serveur.
+  async function reloadFresh() {
+    studentsLoadedAt = 0; messagesLoadedAt = 0; tpLoadedAt = 0; tpLoadedClassId = '';
+    await loadClass();
+  }
   async function loadClass() {
     const refreshStudents = !studentsLoadedAt || Date.now() - studentsLoadedAt > 120000
       || tab === 'students' || tab === 'alerts' || tab === 'tp';
@@ -248,6 +253,7 @@
                 if (!Array.isArray(deleted) || deleted.length !== 1) throw new Error('Suppression non confirmée par la base. Vérifiez la règle SQL.');
                 line.remove();
                 if (!list.children.length) list.textContent='Aucune réponse enregistrée pour ce TP.';
+                await reloadFresh();
                 status('Réponse supprimée définitivement de la base.');
               } catch (error) {
                 progress.textContent='Suppression impossible : ' + error.message;
@@ -335,7 +341,7 @@
       ]);
       const done = selected.size ? 'Envoyé. Les élèves sélectionnés voient le TP dans les 10 secondes.' : 'Associations du TP enregistrées.';
       status(done);
-      await loadClass(); status(done);
+      await (removed.length ? reloadFresh() : loadClass()); status(done);
     } catch (error) { status(error.message,true); }
     finally { if (saveButton?.isConnected) saveButton.disabled = false; }
   }
@@ -439,7 +445,7 @@
       if (!Array.isArray(deleted) || deleted.length !== 1) throw new Error('La suppression du chapitre n’a pas été confirmée par la base.');
       selectedChapterId = ''; selectedItemId = '';
       activeItem = null; editing = null; blocks = []; draftAssets = []; originalAssets = [];
-      await loadClass();
+      await reloadFresh();
       const paths = assets.map(asset => asset.object_path).filter(Boolean);
       if (paths.length) {
         try { await api.removeFiles(paths); }
@@ -462,7 +468,7 @@
       if (!Array.isArray(deleted) || deleted.length !== 1) throw new Error('La suppression n’a pas été confirmée par la base.');
       if (activeItem === id) { activeItem = null; editing = null; blocks = []; draftAssets = []; originalAssets = []; }
       if (selectedItemId === id) selectedItemId = '';
-      await loadClass();
+      await reloadFresh();
       const paths = assets.map(asset => asset.object_path).filter(Boolean);
       if (paths.length) {
         try { await api.removeFiles(paths); }
