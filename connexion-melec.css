@@ -5,9 +5,15 @@
 
 /* ---------- Espace enseignant : #cloudGate ---------- */
 html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate {
+  /* Fond commun aux trois sites : nuit, grille de 24 px, photo d'outils voilée */
   background-color: #050f1e !important;
-  background-image: linear-gradient(rgba(107,169,223,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(107,169,223,.06) 1px, transparent 1px) !important;
-  background-size: 48px 48px !important;
+  background-image:
+    linear-gradient(rgba(30, 69, 105, .22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 69, 105, .22) 1px, transparent 1px),
+    radial-gradient(ellipse 75% 75% at 50% 45%, rgba(5, 15, 30, .55), rgba(5, 15, 30, .96)),
+    url('./background-melec-tools.webp') !important;
+  background-size: 24px 24px, 24px 24px, auto, cover !important;
+  background-position: 0 0, 0 0, 0 0, center !important;
 }
 html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate .cloud-card {
   --acc: 217, 149, 49;
