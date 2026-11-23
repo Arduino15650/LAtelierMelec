@@ -224,7 +224,12 @@
       if (cleanupViewer) { cleanupViewer(); cleanupViewer=null; }
       updateLearningLock();switchContentTab('tp');
     }
-    else {updateLearningLock();switchContentTab(selectedContentTab);}
+    else {
+      updateLearningLock();
+      // Onglet ouvert par l'élève pendant le chargement (inventaire, devis…) : on ne le referme pas.
+      const otherOpen = [...dashboard.querySelectorAll('.student-pane')].some(pane => pane.id !== 'studentTpPane' && !pane.hidden);
+      if (!otherOpen) switchContentTab(selectedContentTab);
+    }
   }
   async function loadTpAssignments(preserveViewer = false) {
     const previousActiveId = activeTp?.id;
