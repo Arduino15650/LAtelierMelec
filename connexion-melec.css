@@ -7,7 +7,7 @@
 html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate {
   /* Voile léger : le fond commun et le réseau animé restent visibles derrière la fenêtre,
      comme sur MELEC-Addict et Habil-MELEC */
-  background: rgba(2, 8, 18, .55) !important;
+  background: rgba(2, 8, 18, .6) !important;
 }
 html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate .cloud-card {
   --acc: 217, 149, 49;
