@@ -93,3 +93,12 @@ html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate > .cloud-card > button.sec
 @media (max-width: 380px) {
   html body:not(#cx-a):not(#cx-b):not(#cx-c) #studentAuth .auth-tabs { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Les éléments masqués (onglet inactif, étape suivante) restent masqués */
+html body:not(#cx-a):not(#cx-b):not(#cx-c) :is(#cloudGate, #studentAuth) [hidden] { display: none !important; }
+/* Pas de surtitre « Q0 · Accès… » : l'étiquette de l'espace le remplace */
+html body:not(#cx-a):not(#cx-b):not(#cx-c) #studentAuth::before { content: none !important; display: none !important; }
+/* Enseignant : icône à gauche de l'étiquette et du titre, comme sur les deux autres sites */
+html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate .cx-head { align-items: flex-start !important; height: 20px; overflow: visible; margin-bottom: 0 !important; }
+html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate .cx-kicker { padding-top: 3px; }
+html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate section > h1 { margin-top: 0 !important; margin-bottom: 14px !important; }
