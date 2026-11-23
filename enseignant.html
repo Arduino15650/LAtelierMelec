@@ -146,8 +146,13 @@
 </head>
 <body class="cloud-locked">
   <div id="cloudGate" role="dialog" aria-modal="true" aria-label="Connexion à LAtelierMelec">
-    <iframe class="cx-fond-accueil" src="./index.html?fond=1" title="Accueil (arrière-plan)" aria-hidden="true" tabindex="-1" inert></iframe>
-    <script>(function(){var f=document.querySelector('.cx-fond-accueil');if(!f)return;var b=document.body;function k(){if(!b.classList.contains('cloud-locked')&&f.parentNode){f.remove();o.disconnect()}}var o=new MutationObserver(k);o.observe(b,{attributes:true,attributeFilter:['class']});k()})();</script>
+    <iframe class="cx-fond-accueil" data-src="./index.html?fond=1" title="Accueil (arrière-plan)" aria-hidden="true" tabindex="-1" inert></iframe>
+    <script>(function(){var f=document.querySelector('.cx-fond-accueil');if(!f)return;var b=document.body,h=document.documentElement;
+    // L'accueil n'est chargé derrière la fenêtre que si elle est vraiment affichée (pas pendant la reconnexion
+    // automatique d'un enseignant déjà connecté), et retiré dès la connexion.
+    function k(){if(!b.classList.contains('cloud-locked')){if(f.parentNode){f.remove();o.disconnect()}return}
+    if(!h.classList.contains('cloud-resuming')&&!f.getAttribute('src'))f.setAttribute('src',f.dataset.src)}
+    var o=new MutationObserver(k);o.observe(b,{attributes:true,attributeFilter:['class']});o.observe(h,{attributes:true,attributeFilter:['class']});k()})();</script>
     <div class="cloud-card">
       <a class="cloud-home-link" href="./index.html" aria-label="Fermer et revenir à l’accueil"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></a>
       <div class="cloud-brand cx-head"><span class="cx-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8l10-5 10 5-10 5L2 8z"/><path d="M6 10v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg></span><strong class="cx-kicker">Espace enseignant</strong></div>

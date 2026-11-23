@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bac-pro-melec-v164-purge';
+const CACHE_NAME = 'bac-pro-melec-v165-fond';
 // Les scripts de l'espace non visité sont mis en cache à la demande.
 const CORE_FILES = ['./logo-melec-192.webp'];
 
