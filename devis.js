@@ -41,12 +41,33 @@
     const tva = round2(ht * TVA);
     return { rows, ht, tva, ttc: round2(ht + tva), valid };
   }
-  const blankLine = () => ({ desc: '', ref: '', qty: '', unit: 'u', pu: '' });
+  // sup : fournisseur de la ligne ; vide = fournisseur par défaut du devis.
+  const blankLine = () => ({ desc: '', ref: '', sup: '', qty: '', unit: 'u', pu: '' });
   const cleanLines = lines => (Array.isArray(lines) ? lines : []).slice(0, 200).map(entry => ({
     desc: String(entry?.desc ?? '').slice(0, 200), ref: String(entry?.ref ?? '').slice(0, 60),
+    sup: String(entry?.sup ?? '').trim().slice(0, 80),
     qty: String(entry?.qty ?? '').slice(0, 15), unit: UNITS.includes(entry?.unit) ? entry.unit : 'u',
     pu: String(entry?.pu ?? '').slice(0, 15)
   }));
+  // Plusieurs fournisseurs dans un même devis : chaque ligne peut avoir le sien.
+  const lineSupplier = (quote, entry) => (entry?.sup || '').trim() || (quote?.supplier || '').trim() || 'Fournisseur à préciser';
+  function supplierTotals(quote) {
+    const totals = new Map();
+    const result = computeTotals(quote.lines);
+    (quote.lines || []).forEach((entry, index) => {
+      if (!entry.desc && !entry.qty && !entry.pu) return;
+      const name = lineSupplier(quote, entry);
+      const row = totals.get(name) || { name, ht: 0, ttc: 0, count: 0 };
+      row.ht = round2(row.ht + (result.rows[index]?.ht || 0)); row.ttc = round2(row.ttc + (result.rows[index]?.ttc || 0)); row.count++;
+      totals.set(name, row);
+    });
+    return [...totals.values()];
+  }
+  // Libellé court pour les listes : « Rexel » ou « Rexel + Sonepar ».
+  function suppliersLabel(quote) {
+    const names = Array.isArray(quote?.lines) && quote.lines.length ? supplierTotals(quote).map(row => row.name) : [];
+    return names.length > 1 ? names.join(' + ') : (names[0] || quote?.supplier || 'Fournisseur à préciser');
+  }
   function el(tag, attrs = {}, ...children) {
     const node = document.createElement(tag);
     for (const [key, value] of Object.entries(attrs)) {
@@ -71,7 +92,8 @@
   function ensureDatalist() {
     if (datalistReady) return;
     datalistReady = true;
-    document.body.append(el('datalist', { id: 'devisMaterials' }, MATERIALS.map(value => el('option', { value }))));
+    document.body.append(el('datalist', { id: 'devisMaterials' }, MATERIALS.map(value => el('option', { value }))),
+      el('datalist', { id: 'devisSuppliers' }, SUPPLIERS.map(value => el('option', { value }))));
   }
 
   // Éditeur de devis : en-tête, lignes et totaux. readOnly : consultation seule.
@@ -104,13 +126,13 @@
     const date = el('input', { id: uid + '-date', type: 'date', value: quote.quote_date || '', disabled: readOnly,
       oninput: event => { quote.quote_date = event.target.value; changed(); } });
     const head = el('div', { class: 'devis-fields' },
-      field('Chantier / objet', project), field('Fournisseur', supplierSelect), otherField, field('Date du devis', date),
+      field('Chantier / objet', project), field('Fournisseur par défaut', supplierSelect), otherField, field('Date du devis', date),
       options.studentLabel ? el('div', { class: 'devis-field' }, el('span', { text: 'Élève' }), el('strong', { text: options.studentLabel })) : null);
 
     const body = el('tbody');
     const table = el('div', { class: 'devis-table-wrap' }, el('table', { class: 'devis-table' },
       el('thead', {}, el('tr', {},
-        el('th', { text: 'Description' }), el('th', { text: 'Référence' }), el('th', { class: 'n', text: 'Qté' }), el('th', { text: 'Unité' }),
+        el('th', { text: 'Description' }), el('th', { text: 'Référence' }), el('th', { text: 'Fournisseur' }), el('th', { class: 'n', text: 'Qté' }), el('th', { text: 'Unité' }),
         el('th', { class: 'n', text: 'Prix unit. HT' }), el('th', { class: 'n', text: 'Total HT' }), el('th', { class: 'n', text: 'Total TTC' }),
         readOnly ? null : el('th', { 'aria-label': 'Supprimer' }))),
       body));
@@ -121,7 +143,8 @@
       el('div', { class: 'devis-grand' }, el('span', { text: 'Total TTC' }), tTtc));
     const addLine = readOnly ? null : el('button', { type: 'button', class: 'devis-add', text: '＋ Ajouter une ligne',
       onclick: () => { quote.lines.push(blankLine()); drawLines(); changed(); body.lastElementChild?.querySelector('input')?.focus(); } });
-    const hint = readOnly ? null : el('p', { class: 'devis-hint', text: 'Prix : virgule ou point (12,50). Câble : quantité en mètres, unité « m ». Les totaux se calculent automatiquement (TVA 20 %).' });
+    const hint = readOnly ? null : el('p', { class: 'devis-hint', text: 'Prix : virgule ou point (12,50). Câble : quantité en mètres, unité « m ». Article introuvable chez le fournisseur par défaut ? Indiquez un autre fournisseur sur sa ligne. Les totaux se calculent automatiquement (TVA 20 %).' });
+    const bySupplier = el('div', { class: 'devis-by-supplier', 'aria-live': 'polite' });
 
     function drawLines() {
       fill(body, ...quote.lines.map((entry, index) => {
@@ -130,6 +153,8 @@
         return el('tr', {},
           el('td', {}, input('desc', { list: 'devisMaterials', maxlength: 200, 'aria-label': 'Description ligne ' + (index + 1), placeholder: readOnly ? '' : 'Ex. : Disjoncteur 1P+N 16 A' })),
           el('td', {}, input('ref', { maxlength: 60, 'aria-label': 'Référence ligne ' + (index + 1) })),
+          el('td', {}, input('sup', { class: 'devis-sup', list: 'devisSuppliers', maxlength: 80, 'aria-label': 'Fournisseur ligne ' + (index + 1),
+            placeholder: readOnly ? (quote.supplier || '') : (quote.supplier || 'Fournisseur') })),
           el('td', {}, input('qty', { class: 'n', inputmode: 'decimal', maxlength: 15, 'aria-label': 'Quantité ligne ' + (index + 1) })),
           el('td', {}, el('select', { disabled: readOnly, 'aria-label': 'Unité ligne ' + (index + 1),
             onchange: event => { entry.unit = event.target.value; changed(); } },
@@ -140,7 +165,7 @@
           readOnly ? null : el('td', {}, el('button', { type: 'button', class: 'devis-remove', 'aria-label': 'Supprimer la ligne ' + (index + 1), text: '×',
             onclick: () => { quote.lines.splice(index, 1); drawLines(); changed(); } })));
       }));
-      if (!quote.lines.length) body.append(el('tr', {}, el('td', { colspan: readOnly ? 7 : 8, class: 'devis-hint', text: readOnly ? 'Aucune ligne.' : 'Aucune ligne : cliquez sur « Ajouter une ligne ».' })));
+      if (!quote.lines.length) body.append(el('tr', {}, el('td', { colspan: readOnly ? 8 : 9, class: 'devis-hint', text: readOnly ? 'Aucune ligne.' : 'Aucune ligne : cliquez sur « Ajouter une ligne ».' })));
       refresh();
     }
     function refresh() {
@@ -153,13 +178,20 @@
         row.querySelector('[data-k="qty"]').setAttribute('aria-invalid', String(!line.qtyOk));
         row.querySelector('[data-k="pu"]').setAttribute('aria-invalid', String(!line.puOk));
       });
+      const groups = supplierTotals(quote);
+      fill(bySupplier, groups.length > 1 ? [el('h4', { text: 'Commande par fournisseur' }), el('ul', {}, groups.map(row => el('li', {},
+        el('span', { text: row.name + ' · ' + row.count + ' ligne' + (row.count > 1 ? 's' : '') }),
+        el('b', { text: euro.format(row.ht) + ' HT · ' + euro.format(row.ttc) + ' TTC' }))))] : []);
+      bySupplier.hidden = groups.length < 2;
+      // Placeholder des lignes sans fournisseur propre = fournisseur par défaut actuel.
+      body.querySelectorAll('input[data-k="sup"]').forEach(node => { node.placeholder = quote.supplier || 'Fournisseur'; });
       tHt.textContent = euro.format(result.ht);
       tTva.textContent = euro.format(result.tva);
       tTtc.textContent = euro.format(result.ttc);
       quote.total_ht = result.ht; quote.total_ttc = result.ttc;
       return result;
     }
-    fill(container, el('div', { class: 'devis-sheet' }, head, table, el('div', { class: 'devis-under' }, addLine, hint), totals));
+    fill(container, el('div', { class: 'devis-sheet' }, head, table, el('div', { class: 'devis-under' }, addLine, hint), totals, bySupplier));
     drawLines();
     return { refresh };
   }
@@ -168,7 +200,7 @@
     number: quote.number, project: quote.project || '', supplier: quote.supplier || '', quote_date: quote.quote_date || undefined,
     lines: cleanLines(quote.lines), total_ht: computeTotals(quote.lines).ht, total_ttc: computeTotals(quote.lines).ttc
   });
-  const LIST_FIELDS = 'id,student_id,number,project,supplier,quote_date,total_ht,total_ttc,locked_at,updated_at';
+  const LIST_FIELDS = 'id,student_id,number,project,supplier,quote_date,total_ht,total_ttc,locked_at,updated_at,lines';
 
   // ───────────── Espace élève ─────────────
   function initStudent() {
@@ -219,7 +251,7 @@
       message.textContent = quotes.length ? 'Vos devis sont enregistrés automatiquement et visibles par votre enseignant.' : 'Aucun devis pour l’instant. Créez votre premier devis.';
       const list = el('div', { class: 'devis-list' }, quotes.map(quote => el('button', { type: 'button', class: 'devis-entry', onclick: () => showQuote(quote.id) },
         el('span', { class: 'devis-entry-title', text: quote.project || 'Devis sans objet' }),
-        el('span', { class: 'devis-entry-meta', text: (quote.supplier || 'Fournisseur à préciser') + ' · ' + quote.number }),
+        el('span', { class: 'devis-entry-meta', text: suppliersLabel(quote) + ' · ' + quote.number }),
         el('span', { class: 'devis-entry-meta' }, el('b', { text: euro.format(Number(quote.total_ttc) || 0) + ' TTC' }), quote.locked_at ? el('span', { class: 'devis-chip devis-locked', text: '🔒 Verrouillé par l’enseignant' }) : null))));
       fill(content, 
         el('div', { class: 'devis-toolbar' }, el('button', { type: 'button', class: 'portal-button devis-primary', text: '＋ Nouveau devis', onclick: () => showQuote(null) })),
@@ -237,8 +269,8 @@
       const rows = [...groups.values()].filter(group => group.length > 1).map(group => {
         const sorted = [...group].sort((a, b) => Number(a.total_ttc) - Number(b.total_ttc));
         return el('li', {}, el('strong', { text: sorted[0].project }), ' : le moins cher est ',
-          el('b', { text: (sorted[0].supplier || '?') + ' (' + euro.format(Number(sorted[0].total_ttc)) + ')' }),
-          ', écart de ' + euro.format(Number(sorted.at(-1).total_ttc) - Number(sorted[0].total_ttc)) + ' TTC avec ' + (sorted.at(-1).supplier || '?') + '.');
+          el('b', { text: suppliersLabel(sorted[0]) + ' (' + euro.format(Number(sorted[0].total_ttc)) + ')' }),
+          ', écart de ' + euro.format(Number(sorted.at(-1).total_ttc) - Number(sorted[0].total_ttc)) + ' TTC avec ' + suppliersLabel(sorted.at(-1)) + '.');
       });
       return rows.length ? el('div', { class: 'devis-compare' }, el('h3', { text: 'Comparaison des fournisseurs' }), el('ul', {}, rows)) : null;
     }
@@ -263,7 +295,7 @@
       const saveButton = locked ? null : el('button', { type: 'button', class: 'portal-button devis-primary', text: 'Enregistrer', onclick: () => save(true) });
       const duplicate = el('button', { type: 'button', text: 'Dupliquer pour un autre fournisseur', onclick: async () => {
         await flush();
-        const lines = cleanLines(quote.lines).map(entry => ({ ...entry, ref: '', pu: '' }));
+        const lines = cleanLines(quote.lines).map(entry => ({ ...entry, ref: '', pu: '', sup: '' }));
         const nextSupplier = SUPPLIERS.find(name => name !== quote.supplier) || '';
         await showQuote(null, { project: quote.project, supplier: nextSupplier, lines });
         if (current) { dirty = true; save(true); }
@@ -289,7 +321,7 @@
         let rows;
         if (!quote.id) {
           rows = await api.rest('student_quotes?select=id,updated_at', { method: 'POST', headers, body });
-          if (rows[0]) { quote.id = rows[0].id; quotes.unshift({ id: quote.id, number: quote.number, project: quote.project, supplier: quote.supplier, total_ttc: quote.total_ttc }); }
+          if (rows[0]) { quote.id = rows[0].id; quotes.unshift({ id: quote.id, number: quote.number, project: quote.project, supplier: quote.supplier, total_ttc: quote.total_ttc, lines: cleanLines(quote.lines) }); }
         } else {
           rows = await api.rest('student_quotes?id=eq.' + encodeURIComponent(quote.id) + '&locked_at=is.null&select=id,updated_at', { method: 'PATCH', headers, body });
         }
@@ -371,7 +403,7 @@
         const openButton = el('button', { type: 'button', class: 'subtle', text: 'Ouvrir', onclick: () => openQuote(quote, student) });
         return el('tr', {},
           el('td', {}, el('strong', { text: name(student) }), student?.class_id && !context.classId ? el('div', { class: 'devis-hint', text: className(student.class_id) }) : null),
-          el('td', { text: quote.project || '—' }), el('td', { text: quote.supplier || '—' }), el('td', { text: quote.number }),
+          el('td', { text: quote.project || '—' }), el('td', { text: suppliersLabel(quote) }), el('td', { text: quote.number }),
           el('td', { text: dateFr.format(new Date(quote.updated_at)) }),
           el('td', { class: 'n devis-amount', text: euro.format(Number(quote.total_ttc) || 0) }),
           el('td', {}, quote.locked_at ? el('span', { class: 'devis-chip devis-locked', text: '🔒 Verrouillé' }) : el('span', { class: 'devis-chip devis-open', text: 'Modifiable par l’élève' })),
@@ -397,6 +429,6 @@
       table), viewer);
   }
 
-  window.MelecDevis = { computeTotals, parseNumber, nextNumber, renderEditor, renderTeacher, TVA };
+  window.MelecDevis = { computeTotals, parseNumber, nextNumber, renderEditor, renderTeacher, supplierTotals, suppliersLabel, TVA };
   if (document.getElementById('studentContentTabs')) initStudent();
 })();

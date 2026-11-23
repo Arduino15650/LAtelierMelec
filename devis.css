@@ -23,12 +23,12 @@ html body .devis-chip.devis-open{background:rgba(63,224,138,.16)!important;color
 .devis-field>span{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
 .devis-field input,.devis-field select{width:100%;min-height:38px;box-sizing:border-box}
 .devis-table-wrap{overflow-x:auto;min-width:0;border-radius:8px}
-.devis-table{width:100%;min-width:820px;border-collapse:collapse}
+.devis-table{width:100%;min-width:960px;border-collapse:collapse}
 .devis-teacher-table{min-width:900px}
 .devis-table th{text-align:left;white-space:nowrap;padding:8px 7px}
 .devis-table td{padding:4px 5px;vertical-align:middle}
 .devis-table .n{text-align:right}
-.devis-table th:nth-child(1){width:32%}
+.devis-table th:nth-child(1){width:28%}
 .devis-table input,.devis-table select{width:100%;min-height:34px;box-sizing:border-box;padding:4px 7px}
 .devis-table input.n{font-family:var(--st-f-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums}
 html body .devis-table input[aria-invalid="true"]{outline:2px solid #ff5a5f;background:#fdecec!important}
@@ -57,3 +57,13 @@ html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"],html
 html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"] span{color:#8a4a06!important}
 html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"].active,html body.subpage-active:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"].active{background:#c46a0c!important;color:#fff!important;border-color:rgba(255,255,255,.85)!important;box-shadow:0 0 0 1px #c46a0c,0 0 16px #c46a0c99!important}
 html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"].active span{color:#fff!important}
+/* Plusieurs fournisseurs dans un même devis */
+.devis-table th:nth-child(3){width:140px}
+.devis-table input.devis-sup::placeholder{font-style:italic;opacity:.75}
+.devis-by-supplier{justify-self:end;width:min(100%,460px);border:1px solid var(--st-wire,#1e4569);border-radius:8px;padding:10px 14px}
+.devis-by-supplier[hidden]{display:none!important}
+.devis-by-supplier h4{margin:0 0 6px;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.devis-by-supplier ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.devis-by-supplier li{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.devis-by-supplier b{font-family:var(--st-f-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums;white-space:nowrap}
+@media(max-width:600px){.devis-by-supplier{justify-self:stretch}}
