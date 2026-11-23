@@ -50,10 +50,22 @@
     } catch { /* stockage indisponible ou plein : le document reste en mémoire pour cette visite */ }
   }
   function forgetStoredDocuments() { try { caches.delete(DOCUMENTS); } catch { /* rien à effacer */ } }
+  // Téléchargements en cours, partagés entre le préchargement et le clic de l'élève : un même
+  // document n'est jamais téléchargé deux fois en parallèle (même si le cache mémoire est vidé).
+  const downloads = new Map();
+  function fetchDocument(path, onProgress) {
+    if (!downloads.has(path)) {
+      const run = storedDocument(path).then(stored => stored || api.download(path, {retryTransient:true, onProgress})
+        .then(blob => { storeDocument(path, blob); return blob; }))
+        .finally(() => downloads.delete(path));
+      downloads.set(path, run);
+    }
+    return downloads.get(path);
+  }
   async function loadDocument(asset, onProgress) {
     const cached = documentCache.get(asset.object_path);
     if (cached) return cached;
-    const pending = storedDocument(asset.object_path).then(stored => stored || api.download(asset.object_path, {retryTransient:true, onProgress}).then(blob => { storeDocument(asset.object_path, blob); return blob; }));
+    const pending = fetchDocument(asset.object_path, onProgress);
     documentCache.set(asset.object_path, pending);
     try {
       const blob = await pending;
