@@ -104,3 +104,6 @@ html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate .cx-kicker { padding-top: 
 html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate section > h1 { margin-top: 0 !important; margin-bottom: 14px !important; }
 /* La ligne d'état vide ne doit pas laisser d'espace en bas de la fenêtre */
 html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate .cloud-status:empty { display: none !important; }
+
+/* Saisie automatique du navigateur : champ clair et texte lisible (sinon fond sombre + texte gris) */
+html:not(#cx-a):not(#cx-b) body input:is(:-webkit-autofill,:-webkit-autofill:hover,:-webkit-autofill:focus,:autofill){color-scheme:light!important;-webkit-box-shadow:0 0 0 1000px #f4f8fc inset!important;box-shadow:0 0 0 1000px #f4f8fc inset!important;-webkit-text-fill-color:#14263d!important;caret-color:#14263d!important;transition:background-color 99999s ease 0s!important}
