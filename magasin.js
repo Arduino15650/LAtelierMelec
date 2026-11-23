@@ -254,7 +254,7 @@
       } else values.forEach(v => s.append(option(v, v, state[key] === v)));
       return s;
     };
-    const search = el('input', { type: 'search', placeholder: 'Référence, désignation…', value: state.search, oninput: () => { state.search = search.value; onChange(true); } });
+    const search = el('input', { type: 'search', 'data-fk': 'search', placeholder: 'Référence, désignation…', value: state.search, oninput: () => { state.search = search.value; onChange(true); } });
     const selected = state.type || state.category || state.supplier;
     return el('section', { class: 'mg-filter-panel' },
       el('div', { class: 'mg-filter-heading' }, el('span', {}, el('b', { 'aria-hidden': 'true', text: '⚙' }), ' Explorer le magasin'), el('small', { text: lists.hint || 'Votre inventaire apparaît après une sélection' })),
@@ -266,6 +266,20 @@
       selected ? el('div', { class: 'mg-filter-bottom' },
         el('span', {}, [state.type, state.category, state.supplier].filter(Boolean).map(v => el('span', { class: 'mg-chip', text: v }))),
         el('button', { type: 'button', class: 'mg-text-button', text: '✕ Effacer les filtres', onclick: () => { state.type = state.category = state.supplier = state.search = ''; onChange(); } })) : null);
+  }
+  // Reconstruction d'une zone sans perdre la saisie en cours : le champ actif (repéré par data-fk)
+  // retrouve le focus et la position du curseur après chaque rafraîchissement.
+  function keepFocus(root, draw) {
+    const active = document.activeElement;
+    const fk = active && root.contains(active) ? active.dataset?.fk : null;
+    let start = null, end = null;
+    try { start = active.selectionStart; end = active.selectionEnd; } catch { /* champ sans sélection */ }
+    draw();
+    if (!fk) return;
+    const next = [...root.querySelectorAll('[data-fk]')].find(node => node.dataset.fk === fk);
+    if (!next || next === active) return;
+    next.focus({ preventScroll: true });
+    try { if (start !== null) next.setSelectionRange(start, end); } catch { /* champ numérique */ }
   }
   const matches = (i, f) => (!f.type || i.type === f.type) && (!f.category || i.category === f.category) && (!f.supplier || i.supplier === f.supplier) &&
     (!f.search || norm(i.name + ' ' + i.ref + ' ' + (i.location || '')).includes(norm(f.search)));
@@ -512,7 +526,7 @@
     function render() {
       renderStatus();
       const waiting = counts.filter(c => !c.loaded_at).length;
-      fill(root,
+      keepFocus(root, () => fill(root,
         el('div', { class: 'teach-head mg-head' },
           el('div', {}, el('span', { class: 'mg-eyebrow', text: 'Gestion du matériel électrique' }), el('h1', { text: 'Accès équipe' }), el('p', { text: 'Votre magasin. En temps réel. Un inventaire organisé : chaque entrée et sortie enregistrée.' })),
           el('div', { class: 'mg-head-actions' }, connection,
@@ -523,7 +537,7 @@
           el('button', { type: 'button', class: section === 'counts' ? 'active' : '', onclick: async () => { section = 'counts'; try { await loadCounts(); } catch (error) { say(error.message, true); } render(); } },
             'Inventaires des élèves', waiting ? el('span', { class: 'mg-count-badge', text: String(waiting) }) : null)),
         el('div', { class: 'teach-card mg-card' }, section === 'store' ? renderStore() : renderCounts()),
-        status);
+        status));
     }
     document.addEventListener('visibilitychange', () => { if (visible()) { load().then(render, () => {}); schedule(); } });
     // Rôle administrateur : la liste des accès ne répond qu'à un administrateur (réponse légère,
@@ -734,14 +748,14 @@
       live = [];
       const row = (item, isNew) => {
         const line = lines.get(key(item));
-        const qty = el('input', { type: 'number', min: 0, inputmode: 'numeric', placeholder: '—', 'aria-label': 'Quantité comptée pour ' + item.name, value: line?.counted ?? '', oninput: e => setCount(item, e.target.value, note.value) });
-        const note = el('input', { maxlength: 200, placeholder: 'Remarque', 'aria-label': 'Remarque pour ' + item.name, value: line?.note || '', oninput: () => { if (lines.has(key(item))) { lines.get(key(item)).note = note.value; later(); } } });
+        const qty = el('input', { type: 'number', min: 0, inputmode: 'numeric', 'data-fk': 'qty:' + key(item), placeholder: '—', 'aria-label': 'Quantité comptée pour ' + item.name, value: line?.counted ?? '', oninput: e => setCount(item, e.target.value, note.value) });
+        const note = el('input', { maxlength: 200, 'data-fk': 'note:' + key(item), placeholder: 'Remarque', 'aria-label': 'Remarque pour ' + item.name, value: line?.note || '', oninput: () => { if (lines.has(key(item))) { lines.get(key(item)).note = note.value; later(); } } });
         return el('article', { class: 'mg-item mg-count' + (line ? ' is-counted' : ''), 'data-key': key(item) },
           el('div', { class: 'mg-item-title' }, el('span', { class: 'mg-reference', text: item.ref || (isNew ? 'Nouvel article' : '') }), el('h3', { text: item.name }),
             el('p', {}, [item.type, item.category, item.supplier].filter(Boolean).join(' · ')), item.location ? el('small', { text: '⌖ ' + item.location }) : null),
           el('div', { class: 'mg-count-fields' }, el('label', { class: 'mg-count-qty' }, el('span', { text: 'Quantité comptée (' + (item.unit || 'pièce') + ')' }), qty), note));
       };
-      fill(content,
+      keepFocus(content, () => fill(content,
         el('p', { class: 'portal-small', text: 'Comptez le matériel présent dans le magasin et notez la quantité de chaque article. Votre inventaire est enregistré au fur et à mesure ; envoyez-le à votre enseignant quand il est terminé.' + (sentAt ? ' Dernier envoi : ' + new Date(sentAt).toLocaleString('fr-FR') + '.' : '') }),
         filterPanel(state, lists, searching => { if (searching) { clearTimeout(render.t); render.t = setTimeout(render, 160); } else render(); }),
         selected ? el('div', { class: 'mg-results' },
@@ -756,7 +770,7 @@
             el('div', { class: 'mg-empty' }, el('h3', { text: 'Aucun article pour cette sélection' }), el('p', { text: 'Si vous trouvez du matériel qui n’est pas dans la liste, ajoutez-le.' }))) :
           el('p', { class: 'mg-hint', text: catalog.length ? catalog.length + ' article(s) dans le catalogue. Choisissez un type, une catégorie ou un fournisseur pour commencer à compter.' : 'Le catalogue du magasin est encore vide : ajoutez les articles que vous trouvez avec « Article absent de la liste ».' }),
         !selected && !catalog.length ? el('button', { type: 'button', class: 'subtle', text: '＋ Article absent de la liste', onclick: addMissing }) : null,
-        summaryBox);
+        summaryBox));
       summary();
     }
     button.addEventListener('click', () => { if (pane.hidden) open(); });
