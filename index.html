@@ -74,9 +74,15 @@ p{margin:0}
 .hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:clamp(28px,5vw,72px);align-items:center;padding-block:clamp(56px,9vw,112px) clamp(48px,7vw,88px)}
 .hero-copy{min-width:0}
 .hero h1{font-family:var(--f-display);font-weight:900;text-transform:uppercase;line-height:.82;letter-spacing:.01em;margin-top:18px}
-.hero h1 .l1{display:block;font-size:clamp(2.2rem,6vw,4.4rem);color:var(--ink);letter-spacing:.06em}
-.hero h1 .l2{display:block;white-space:nowrap;font-size:clamp(5rem,19vw,13.5rem);color:color-mix(in srgb,var(--ink) 14%,transparent);-webkit-text-stroke:2px var(--muted);transition:color .5s ease,-webkit-text-stroke-color .5s ease,text-shadow .5s ease;position:relative}
+.hero h1 .l1{display:block;font-size:clamp(2rem,5.2vw,3.8rem);color:#6fa8ff;letter-spacing:.06em}
+.hero h1 .l2{display:block;white-space:nowrap;font-size:clamp(4.4rem,15vw,11rem);color:color-mix(in srgb,var(--ink) 14%,transparent);-webkit-text-stroke:2px var(--muted);transition:color .5s ease,-webkit-text-stroke-color .5s ease,text-shadow .5s ease;position:relative}
 .live .hero h1 .l2{color:var(--ink);-webkit-text-stroke-color:var(--ink);text-shadow:0 0 28px color-mix(in srgb,var(--arc) 55%,transparent),0 0 2px #fff}
+/* Titre tricolore : bleu / blanc / rouge, en contour hors tension puis allumé */
+.hero h1 .l2 :is(.tw,.tr){transition:color .5s ease,-webkit-text-stroke-color .5s ease,text-shadow .5s ease}
+.hero h1 .l2 .tw{color:rgba(255,255,255,.12);-webkit-text-stroke-color:rgba(255,255,255,.55)}
+.hero h1 .l2 .tr{color:rgba(255,95,107,.12);-webkit-text-stroke-color:rgba(255,95,107,.75)}
+.live .hero h1 .l2 .tw{color:#fff;-webkit-text-stroke-color:#fff;text-shadow:0 0 26px rgba(111,168,255,.45),0 0 2px #fff}
+.live .hero h1 .l2 .tr{color:#ff5f6b;-webkit-text-stroke-color:#ff5f6b;text-shadow:0 0 26px rgba(255,95,107,.5)}
 .hero h1 .bolt{display:inline-block;width:.42em;height:.62em;vertical-align:.02em;margin-left:.04em}
 .hero h1 .bolt path{fill:color-mix(in srgb,var(--volt) 25%,transparent);stroke:var(--volt);stroke-width:1.2;transition:fill .4s}
 .live .hero h1 .bolt path{fill:var(--volt);filter:drop-shadow(0 0 10px var(--volt))}
@@ -385,7 +391,7 @@ section.row-sec{padding-block:clamp(36px,4.5vw,56px)}
   <div class="wrap">
     <div class="hero-copy">
       <p class="eyebrow">Bac Pro MELEC · Métiers de l’électricité</p>
-      <h1 id="h-title"><span class="l1">L’Atelier</span><span class="l2">MELEC<svg class="bolt" viewBox="0 0 32 46" aria-hidden="true"><path d="M20 1 4 26h10l-3 19 17-27H17l3-17z"/></svg></span></h1>
+      <h1 id="h-title"><span class="l1">L’Atelier</span><span class="l2"><span class="tw">MEL</span><span class="tr">EC</span><svg class="bolt" viewBox="0 0 32 46" aria-hidden="true"><path d="M20 1 4 26h10l-3 19 17-27H17l3-17z"/></svg></span></h1>
       <div class="entries">
         <a class="entry teacher" href="./enseignant.html">
           <span class="ic"><svg viewBox="0 0 32 38" aria-hidden="true"><path fill="#ff8a1e" d="M18 1 5 21h9l-2 16 15-23h-9l3-13z"/></svg></span>
