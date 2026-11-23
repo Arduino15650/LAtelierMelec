@@ -120,3 +120,27 @@ html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate::before {
 html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate > .cloud-card { z-index: 2; animation: cx-entree .18s ease-out; }
 @keyframes cx-entree { from { opacity: 0; transform: translateY(6px) scale(.985); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate > .cloud-card { animation: none; } }
+
+/* Connexion élève : même principe, fenêtre par-dessus l'accueil flouté */
+html.eleve-connexion body:not(#cx-a):not(#cx-b) .portal-header { display: none !important; }
+html.eleve-connexion body:not(#cx-a):not(#cx-b) .portal-shell > main {
+  position: fixed !important; inset: 0 !important; z-index: 10000 !important; display: grid !important;
+  place-content: center !important; justify-items: center !important; gap: 12px !important;
+  overflow-y: auto !important; padding: 16px !important; margin: 0 !important; max-width: none !important; box-sizing: border-box !important;
+}
+html.eleve-connexion body:not(#cx-a):not(#cx-b) .portal-shell > main > .cx-fond { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+html.eleve-connexion body:not(#cx-a):not(#cx-b) .portal-shell > main > .cx-fond > iframe {
+  position: absolute; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); border: 0; filter: blur(3px); background: #050f1e;
+}
+html.eleve-connexion body:not(#cx-a):not(#cx-b) .portal-shell > main > .cx-fond::after { content: ""; position: absolute; inset: 0; background: rgba(2, 8, 18, .55); }
+html.eleve-connexion body:not(#cx-a):not(#cx-b) .portal-shell > main > section { position: relative; z-index: 1; width: min(440px, calc(100vw - 24px)) !important; margin: 0 !important; }
+html.eleve-connexion body:not(#cx-a):not(#cx-b) #studentAuth { animation: cx-entree .18s ease-out; }
+html body:not(#cx-a):not(#cx-b) #studentAuth .cx-fermer { display: none; }
+html.eleve-connexion body:not(#cx-a):not(#cx-b) #studentAuth .cx-fermer {
+  position: absolute; top: 16px; right: 16px; z-index: 2; display: grid; place-items: center; width: 38px; height: 38px; box-sizing: border-box;
+  border-radius: 6px; border: 1px solid rgba(255, 255, 255, .3); background: #0a1c33; color: #e9f1fb;
+}
+html.eleve-connexion body:not(#cx-a):not(#cx-b) #studentAuth .cx-fermer svg { width: 20px; height: 20px; }
+html.eleve-connexion body:not(#cx-a):not(#cx-b) #studentAuth .cx-fermer:hover { border-color: #ff8a1e; }
+html.eleve-connexion body:not(#cx-a):not(#cx-b) #studentAuth .cx-head { margin-right: 52px !important; }
+@media (pointer: coarse) { html.eleve-connexion body:not(#cx-a):not(#cx-b) #studentAuth .cx-fermer { width: 44px; height: 44px; } }

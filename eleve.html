@@ -5,6 +5,7 @@
   <link rel="icon" href="icon-192.png"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#071b34"><title>BAC PRO MELEC — Élève</title>
   <script>try{if(sessionStorage.getItem('melec-cloud-session-v1'))document.documentElement.classList.add('student-resuming')}catch{}</script>
+  <script>if(!document.documentElement.classList.contains('student-resuming'))document.documentElement.classList.add('eleve-connexion')</script>
   <style>html.student-resuming #studentAuth > :not(#studentAuthStatus){display:none}html.student-resuming #studentAuthStatus:empty::before{content:'Reconnexion en cours…'}</style>
   <link rel="stylesheet" href="portal.css?v=20261014-electrique">
   <style>
@@ -69,6 +70,7 @@
     <header class="portal-header"><img src="logo-melec-192.webp" alt="Logo BAC PRO MELEC" width="92" height="92"><div><div class="space-title"><h1>BAC PRO MELEC</h1><span class="space-badge">Élève</span></div><p>Consulter les contenus pédagogiques de votre classe.</p></div><a class="portal-top-link" href="./index.html">← Accueil</a></header>
     <main>
       <section id="studentAuth" class="portal-panel portal-auth" aria-labelledby="studentAuthTitle">
+        <a class="cx-fermer" href="./index.html" aria-label="Fermer et revenir à l’accueil"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></a>
         <div class="cx-head"><span class="cx-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><p class="cx-kicker">Espace élève</p><h2 id="studentAuthTitle">Se connecter</h2></div>
         <div class="portal-tabs auth-tabs"><button id="studentLoginTab" class="active" type="button">Se connecter</button><button id="studentSignupTab" type="button">Inscription</button><button id="studentContactTab" type="button">Contacter l’enseignant</button></div>
         <form id="studentLoginForm" class="portal-form">
@@ -107,6 +109,11 @@
         </form>
       </section>
     </main>
+    <script>(function(){var h=document.documentElement,auth=document.getElementById('studentAuth'),main=auth.parentNode,fond=null;
+function sync(){var on=!auth.hidden&&!h.classList.contains('student-resuming');h.classList.toggle('eleve-connexion',on);
+if(on&&!fond){fond=document.createElement('div');fond.className='cx-fond';fond.setAttribute('aria-hidden','true');fond.innerHTML='<iframe src="./index.html?fond=1" title="Accueil (arrière-plan)" tabindex="-1" inert></iframe>';main.insertBefore(fond,main.firstChild)}
+if(!on&&fond){fond.remove();fond=null}}
+var o=new MutationObserver(sync);o.observe(auth,{attributes:true,attributeFilter:['hidden']});o.observe(h,{attributes:true,attributeFilter:['class']});sync()})();</script>
   </div>
   <script src="portal-api.js?v=20261015-charge"></script>
   <script src="content-render.js?v=20261014-verrou"></script>
