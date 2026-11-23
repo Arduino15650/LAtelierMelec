@@ -107,3 +107,16 @@ html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate .cloud-status:empty { disp
 
 /* Saisie automatique du navigateur : champ clair et texte lisible (sinon fond sombre + texte gris) */
 html:not(#cx-a):not(#cx-b) body input:is(:-webkit-autofill,:-webkit-autofill:hover,:-webkit-autofill:focus,:autofill){color-scheme:light!important;-webkit-box-shadow:0 0 0 1000px #f4f8fc inset!important;box-shadow:0 0 0 1000px #f4f8fc inset!important;-webkit-text-fill-color:#14263d!important;caret-color:#14263d!important;transition:background-color 99999s ease 0s!important}
+
+/* Connexion enseignant : la fenêtre s'ouvre par-dessus l'accueil flouté, comme sur MELEC-Addict et Habil-MELEC */
+html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate { background: transparent !important; backdrop-filter: none !important; }
+html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate > .cx-fond-accueil {
+  position: fixed; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); border: 0; z-index: 0;
+  pointer-events: none; filter: blur(3px); background: #050f1e;
+}
+html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate::before {
+  content: ""; position: fixed; inset: 0; z-index: 1; background: rgba(2, 8, 18, .55); pointer-events: none;
+}
+html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate > .cloud-card { z-index: 2; animation: cx-entree .18s ease-out; }
+@keyframes cx-entree { from { opacity: 0; transform: translateY(6px) scale(.985); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { html body:not(#cx-a):not(#cx-b):not(#cx-c) #cloudGate > .cloud-card { animation: none; } }
