@@ -199,8 +199,16 @@
       await new Promise(resolve => setTimeout(resolve, pause(attempt)));
     }
   }
+  // Copies locales des fichiers (PDF gardés sur le poste) : effacées dès que les fichiers sont supprimés.
+  async function forgetFiles(paths) {
+    try {
+      const box = await caches.open('melec-documents-v1');
+      await Promise.all((paths || []).map(path => box.delete(new URL('./__documents/' + encodeURIComponent(path), location.href).href)));
+    } catch { /* stockage indisponible : rien à effacer */ }
+  }
   async function removeFiles(paths) {
     if (!Array.isArray(paths) || !paths.length) return [];
+    forgetFiles(paths);
     const removed = [];
     for (let index = 0; index < paths.length; index += 1000) {
       const batch = paths.slice(index, index + 1000);
@@ -271,7 +279,7 @@
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   }
-  window.MelecPortal = { URL, KEY, signIn, signUp, token, user, userId, rest, invoke, upload, download, removeFiles, signOut, escapeHtml, sessionRejected, forget,
+  window.MelecPortal = { URL, KEY, signIn, signUp, token, user, userId, rest, invoke, upload, download, removeFiles, forgetFiles, signOut, escapeHtml, sessionRejected, forget,
     assuranceLevel, mfaFactors, mfaEnroll, mfaVerify, mfaUnenroll };
 })();
 

@@ -245,7 +245,11 @@
       tpItemsLoadedAt = Date.now();
     }
     activeTp = assignments.find(row => tpEnd(row) > Date.now()) || null;
-    if (previousActiveId !== activeTp?.id) clearDocumentCache();
+    if (previousActiveId !== activeTp?.id) {
+      clearDocumentCache();
+      // TP terminé, retiré, validé ou supprimé : ses documents ne restent pas sur le poste.
+      if (previousActiveId) { forgetStoredDocuments(); prefetchedTp = ''; }
+    }
     prefetchActiveTp();
     if (preserveViewer && previousActiveId && activeTp?.id === previousActiveId) return;
     // Actualisation automatique : la liste n'est reconstruite que si les TP ont changé (évite le scintillement toutes les 30 s).
@@ -429,7 +433,7 @@
     const remaining = tpEnd(activeTp) - Date.now();
     const info = $('studentTpList').querySelector('.student-tp-card .portal-small');
     if (info) info.textContent = remaining > 0 ? 'Temps restant : ' + formatDuration(remaining) : 'Temps écoulé · TP verrouillé.';
-    if (remaining <= 0) { clearTpViewer(); clearDocumentCache(); activeTp=null; selectedContentTab='tp'; openDashboard().catch(error => message($('studentTpNotice'),error.message,true)); }
+    if (remaining <= 0) { clearTpViewer(); clearDocumentCache(); forgetStoredDocuments(); activeTp=null; selectedContentTab='tp'; openDashboard().catch(error => message($('studentTpNotice'),error.message,true)); }
   },1000);
   let accessRefreshInProgress = false, accessTick = 0;
   async function refreshStudentAccess(force = false) {

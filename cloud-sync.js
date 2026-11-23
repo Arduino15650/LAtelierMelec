@@ -261,6 +261,9 @@
       return;
     }
     if (readPending()) { scheduleUpload(); return; }
+    // Saisie en cours dans un champ : l'actualisation attend, pour ne pas faire perdre le curseur.
+    const typing = document.activeElement;
+    if (typing && /^(INPUT|TEXTAREA|SELECT)$/.test(typing.tagName) && !typing.closest('#cloudGate') && !typing.disabled) return;
     refreshing = true;
     try {
       const latest = await cloudRevision();
