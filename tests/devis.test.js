@@ -51,3 +51,21 @@ test('le numéro de devis suit le dernier numéro de l’élève', () => {
   assert.equal(nextNumber([]), `DEV-${year}-001`);
   assert.equal(nextNumber(['DEV-2026-001', 'DEV-2026-007']), `DEV-${year}-008`);
 });
+
+test('un devis peut répartir ses lignes entre plusieurs fournisseurs', () => {
+  const { supplierTotals, suppliersLabel } = window.MelecDevis;
+  const quote = { supplier: 'Rexel', lines: [
+    { desc: 'Disjoncteur 16 A', sup: '', qty: '2', pu: '10' },
+    { desc: 'Câble R2V 3G2,5', sup: 'Sonepar', qty: '10', pu: '1,5' },
+    { desc: 'Télérupteur', sup: 'Rexel', qty: '1', pu: '20' },
+    { desc: '', sup: '', qty: '', pu: '' }
+  ] };
+  const rows = supplierTotals(quote);
+  assert.equal(rows.length, 2);
+  const rexel = rows.find(r => r.name === 'Rexel'), sonepar = rows.find(r => r.name === 'Sonepar');
+  assert.equal(rexel.ht, 40); assert.equal(rexel.ttc, 48); assert.equal(rexel.count, 2);
+  assert.equal(sonepar.ht, 15); assert.equal(sonepar.ttc, 18); assert.equal(sonepar.count, 1);
+  assert.equal(suppliersLabel(quote), 'Rexel + Sonepar');
+  assert.equal(suppliersLabel({ supplier: 'CGED', lines: [{ desc: 'Gaine', sup: '', qty: '1', pu: '2' }] }), 'CGED');
+  assert.equal(suppliersLabel({ supplier: 'Würth' }), 'Würth');
+});
