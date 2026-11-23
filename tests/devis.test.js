@@ -72,7 +72,7 @@ test('un devis peut répartir ses lignes entre plusieurs fournisseurs', () => {
 
 test('la liste des fournisseurs propose grossistes, enseignes et sites en ligne', () => {
   const { SUPPLIERS } = window.MelecDevis;
-  for (const name of ['Rexel', 'Sonepar', 'CGED', 'Yesss Électrique', 'Würth', 'Leroy Merlin', 'RS Components']) assert.ok(SUPPLIERS.includes(name), name);
+  for (const name of ['Rexel', 'Sonepar', 'CGED', 'Yesss Électrique', 'Würth', 'Leroy Merlin', 'RS Components', 'Legrand', 'Schneider Electric', 'Hager']) assert.ok(SUPPLIERS.includes(name), name);
   assert.equal(new Set(SUPPLIERS).size, SUPPLIERS.length);
 });
 
