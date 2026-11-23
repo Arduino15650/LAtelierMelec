@@ -7,8 +7,11 @@
   const TVA = 0.20;
   // Distributeurs proposés (saisie libre toujours possible) : grossistes professionnels, puis
   // enseignes de bricolage et sites de vente en ligne.
-  const SUPPLIERS = ['Rexel', 'Sonepar', 'CGED', 'Yesss Électrique', 'Würth', 'Bis Électric', 'Prolians', 'Point.P',
+  const DISTRIBUTORS = ['Rexel', 'Sonepar', 'CGED', 'Yesss Électrique', 'Würth', 'Bis Électric', 'Prolians', 'Point.P',
     'RS Components', 'Farnell', 'Conrad', 'Manutan', '123elec', 'Leroy Merlin', 'Castorama', 'Brico Dépôt', 'ManoMano'];
+  // Fabricants : prix publics de leurs catalogues (Legrand intégré au site, voir CATALOGS).
+  const MANUFACTURERS = ['Legrand', 'Schneider Electric', 'Hager', 'ABB', 'Siemens', 'BTicino'];
+  const SUPPLIERS = [...DISTRIBUTORS, ...MANUFACTURERS];
   // Catalogues de prix intégrés au site (fichiers dans /catalogues), chargés seulement à l'ouverture d'un devis.
   const CATALOGS = [{ id: 'legrand-2025-01', url: './catalogues/legrand-2025-01.json', label: 'Tarif Legrand 01/2025' }];
   const norm = text => String(text || '').toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -150,7 +153,8 @@
     const project = el('input', { id: uid + '-project', maxlength: 200, value: quote.project || '', placeholder: 'Ex. : Tableau de chambre', disabled: readOnly,
       oninput: event => { quote.project = event.target.value; changed(); } });
     const supplierSelect = el('select', { id: uid + '-supplier', disabled: readOnly },
-      SUPPLIERS.map(name => el('option', { value: name, text: name, selected: known && quote.supplier === name })),
+      el('optgroup', { label: 'Distributeurs' }, DISTRIBUTORS.map(name => el('option', { value: name, text: name, selected: known && quote.supplier === name }))),
+      el('optgroup', { label: 'Fabricants (tarif public)' }, MANUFACTURERS.map(name => el('option', { value: name, text: name, selected: known && quote.supplier === name }))),
       el('option', { value: '__other', text: 'Autre fournisseur…', selected: !known }));
     const otherSupplier = el('input', { id: uid + '-other', maxlength: 80, value: known ? '' : (quote.supplier || ''), placeholder: 'Nom du fournisseur', disabled: readOnly,
       oninput: event => { quote.supplier = event.target.value.trim(); changed(); } });
