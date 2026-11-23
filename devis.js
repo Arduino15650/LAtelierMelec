@@ -5,7 +5,47 @@
 (function () {
   'use strict';
   const TVA = 0.20;
-  const SUPPLIERS = ['Rexel', 'Sonepar', 'CGED', 'Yesss Électrique', 'Würth'];
+  // Distributeurs proposés (saisie libre toujours possible) : grossistes professionnels, puis
+  // enseignes de bricolage et sites de vente en ligne.
+  const SUPPLIERS = ['Rexel', 'Sonepar', 'CGED', 'Yesss Électrique', 'Würth', 'Bis Électric', 'Prolians', 'Point.P',
+    'RS Components', 'Farnell', 'Conrad', 'Manutan', '123elec', 'Leroy Merlin', 'Castorama', 'Brico Dépôt', 'ManoMano'];
+  // Catalogues de prix intégrés au site (fichiers dans /catalogues), chargés seulement à l'ouverture d'un devis.
+  const CATALOGS = [{ id: 'legrand-2025-01', url: './catalogues/legrand-2025-01.json', label: 'Tarif Legrand 01/2025' }];
+  const norm = text => String(text || '').toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  let catalogPromise = null;
+  // Une seule liste de suggestions ouverte à la fois ; fermée quand la page défile ou change de taille.
+  let closeOpenSuggest = () => {};
+  if (typeof addEventListener === 'function') {
+    addEventListener('scroll', event => { if (!event.target?.closest?.('.devis-suggest')) closeOpenSuggest(); }, { passive: true, capture: true });
+    addEventListener('resize', () => closeOpenSuggest());
+  }
+  function loadCatalogs() {
+    if (!catalogPromise) catalogPromise = Promise.all(CATALOGS.map(async catalog => {
+      const response = await fetch(catalog.url, { cache: 'force-cache' });
+      if (!response.ok) throw new Error('Catalogue indisponible');
+      const data = await response.json();
+      return data.items.map(([ref, des, price, brand, gencod, isNew]) => ({
+        ref, des, price, brand: data.brands[brand] || '', gencod, isNew: Boolean(isNew), catalog: catalog.label,
+        key: norm(ref + ' ' + des + ' ' + (data.brands[brand] || '') + ' ' + gencod)
+      }));
+    })).then(lists => lists.flat()).catch(error => { catalogPromise = null; throw error; });
+    return catalogPromise;
+  }
+  // Recherche : tous les mots tapés doivent apparaître (référence, désignation, marque ou code-barres).
+  function searchCatalog(items, query, limit = 8) {
+    const words = norm(query).split(/\s+/).filter(Boolean);
+    if (words.join('').length < 3) return [];
+    const exact = norm(query).trim();
+    const found = [];
+    for (const item of items) {
+      if (words.every(word => item.key.includes(word))) {
+        const rank = norm(item.ref) === exact ? 0 : norm(item.ref).startsWith(exact) ? 1 : 2;
+        found.push([rank, item]);
+        if (found.length > 400) break;
+      }
+    }
+    return found.sort((a, b) => a[0] - b[0] || a[1].des.localeCompare(b[1].des, 'fr')).slice(0, limit).map(([, item]) => item);
+  }
   const UNITS = ['u', 'm', 'lot', 'couronne', 'boîte'];
   const MATERIALS = [
     'Disjoncteur divisionnaire 1P+N 10 A courbe C', 'Disjoncteur divisionnaire 1P+N 16 A courbe C',
@@ -143,15 +183,76 @@
       el('div', { class: 'devis-grand' }, el('span', { text: 'Total TTC' }), tTtc));
     const addLine = readOnly ? null : el('button', { type: 'button', class: 'devis-add', text: '＋ Ajouter une ligne',
       onclick: () => { quote.lines.push(blankLine()); drawLines(); changed(); body.lastElementChild?.querySelector('input')?.focus(); } });
-    const hint = readOnly ? null : el('p', { class: 'devis-hint', text: 'Prix : virgule ou point (12,50). Câble : quantité en mètres, unité « m ». Article introuvable chez le fournisseur par défaut ? Indiquez un autre fournisseur sur sa ligne. Les totaux se calculent automatiquement (TVA 20 %).' });
+    const hint = readOnly ? null : el('p', { class: 'devis-hint', text: 'Tapez une référence ou des mots (ex. « dx3 16a ») : le catalogue Legrand 2025 propose l’article et remplit référence et prix (tarif public HT, avant remise du distributeur). Prix : virgule ou point (12,50). Câble : quantité en mètres, unité « m ». Article introuvable chez le fournisseur par défaut ? Indiquez un autre fournisseur sur sa ligne. Les totaux se calculent automatiquement (TVA 20 %).' });
     const bySupplier = el('div', { class: 'devis-by-supplier', 'aria-live': 'polite' });
 
+    // Suggestions du catalogue (référence, désignation, prix HT) sous les champs Description et Référence.
+    let suggestBox = null, suggestTimer = null, suggestions = [], activeSuggestion = -1, suggestFor = null;
+    const fr2 = value => Number(value).toFixed(2).replace('.', ',');
+    function closeSuggest() { clearTimeout(suggestTimer); suggestBox?.remove(); suggestBox = null; suggestions = []; activeSuggestion = -1; suggestFor = null; }
+    function chooseSuggestion(item, entry, index) {
+      if (item.generic) entry.desc = item.des;
+      else { entry.desc = (item.des + ' — ' + item.brand).slice(0, 200); entry.ref = item.ref.slice(0, 60); entry.pu = fr2(item.price); }
+      closeSuggest(); drawLines(); changed();
+      body.children[index]?.querySelector(item.generic ? '[data-k="ref"]' : '[data-k="qty"]')?.focus();
+    }
+    function paintSuggest() {
+      if (!suggestBox) return;
+      [...suggestBox.children].forEach((node, i) => { node.setAttribute('aria-selected', String(i === activeSuggestion)); node.classList.toggle('active', i === activeSuggestion); });
+    }
+    async function openSuggest(node, entry, index, key) {
+      const query = node.value;
+      let items;
+      try { items = await loadCatalogs(); } catch { items = []; }
+      if (document.activeElement !== node || node.value !== query) return;
+      const generic = key === 'desc' && query.trim().length >= 2 ? MATERIALS.filter(name => norm(name).includes(norm(query.trim()))).slice(0, 3).map(des => ({ generic: true, des })) : [];
+      suggestions = [...generic, ...searchCatalog(items, query, 8)];
+      suggestBox?.remove(); suggestBox = null; activeSuggestion = -1;
+      if (!suggestions.length) return;
+      const rect = node.getBoundingClientRect();
+      suggestFor = node;
+      suggestBox = el('div', { class: 'devis-suggest', role: 'listbox', 'aria-label': 'Suggestions du catalogue' }, suggestions.map((item, i) => el('div', {
+        class: 'devis-suggest-item', role: 'option', 'aria-selected': 'false',
+        onmousedown: event => { event.preventDefault(); chooseSuggestion(item, entry, index); },
+        onmouseenter: () => { activeSuggestion = i; paintSuggest(); }
+      }, item.generic
+        ? [el('span', { class: 'devis-suggest-des', text: item.des }), el('span', { class: 'devis-suggest-meta', text: 'Désignation type (sans prix)' })]
+        : [el('span', { class: 'devis-suggest-des', text: item.des + (item.isNew ? ' · nouveauté' : '') }),
+           el('span', { class: 'devis-suggest-meta', text: item.brand + ' · réf. ' + item.ref + ' · ' + item.catalog }),
+           el('b', { class: 'devis-suggest-price', text: euro.format(item.price) + ' HT' })])));
+      suggestBox.style.left = Math.max(8, Math.min(rect.left, innerWidth - 440)) + 'px';
+      suggestBox.style.top = (rect.bottom + 4) + 'px';
+      suggestBox.style.width = Math.min(Math.max(rect.width, 360), innerWidth - 16) + 'px';
+      document.body.append(suggestBox);
+    }
+    if (!readOnly) closeOpenSuggest = closeSuggest;
     function drawLines() {
       fill(body, ...quote.lines.map((entry, index) => {
-        const input = (key, attrs) => el('input', { value: entry[key], disabled: readOnly, 'data-k': key, ...attrs,
-          oninput: event => { entry[key] = event.target.value; changed(); } });
+        const input = (key, attrs) => {
+          const node = el('input', { value: entry[key], disabled: readOnly, 'data-k': key, ...attrs,
+            oninput: event => {
+              entry[key] = event.target.value; changed();
+              if (!readOnly && (key === 'desc' || key === 'ref')) { clearTimeout(suggestTimer); suggestTimer = setTimeout(() => openSuggest(node, entry, index, key), 150); }
+            } });
+          if (!readOnly && (key === 'desc' || key === 'ref')) {
+            node.setAttribute('autocomplete', 'off');
+            node.addEventListener('focus', () => { loadCatalogs().catch(() => {}); });
+            node.addEventListener('blur', () => setTimeout(() => { if (suggestFor === node) closeSuggest(); }, 120));
+            node.addEventListener('keydown', event => {
+              if (!suggestBox || suggestFor !== node) return;
+              if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                activeSuggestion = (activeSuggestion + (event.key === 'ArrowDown' ? 1 : -1) + suggestions.length) % suggestions.length;
+                paintSuggest();
+              } else if (event.key === 'Enter' && activeSuggestion >= 0) {
+                event.preventDefault(); chooseSuggestion(suggestions[activeSuggestion], entry, index);
+              } else if (event.key === 'Escape') closeSuggest();
+            });
+          }
+          return node;
+        };
         return el('tr', {},
-          el('td', {}, input('desc', { list: 'devisMaterials', maxlength: 200, 'aria-label': 'Description ligne ' + (index + 1), placeholder: readOnly ? '' : 'Ex. : Disjoncteur 1P+N 16 A' })),
+          el('td', {}, input('desc', { list: readOnly ? null : undefined, maxlength: 200, 'aria-label': 'Description ligne ' + (index + 1), placeholder: readOnly ? '' : 'Ex. : Disjoncteur 1P+N 16 A' })),
           el('td', {}, input('ref', { maxlength: 60, 'aria-label': 'Référence ligne ' + (index + 1) })),
           el('td', {}, input('sup', { class: 'devis-sup', list: 'devisSuppliers', maxlength: 80, 'aria-label': 'Fournisseur ligne ' + (index + 1),
             placeholder: readOnly ? (quote.supplier || '') : (quote.supplier || 'Fournisseur') })),
@@ -429,6 +530,6 @@
       table), viewer);
   }
 
-  window.MelecDevis = { computeTotals, parseNumber, nextNumber, renderEditor, renderTeacher, supplierTotals, suppliersLabel, TVA };
+  window.MelecDevis = { computeTotals, parseNumber, nextNumber, renderEditor, renderTeacher, supplierTotals, suppliersLabel, searchCatalog, SUPPLIERS, TVA };
   if (document.getElementById('studentContentTabs')) initStudent();
 })();

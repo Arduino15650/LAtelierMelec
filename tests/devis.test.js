@@ -69,3 +69,23 @@ test('un devis peut répartir ses lignes entre plusieurs fournisseurs', () => {
   assert.equal(suppliersLabel({ supplier: 'CGED', lines: [{ desc: 'Gaine', sup: '', qty: '1', pu: '2' }] }), 'CGED');
   assert.equal(suppliersLabel({ supplier: 'Würth' }), 'Würth');
 });
+
+test('la liste des fournisseurs propose grossistes, enseignes et sites en ligne', () => {
+  const { SUPPLIERS } = window.MelecDevis;
+  for (const name of ['Rexel', 'Sonepar', 'CGED', 'Yesss Électrique', 'Würth', 'Leroy Merlin', 'RS Components']) assert.ok(SUPPLIERS.includes(name), name);
+  assert.equal(new Set(SUPPLIERS).size, SUPPLIERS.length);
+});
+
+test('le catalogue Legrand 2025 est intégré et interrogeable', () => {
+  const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'catalogues', 'legrand-2025-01.json'), 'utf8'));
+  assert.ok(data.items.length > 17000);
+  const norm = t => String(t).toLocaleLowerCase('fr').normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const items = data.items.map(([ref, des, price, brand, gencod]) => ({ ref, des, price, brand: data.brands[brand], gencod, key: norm(ref + ' ' + des + ' ' + data.brands[brand] + ' ' + gencod) }));
+  const { searchCatalog } = window.MelecDevis;
+  const byRef = searchCatalog(items, '00040');
+  assert.equal(byRef[0].ref, '00040');
+  assert.equal(byRef[0].price, 7.662);
+  const byWords = searchCatalog(items, 'icta gliss 63');
+  assert.ok(byWords.some(item => item.ref === '00063'));
+  assert.equal(searchCatalog(items, 'ic').length, 0);
+});

@@ -67,3 +67,10 @@ html body:not(#st-a):not(#st-b) #teacherPrimaryNav .nav[data-view="quotes"].acti
 .devis-by-supplier li{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .devis-by-supplier b{font-family:var(--st-f-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums;white-space:nowrap}
 @media(max-width:600px){.devis-by-supplier{justify-self:stretch}}
+/* Suggestions du catalogue fournisseur */
+.devis-suggest{position:fixed;z-index:10050;max-height:min(360px,60vh);overflow-y:auto;background:#0a1c33;border:1px solid var(--st-volt,#ff8a1e);border-radius:8px;box-shadow:0 18px 40px rgba(0,0,0,.5);padding:4px}
+.devis-suggest-item{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:7px 10px;border-radius:6px;cursor:pointer;color:#e9f1fb}
+.devis-suggest-item.active,.devis-suggest-item:hover{background:rgba(255,138,30,.18)}
+.devis-suggest-des{font-weight:700;font-size:.9rem;grid-column:1}
+.devis-suggest-meta{font-size:.76rem;color:#a9c0da;grid-column:1;font-family:var(--st-f-mono,ui-monospace,monospace)}
+.devis-suggest-price{grid-column:2;grid-row:1/span 2;align-self:center;font-family:var(--st-f-mono,ui-monospace,monospace);white-space:nowrap;color:#ffc48f}
