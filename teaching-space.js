@@ -315,18 +315,29 @@
     const existing = tpAssignments.filter(row => row.tp_id === tpId);
     const removed = existing.filter(row => !selected.has(row.student_id));
     if (removed.some(row => row.started_at) && !confirm('Retirer un élève qui a déjà ouvert ce TP supprimera son accès et son chronomètre. Continuer ?')) return;
+    const saveButton = card.querySelector('[data-save-tp]');
+    if (saveButton) saveButton.disabled = true;
+    status('Envoi aux élèves…');
     try {
       const newRows = [...selected].filter(id => !existing.some(row => row.student_id === id)).map(student_id => ({tp_id:tpId,student_id}));
-      if (newRows.length) await api.rest('tp_assignments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newRows)});
-      if (removed.length) await api.rest('tp_assignments?id=in.(' + removed.map(row => encodeURIComponent(row.id)).join(',') + ')',{method:'DELETE'});
       const item = items.find(candidate => candidate.id === tpId);
-      if (selected.size && item && !item.published) {
-        const chapter = chapters.find(candidate => candidate.id === item.chapter_id);
-        if (chapter && !chapter.published) await api.rest('learning_chapters?id=eq.' + encodeURIComponent(chapter.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:true})});
-        await api.rest('learning_items?id=eq.' + encodeURIComponent(tpId),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({published:true})});
-      }
-      await loadClass(); status(selected.size ? 'Associations enregistrées. Le TP est accessible aux élèves sélectionnés.' : 'Associations du TP enregistrées.');
+      const chapter = item && chapters.find(candidate => candidate.id === item.chapter_id);
+      const json = {'Content-Type':'application/json'};
+      // Le TP est publié AVANT d'être attribué : l'élève ne voit jamais une attribution sans document.
+      // Écritures indépendantes lancées en parallèle plutôt qu'une par une.
+      if (selected.size && item && !item.published) await Promise.all([
+        chapter && !chapter.published ? api.rest('learning_chapters?id=eq.' + encodeURIComponent(chapter.id),{method:'PATCH',headers:json,body:JSON.stringify({published:true})}) : null,
+        api.rest('learning_items?id=eq.' + encodeURIComponent(tpId),{method:'PATCH',headers:json,body:JSON.stringify({published:true})})
+      ]);
+      await Promise.all([
+        newRows.length ? api.rest('tp_assignments',{method:'POST',headers:json,body:JSON.stringify(newRows)}) : null,
+        removed.length ? api.rest('tp_assignments?id=in.(' + removed.map(row => encodeURIComponent(row.id)).join(',') + ')',{method:'DELETE'}) : null
+      ]);
+      const done = selected.size ? 'Envoyé. Les élèves sélectionnés voient le TP dans les 10 secondes.' : 'Associations du TP enregistrées.';
+      status(done);
+      await loadClass(); status(done);
     } catch (error) { status(error.message,true); }
+    finally { if (saveButton?.isConnected) saveButton.disabled = false; }
   }
   async function extendTp(id) {
     const assignment = tpAssignments.find(row => row.id === id);

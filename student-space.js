@@ -76,6 +76,22 @@
       throw error;
     }
   }
+  // Dès qu'un TP est en cours, son document principal est téléchargé en arrière-plan : quand l'élève
+  // clique, il s'affiche aussitôt. Uniquement pour un TP démarré (chronomètre lancé), jamais avant.
+  let prefetchedTp = '';
+  function prefetchActiveTp() {
+    if (!activeTp || prefetchedTp === activeTp.id) return;
+    const target = activeTp; prefetchedTp = target.id;
+    setTimeout(async () => {
+      try {
+        const assets = await api.rest('learning_assets?item_id=eq.' + encodeURIComponent(target.tp_id) + '&select=id,object_path,file_name,mime_type,asset_role');
+        for (const asset of assets.filter(row => (row.asset_role || 'main') === 'main')) {
+          if (activeTp?.id !== target.id) return;
+          await loadDocument(asset).catch(() => {});
+        }
+      } catch { prefetchedTp = ''; }
+    }, 300);
+  }
   function tpEnd(assignment) {
     if (assignment.validated_at) return 0;
     return assignment.reactivated_at
@@ -213,6 +229,7 @@
     }
     activeTp = assignments.find(row => tpEnd(row) > Date.now()) || null;
     if (previousActiveId !== activeTp?.id) clearDocumentCache();
+    prefetchActiveTp();
     if (preserveViewer && previousActiveId && activeTp?.id === previousActiveId) return;
     // Actualisation automatique : la liste n'est reconstruite que si les TP ont changé (évite le scintillement toutes les 30 s).
     const signature = JSON.stringify([activeTp?.id || null,
@@ -244,8 +261,9 @@
               method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify({started_at:new Date().toISOString()})
             });
             if (!Array.isArray(changed) || changed.length !== 1) throw new Error('Le démarrage du TP n’a pas été confirmé. Actualisez la page.');
-            clearTpViewer(); await openDashboard();
-            const current = tpItems.find(candidate => candidate.id === row.tp_id);
+            clearTpViewer(); await loadTpAssignments();
+            updateLearningLock(); switchContentTab('tp');
+            const current = tpItems.find(candidate => candidate.id === row.tp_id) || {id:row.tp_id,title:row.tp_title};
             if (current) await openTpFiles(current,$('studentTpList').querySelector('.student-tp-card'));
           } catch (error) { alert(error.message); start.disabled = false; }
         }; card.append(start);
@@ -396,12 +414,13 @@
     if (info) info.textContent = remaining > 0 ? 'Temps restant : ' + formatDuration(remaining) : 'Temps écoulé · TP verrouillé.';
     if (remaining <= 0) { clearTpViewer(); clearDocumentCache(); activeTp=null; selectedContentTab='tp'; openDashboard().catch(error => message($('studentTpNotice'),error.message,true)); }
   },1000);
-  let accessRefreshInProgress = false;
-  async function refreshStudentAccess() {
+  let accessRefreshInProgress = false, accessTick = 0;
+  async function refreshStudentAccess(force = false) {
     if (!profile || dashboard.hidden || document.visibilityState === 'hidden' || accessRefreshInProgress) return;
     accessRefreshInProgress = true;
     try {
-    try {
+    // Les TP envoyés par l'enseignant sont cherchés toutes les 10 s ; l'accès du compte toutes les 30 s.
+    if (force === true || accessTick++ % 3 === 0) try {
       const current = await api.rest('student_profiles?user_id=eq.' + encodeURIComponent(profile.user_id) + '&select=approved_at,class_id,blocked_at');
       if (current[0]) profile = { ...profile, ...current[0] };
     } catch { /* Les requêtes de contenu restent protégées par RLS même hors réseau. */ }
@@ -429,12 +448,12 @@
     }
     } finally { accessRefreshInProgress = false; }
   }
-  setInterval(refreshStudentAccess, 30000);
+  setInterval(refreshStudentAccess, 10000);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') refreshStudentAccess();
+    if (document.visibilityState === 'visible') refreshStudentAccess(true);
   });
   window.addEventListener('pageshow', event => {
-    if (event.persisted) refreshStudentAccess();
+    if (event.persisted) refreshStudentAccess(true);
   });
   paintFromLastVisit();
   openDashboard().catch(error => {
