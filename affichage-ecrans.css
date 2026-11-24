@@ -1,0 +1,65 @@
+/* L'Atelier MELEC · corrections d'affichage sur smartphone, tablette et ordinateur (audit du 24/11/2026).
+   Chargée en dernier dans l'espace enseignant et l'espace élève. Les sélecteurs portent des :not(#fx-…)
+   pour passer devant les couches de thème plus anciennes, sans les modifier. */
+
+/* 1. Titres de rubrique en dégradé : les accents des majuscules (É, È, À…) étaient rognés
+      par l'interligne serré. Un peu d'espace au-dessus les rend visibles. */
+html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(.teach-head h1,.page-head h1,#studentDashboard .student-pane>h2){
+  padding-top:.16em!important}
+
+/* 2. Messages vides posés directement dans un cadre de tableau : marge intérieure. */
+html body:not(#fx-a):not(#fx-b):not(#fx-c) .dashboard-table-wrap>p{margin:0;padding:14px 16px}
+
+/* 3. Administration : le bouton « Désactiver » ne se coupe plus au milieu du mot. */
+.mg-member>:first-child{min-width:0}
+html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) .mg-member>button{flex:none;white-space:nowrap;overflow-wrap:normal!important;word-break:normal!important}
+
+/* 4. SUIVI › Élèves et autres formulaires : les listes déroulantes prennent toute la largeur du champ. */
+html body:not(#fx-a):not(#fx-b):not(#fx-c) #suiviView .su-field :is(select,input){width:100%;min-width:0;box-sizing:border-box}
+
+/* 5. Espace élève › Ma PFMP : la recherche d'entreprise ne dépasse plus de l'écran. */
+.pfmp-panel>*{min-width:0}
+.pfmp-filters select{min-width:0;flex:1 1 160px}
+
+/* 6. Onglets élève : couleurs pour « Ma PFMP » et « Inventaire magasin », comme les autres onglets. */
+html body:not(#st-a):not(#st-b):not(#fx-a).portal-page #studentDashboard #studentContentTabs button:nth-child(7){background:#ffe9c9!important;border-color:#dfa75a!important;color:#6b3d00!important}
+html body:not(#st-a):not(#st-b):not(#fx-a).portal-page #studentDashboard #studentContentTabs button:nth-child(7).active{background:#a85d0c!important;border-color:rgba(255,255,255,.85)!important;color:#fff!important}
+html body:not(#st-a):not(#st-b):not(#fx-a).portal-page #studentDashboard #studentContentTabs button:nth-child(8){background:#dff4d6!important;border-color:#8cc47a!important;color:#25551b!important}
+html body:not(#st-a):not(#st-b):not(#fx-a).portal-page #studentDashboard #studentContentTabs button:nth-child(8).active{background:#3d7a2b!important;border-color:rgba(255,255,255,.85)!important;color:#fff!important}
+
+/* 7. Petits textes devenus lisibles (au moins 11 px). */
+html body:not(#fx-a):not(#fx-b) .ccf-pill{font-size:11px!important}
+html body:not(#fx-a):not(#fx-b) #referentialView summary span:not([class]),
+html body:not(#fx-a):not(#fx-b) #referentialView .autonomy,
+html body:not(#fx-a):not(#fx-b) #referentialView .attitudes span{font-size:11.5px!important}
+
+/* ───── Tablette et smartphone ───── */
+@media (max-width:900px){
+  /* SUIVI&PFMP : 4 rubriques par ligne, texte lisible. */
+  html body:not(#st-a):not(#st-b):not(#el-a):not(#fx-a) #suiviView .su-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  html body:not(#st-a):not(#st-b):not(#el-a):not(#fx-a) #suiviView .su-tabs button{min-height:40px!important;padding:6px 8px!important;font-size:.82rem!important;line-height:1.2!important}
+  /* Boutons trop petits pour le doigt. */
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(#appShell,#studentDashboard,main) button.small,
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) #studentDashboard .student-pane button.subtle,
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) #ccfAllStudents{min-height:38px!important}
+  html body:not(#fx-a):not(#fx-b) a.portal-top-link{display:inline-flex;align-items:center;min-height:36px!important;padding:4px 2px}
+}
+@media (max-width:600px){
+  /* SUIVI&PFMP : 2 rubriques par ligne sur téléphone. */
+  html body:not(#st-a):not(#st-b):not(#el-a):not(#fx-a) #suiviView .su-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  html body:not(#st-a):not(#st-b):not(#el-a):not(#fx-a) #suiviView .su-tabs button{min-height:42px!important;padding:8px 10px!important;font-size:.86rem!important;letter-spacing:0!important}
+  /* Onglets élève : deux par ligne au lieu d'une longue colonne. */
+  html body:not(#st-a):not(#st-b):not(#fx-a).portal-page #studentDashboard #studentContentTabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important}
+  html body:not(#st-a):not(#st-b):not(#fx-a).portal-page #studentDashboard #studentContentTabs button{width:auto!important;min-width:0!important;min-height:44px!important;margin:0!important;padding:8px 10px!important;font-size:.9rem!important;line-height:1.2!important;white-space:normal!important}
+  /* Élèves par classe : une ligne claire par élève, bouton de suppression compact. */
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) #studentsView .class-fold tr{grid-template-columns:minmax(0,1fr) auto!important;gap:2px 12px!important;align-items:center!important;padding:10px 2px!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) #studentsView .class-fold td{background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) #studentsView .class-fold td:first-child{grid-column:1!important;grid-row:1!important;font-weight:750}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) #studentsView .class-fold td:nth-child(2){grid-column:1!important;grid-row:2!important;font-size:.82rem!important;color:#93abc7!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) #studentsView .class-fold td:nth-child(3):not(:last-child){grid-column:1!important;grid-row:3!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) #studentsView .class-fold td:last-child{grid-column:2!important;grid-row:1 / span 3!important;align-self:center}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) #studentsView .class-fold td:last-child .button{width:auto!important;max-width:none!important;min-height:36px!important;padding:6px 10px!important;font-size:.8rem!important;white-space:nowrap!important}
+  /* TP en atelier : « Afficher » au-dessus de la liste des TP. */
+  html body:not(#fx-a):not(#fx-b):not(#fx-c) #teachBody label:has(>#tpFilter){display:grid!important;gap:6px;width:100%}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c) #tpFilter{width:100%!important;min-width:0}
+}
