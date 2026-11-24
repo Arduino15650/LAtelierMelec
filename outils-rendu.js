@@ -22,10 +22,20 @@
     { id: 'suisse', name: 'Minimal suisse', level: 'Moderne', ats: true, accent: '#d62839', side: '#ffffff', sideInk: '#222222', head: 'sans', body: 'sans', title: 'caps', caps: false, photo: 'square', desc: 'Grille stricte, grand nom en gras, une seule couleur vive.' },
     { id: 'nordique', name: 'Nordique', level: 'Moderne', ats: false, accent: '#4a6fa5', side: '#e9eff6', sideInk: '#2c3e57', head: 'sans', body: 'sans', title: 'pill', caps: false, photo: 'rounded', desc: 'Tons doux, titres en pastilles, beaucoup d’air.' },
     { id: 'technique', name: 'Technique', level: 'Professionnel', ats: true, accent: '#3b5bdb', side: '#edf1ff', sideInk: '#26346e', head: 'mono', body: 'sans', title: 'code', caps: false, photo: 'rounded', desc: 'Esprit bureau d’études : titres techniques, repères bleus, très lisible.' },
-    { id: 'pro', name: 'Électrique pro', level: 'Professionnel', ats: false, accent: '#e07a10', side: '#0f2846', sideInk: '#e9f1fb', head: 'sans', body: 'sans', title: 'bar', caps: true, photo: 'rounded', desc: 'Le style de L’Atelier : bleu nuit et orange, très affirmé.' },
+    { id: 'pro', name: 'Électrique pro', level: 'Professionnel', ats: false, accent: '#e07a10', ink: '#0f2846', side: '#0f2846', sideInk: '#e9f1fb', head: 'sans', body: 'sans', title: 'bar', caps: true, photo: 'rounded', desc: 'Le style de L’Atelier : bleu nuit et orange, très affirmé.' },
     { id: 'corporate', name: 'Corporate', level: 'Professionnel', ats: true, accent: '#0d3b66', side: '#0d3b66', sideInk: '#ffffff', head: 'sans', body: 'sans', title: 'rule', caps: true, photo: 'square', desc: 'Bleu profond et sobre, pour l’alternance et les grands groupes.' },
     { id: 'elegant', name: 'Élégant', level: 'Professionnel', ats: true, accent: '#8a6d3b', side: '#faf6ee', sideInk: '#5b4523', head: 'serif', body: 'sans', title: 'caps', caps: false, photo: 'round', desc: 'Filets dorés, mise en page aérée et raffinée.' },
     { id: 'creatif', name: 'Créatif', level: 'Créatif', ats: false, accent: '#7b2cbf', side: '#f3e8ff', sideInk: '#4a1c7a', head: 'sans', body: 'sans', title: 'pill', caps: false, photo: 'round', desc: 'Violet franc et pastilles, pour se démarquer.' },
+    { id: 'executif', name: 'Exécutif', level: 'Professionnel', ats: true, accent: '#1f2937', side: '#ffffff', sideInk: '#1f2937', head: 'serif', body: 'sans', title: 'rule', caps: true, photo: 'square', desc: 'Noir profond, nom en capitales à empattements : très sérieux, pour les grands groupes.' },
+    { id: 'ardoise', name: 'Ardoise', level: 'Professionnel', ats: true, accent: '#334155', side: '#f1f5f9', sideInk: '#1e293b', head: 'sans', body: 'sans', title: 'caps', caps: false, photo: 'rounded', desc: 'Gris ardoise discret, colonne claire : professionnel sans être austère.' },
+    { id: 'cuivre', name: 'Cuivre', level: 'Professionnel', ats: true, accent: '#b45309', ink: '#7c2d12', side: '#fff7ed', sideInk: '#7c2d12', head: 'sans', body: 'sans', title: 'rule', caps: true, photo: 'rounded', desc: 'La couleur du cuivre des conducteurs : chaleureux et professionnel.' },
+    { id: 'bordeaux', name: 'Bordeaux', level: 'Professionnel', ats: true, accent: '#7f1d1d', side: '#fdf2f2', sideInk: '#5b1414', head: 'serif', body: 'sans', title: 'caps', caps: false, photo: 'round', desc: 'Rouge profond et titres élégants : distingué et sobre.' },
+    { id: 'ocean', name: 'Océan', level: 'Moderne', ats: false, accent: '#0077b6', side: '#023e8a', sideInk: '#ffffff', head: 'sans', body: 'sans', title: 'bar', caps: false, photo: 'round', desc: 'Bleus profonds, colonne marine : moderne et rassurant.' },
+    { id: 'foret', name: 'Forêt', level: 'Moderne', ats: true, accent: '#2d6a4f', side: '#e3f4e8', sideInk: '#1b4332', head: 'sans', body: 'sans', title: 'pill', caps: false, photo: 'round', desc: 'Vert nature, idéal pour les métiers de l’énergie renouvelable.' },
+    { id: 'chantier', name: 'Chantier', level: 'Créatif', ats: false, accent: '#f2b705', ink: '#1f1f1f', side: '#1f1f1f', sideInk: '#fafafa', head: 'sans', body: 'sans', title: 'bar', caps: true, photo: 'square', desc: 'Noir et jaune sécurité : un CV qui se remarque, esprit terrain.' },
+    { id: 'electro', name: 'Électro', level: 'Créatif', ats: false, accent: '#0891b2', ink: '#0e7490', side: '#0f172a', sideInk: '#e2e8f0', head: 'mono', body: 'sans', title: 'code', caps: false, photo: 'rounded', desc: 'Bleu nuit et cyan, titres techniques : esprit électronique et réseaux.' },
+    { id: 'minuit', name: 'Minuit', level: 'Créatif', ats: false, accent: '#8b5cf6', ink: '#5b21b6', side: '#111827', sideInk: '#f3f4f6', head: 'sans', body: 'sans', title: 'pill', caps: false, photo: 'round', desc: 'Colonne nuit et violet lumineux : original et moderne.' },
+    { id: 'pastel', name: 'Pastel', level: 'Simple', ats: true, accent: '#3d7ea6', side: '#f4f8fb', sideInk: '#2a5470', head: 'sans', body: 'sans', title: 'rule', caps: false, photo: 'round', desc: 'Bleu doux et fond très clair : simple, lisible et agréable.' },
     { id: 'graphite', name: 'Graphite', level: 'Créatif', ats: false, accent: '#ef8354', side: '#2b2d42', sideInk: '#edf2f4', head: 'sans', body: 'sans', title: 'bar', caps: true, photo: 'round', desc: 'Colonne anthracite et corail, très graphique.' }
   ];
   const THEME_LEVELS = ['Simple', 'Moderne', 'Professionnel', 'Créatif'];
@@ -48,7 +58,9 @@
     { id: 'formation', label: 'Formation', type: 'list', zone: 'main', on: true, help: 'Diplôme préparé, établissement, années. Le plus récent en premier.' },
     { id: 'projets', label: 'Réalisations et projets', type: 'list', zone: 'main', on: false, help: 'Chef-d’œuvre, projet d’atelier, installation réalisée…' },
     { id: 'engagement', label: 'Engagements et bénévolat', type: 'list', zone: 'main', on: false, help: 'Association, délégué de classe, club sportif, sapeur-pompier volontaire…' },
-    { id: 'autre', label: 'Rubrique libre', type: 'list', zone: 'main', on: false, help: 'Donnez-lui le titre de votre choix (Prix, Séjours à l’étranger…).' },
+    { id: 'autre', label: 'Rubrique personnalisée', type: 'list', zone: 'main', on: false, custom: true, help: 'Donnez-lui le titre de votre choix (Prix, Séjours à l’étranger, Sport de haut niveau…).' },
+    { id: 'perso2', label: 'Rubrique personnalisée 2', type: 'list', zone: 'main', on: false, custom: true, help: 'Donnez-lui le titre de votre choix.' },
+    { id: 'perso3', label: 'Rubrique personnalisée 3', type: 'list', zone: 'main', on: false, custom: true, help: 'Donnez-lui le titre de votre choix.' },
     { id: 'references', label: 'Références', type: 'refs', zone: 'main', on: false, help: 'Tuteur de stage ou employeur qui accepte d’être contacté.' },
     { id: 'habilitations', label: 'Habilitations et certifications', type: 'tags', zone: 'side', on: true, help: 'Habilitations électriques, SST, CACES… Une par ligne.' },
     { id: 'competences', label: 'Compétences techniques', type: 'levels', zone: 'side', on: true, help: 'Ce que vous savez faire, avec votre niveau.' },
@@ -101,6 +113,8 @@
     { id: 'nous', label: 'Nous · le projet commun', help: 'Ce que vous apporterez et ce que vous apprendrez.', model: 'Rejoindre votre équipe me permettrait de progresser en [domaine], tout en vous apportant mon sérieux, ma ponctualité et ma motivation.', tips: ['Je souhaite contribuer à…', 'Ce stage me permettra de…'] },
     { id: 'dispo', label: 'Disponibilités', on: false, help: 'Dates, mobilité, permis.', model: 'Je suis disponible à partir du [date] et peux me déplacer sur [secteur].', tips: ['Je suis disponible à partir du…', 'Je suis mobile sur…'] },
     { id: 'conclusion', label: 'Conclusion', help: 'Demandez un entretien.', model: 'Je serais heureux de vous présenter ma motivation lors d’un entretien, à la date qui vous conviendra.', tips: ['Je me tiens à votre disposition…', 'Dans l’attente de votre réponse…'] },
+    { id: 'libre1', label: 'Paragraphe libre', on: false, custom: true, help: 'Un paragraphe en plus, à placer où vous voulez.', tips: ['Par ailleurs,', 'Je souhaite également préciser que…'] },
+    { id: 'libre2', label: 'Paragraphe libre 2', on: false, custom: true, help: 'Un paragraphe en plus, à placer où vous voulez.', tips: ['Enfin,', 'Je tiens à ajouter que…'] },
     { id: 'politesse', label: 'Formule de politesse', model: 'Je vous prie d’agréer, Madame, Monsieur, l’expression de mes salutations distinguées.', tips: ['Je vous prie d’agréer, Madame, Monsieur, l’expression de mes salutations distinguées.', 'Veuillez recevoir, Madame, Monsieur, mes sincères salutations.', 'Bien cordialement,'] }
   ];
   const LETTER_OPTIONAL = [
@@ -235,6 +249,46 @@
     return { score: Math.min(100, score), tips: tips.slice(0, 4) };
   }
 
+  // Contrôles de qualité affichés à côté de l'aperçu (✓ réussi, ! à améliorer).
+  function cvChecks(d, pages = 1) {
+    const r = resolved(d), out = [];
+    const on = id => d.sections[id].on;
+    out.push([pages === 1, pages === 1 ? '1 page' : pages + ' pages : visez une seule page (densité compacte, rubriques à masquer)']);
+    const hab = on('habilitations') && d.sections.habilitations.tags.some(t => t.trim());
+    out.push([hab, hab ? 'Habilitations visibles' : 'Ajoutez vos habilitations électriques (B1V, BR…)']);
+    const ats = r.t.ats || d.layout === 'ats';
+    out.push([ats, ats ? 'Lisible par les logiciels de recrutement (ATS)' : 'Thème graphique : pour une grande entreprise, préférez un thème « ATS »']);
+    const exps = d.sections.experiences.items.filter(i => i.title.trim());
+    exps.forEach((item, index) => { if (!/\d/.test(item.desc)) out.push([false, 'Ajoutez un résultat chiffré à l’expérience ' + (index + 1) + ' (« 12 logements raccordés »)']); });
+    if (exps.length && exps.every(i => /\d/.test(i.desc))) out.push([true, 'Résultats chiffrés dans les expériences']);
+    const lines = exps.flatMap(i => i.desc.split('\n').filter(l => /^\s*[-•*]/.test(l)).map(l => l.replace(/^\s*[-•*]\s*/, '')));
+    if (lines.length) { const weak = lines.filter(l => /^(je|j’|j'|il|on|nous)\b/i.test(l) || /^[a-zà-ÿ]/.test(l) || l.split(/\s+/).length < 3); out.push([weak.length === 0, weak.length ? 'Rédigez chaque mission comme une action précise, sans « je » (« Câblage de 8 tableaux… »)' : 'Missions rédigées comme des actions précises']); }
+    const p = d.person;
+    out.push([Boolean(p.email && p.phone), p.email && p.phone ? 'E-mail et téléphone présents' : 'E-mail et téléphone indispensables']);
+    if (p.email && !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(p.email)) out.push([false, 'Adresse e-mail à vérifier']);
+    return out;
+  }
+  function letterChecks(d, cvText = '') {
+    const out = [];
+    const body = d.order.filter(id => d.blocks[id].on).map(id => d.blocks[id].text).join('\n');
+    const n = letterWords(d);
+    out.push([n >= 250 && n <= 400, n + ' mots ' + (n < 250 ? '(un peu court : visez 250 à 400)' : n > 400 ? '(trop long : visez 250 à 400)' : '(longueur idéale)')]);
+    const company = d.recipient.company.trim();
+    const cited = company ? body.toLocaleLowerCase('fr').split(company.toLocaleLowerCase('fr')).length - 1 : 0;
+    out.push([cited >= 1, !company ? 'Indiquez l’entreprise destinataire' : cited ? 'Entreprise citée ' + cited + ' fois' : 'Citez l’entreprise dans la lettre (paragraphe « Vous »)']);
+    const objectOk = d.show.objet && d.object.trim().length > 12 && !/\[/.test(d.object);
+    out.push([objectOk, objectOk ? 'Objet précis' : 'Précisez l’objet (dates, poste visé)']);
+    out.push([/entretien|rencontr/i.test(body), /entretien|rencontr/i.test(body) ? 'Demande d’entretien' : 'Demandez un entretien dans la conclusion']);
+    const holes = (body + d.object).match(/\[[^\]]{2,60}\]/g);
+    if (holes) out.push([false, 'Passages entre crochets à compléter : ' + [...new Set(holes)].slice(0, 3).join(', ')]);
+    if (cvText) {
+      const sentences = cvText.split(/[\n.]/).map(x => x.trim().toLocaleLowerCase('fr')).filter(x => x.length > 35);
+      const copied = sentences.some(x => body.toLocaleLowerCase('fr').includes(x));
+      out.push([!copied, copied ? 'Évitez de recopier le CV mot pour mot : racontez une situation' : 'Pas de copie du CV mot pour mot']);
+    }
+    return out;
+  }
+
   function resolved(d) {
     const t = THEMES.find(x => x.id === d.theme) || THEMES[3];
     return {
@@ -351,7 +405,7 @@
     page.style.setProperty('--ff-h', r.head);
     page.style.setProperty('--ff-b', r.body);
     // Couleur d'accent lisible sur fond clair (titres) : le orange du thème pro devient bleu nuit pour les titres.
-    page.style.setProperty('--a-ink', r.t.id === 'pro' && !d.accent ? '#0f2846' : r.accent);
+    page.style.setProperty('--a-ink', !d.accent && r.t.ink ? r.t.ink : r.accent);
     const dark = isDark(r.t.side);
     page.classList.toggle('od-side-dark', dark);
     page.classList.toggle('od-side-tinted', r.t.side !== '#ffffff');
@@ -444,7 +498,7 @@
 
   window.MelecOutilsRendu = {
     PAGE_W, PAGE_H, FONTS, FONT_LABELS, THEMES, THEME_LEVELS, ACCENTS, LAYOUTS, CV_SECTIONS, SUGGESTIONS, LEVEL_NAMES,
-    LETTER_LAYOUTS, LETTER_TYPES, LETTER_BLOCKS, LETTER_OPTIONAL,
+    LETTER_LAYOUTS, LETTER_TYPES, LETTER_BLOCKS, LETTER_OPTIONAL, cvChecks, letterChecks,
     safe, clean, newCv, newLetter, emptyItem, letterWords, words, cvScore, resolved, renderCv, renderLetter, isDark
   };
 })();
