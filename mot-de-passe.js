@@ -1,4 +1,4 @@
-// Bouton « Afficher » dans les champs mot de passe des connexions élève et enseignant :
+// Bouton « Afficher » dans tous les champs mot de passe (élève, enseignant, accès équipe) :
 // permet de vérifier ce qui est réellement tapé (clavier iPhone, remplissage automatique de Safari).
 (function () {
   'use strict';
@@ -29,6 +29,8 @@
     // Le mot de passe est toujours remasqué à l'envoi du formulaire.
     input.form?.addEventListener('submit', () => { input.type = 'password'; button.textContent = 'Afficher'; button.setAttribute('aria-pressed', 'false'); }, true);
   }
-  function scan() { document.querySelectorAll('#studentLoginForm input[name=password], #cloudPassword').forEach(attach); }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan); else scan();
+  // Tous les champs mot de passe du site (connexion, inscription, accès équipe…), y compris ceux ajoutés plus tard.
+  function scan() { document.querySelectorAll('input[type=password]:not([data-voir])').forEach(attach); }
+  function start() { scan(); new MutationObserver(scan).observe(document.body, { childList: true, subtree: true }); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
