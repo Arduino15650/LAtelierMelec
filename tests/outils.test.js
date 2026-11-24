@@ -81,3 +81,23 @@ test('contrôles de qualité du CV et de la lettre', () => {
   assert.ok(R.cvChecks(cv, 2).some(([ok, t]) => !ok && /2 pages/.test(t)));
   assert.ok(R.THEMES.length >= 22);
 });
+
+test('personnalisation : couleurs, polices, tailles et anciennes valeurs', () => {
+  const d = R.clean('cv', { font: 'serif', accent: '#123456', sideColor: 'rouge', titleColor: '#abcdef', textSize: 'xl', titleStyle: 'pill', palette: 'marine-dore', icons: false, sideWidth: 'wide', photoSize: 'l', photoBorder: 1 });
+  assert.equal(d.headFont, 'times');
+  assert.equal(d.bodyFont, 'times');
+  assert.equal(d.sideColor, '');
+  assert.equal(d.titleColor, '#abcdef');
+  assert.equal(d.textSize, 'm');
+  assert.equal(d.titleStyle, 'pill');
+  assert.equal(d.icons, false);
+  assert.equal(d.sideWidth, 'wide');
+  assert.equal(d.photoBorder, true);
+  const r = R.resolved({ ...d, sideColor: '#13294b' });
+  assert.equal(r.sideInk, '#ffffff');
+  assert.equal(r.titleStyle, 'pill');
+  assert.ok(R.PALETTES.length >= 12 && R.ACCENTS.length >= 17 && R.FONT_LIST.length >= 15);
+  for (const f of R.FONT_LIST.filter(f => f[3])) for (const st of f[3]) assert.ok(fs.existsSync(path.join(__dirname, '..', 'fonts', f[0] + '-' + st + '.ttf')), f[0] + '-' + st);
+  for (const t of R.THEMES) { assert.ok(R.FONT_LIST.some(f => f[0] === t.head), t.id); assert.ok(R.FONT_LIST.some(f => f[0] === t.body), t.id); }
+  assert.ok(R.styleWarnings({ ...d, titleColor: '#f2f2f2' }).length >= 1);
+});

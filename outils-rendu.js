@@ -6,40 +6,76 @@
 (function () {
   'use strict';
   const PAGE_W = 794, PAGE_H = 1123;
-  const FONTS = {
-    sans: 'Arimo, Arial, Helvetica, "Liberation Sans", sans-serif',
-    serif: 'Tinos, "Times New Roman", Times, "Liberation Serif", serif',
-    mono: 'Cousine, "Courier New", Courier, "Liberation Mono", monospace'
+  // Polices : trois polices légères (intégrées à tous les lecteurs PDF) et douze polices
+  // embarquées (fichiers dans /fonts, chargés seulement quand on les choisit).
+  const FONT_LIST = [
+    ['arial', 'Arial (très léger)', 'sans'], ['times', 'Times (très léger)', 'serif'], ['courier', 'Courier (très léger)', 'mono'],
+    ['archivo', 'Archivo', 'sans', 'rbi'], ['roboto', 'Roboto', 'sans', 'rbi'], ['opensans', 'Open Sans', 'sans', 'rbi'], ['montserrat', 'Montserrat', 'sans', 'rbi'],
+    ['poppins', 'Poppins', 'sans', 'rbi'], ['sourcesans', 'Source Sans 3', 'sans', 'rbi'], ['lora', 'Lora', 'serif', 'rbi'], ['merriweather', 'Merriweather', 'serif', 'rbi'],
+    ['playfair', 'Playfair Display', 'serif', 'rbi'], ['oswald', 'Oswald (titres)', 'sans', 'rb'], ['bigshoulders', 'Big Shoulders (titres)', 'sans', 'rb'], ['jetbrains', 'JetBrains Mono', 'mono', 'rbi']
+  ];
+  const CORE = {
+    arial: 'Arimo, Arial, Helvetica, "Liberation Sans", sans-serif',
+    times: 'Tinos, "Times New Roman", Times, "Liberation Serif", serif',
+    courier: 'Cousine, "Courier New", Courier, "Liberation Mono", monospace'
   };
-  const FONT_LABELS = { '': 'Celle du thème', sans: 'Sans empattement (Arial)', serif: 'À empattements (Times)', mono: 'Technique (Courier)' };
+  const fontStack = key => { const f = FONT_LIST.find(x => x[0] === key) || FONT_LIST[0]; return f[3] ? '"OT-' + f[0] + '", ' + CORE[f[2] === 'serif' ? 'times' : f[2] === 'mono' ? 'courier' : 'arial'] : CORE[f[0]]; };
+  const FONTS = Object.fromEntries(FONT_LIST.map(f => [f[0], fontStack(f[0])]));
+  const FONT_LABELS = Object.fromEntries([['', 'Celle du thème'], ...FONT_LIST.map(f => [f[0], f[1]])]);
+  // Anciennes valeurs (première version) : sans / serif / mono.
+  const OLD_FONT = { sans: 'arial', serif: 'times', mono: 'courier' };
 
   // 12 thèmes, du plus simple au plus professionnel. side : couleur de la colonne ; sideInk : texte de la colonne.
   const THEMES = [
-    { id: 'sobre', name: 'Sobre', level: 'Simple', ats: true, accent: '#222222', side: '#f2f2f2', sideInk: '#222222', head: 'sans', body: 'sans', title: 'rule', caps: false, photo: 'rounded', desc: 'Noir et blanc, une seule police : passe partout et s’imprime parfaitement.' },
-    { id: 'classique', name: 'Classique', level: 'Simple', ats: true, accent: '#1f3b63', side: '#eef2f7', sideInk: '#1f3b63', head: 'serif', body: 'sans', title: 'rule', caps: false, photo: 'rounded', desc: 'Titres à empattements bleu marine, le CV « bien élevé ».' },
-    { id: 'harvard', name: 'Épuré ATS', level: 'Simple', ats: true, accent: '#111111', side: '#ffffff', sideInk: '#111111', head: 'serif', body: 'serif', title: 'caps', caps: true, photo: 'none', desc: 'Inspiré des CV universitaires : sans couleur, lu sans erreur par les logiciels de recrutement.' },
-    { id: 'moderne', name: 'Moderne', level: 'Moderne', ats: false, accent: '#0b7f74', side: '#0b7f74', sideInk: '#ffffff', head: 'sans', body: 'sans', title: 'bar', caps: false, photo: 'round', desc: 'Colonne colorée, photo ronde, barres de niveau : le standard actuel.' },
-    { id: 'suisse', name: 'Minimal suisse', level: 'Moderne', ats: true, accent: '#d62839', side: '#ffffff', sideInk: '#222222', head: 'sans', body: 'sans', title: 'caps', caps: false, photo: 'square', desc: 'Grille stricte, grand nom en gras, une seule couleur vive.' },
-    { id: 'nordique', name: 'Nordique', level: 'Moderne', ats: false, accent: '#4a6fa5', side: '#e9eff6', sideInk: '#2c3e57', head: 'sans', body: 'sans', title: 'pill', caps: false, photo: 'rounded', desc: 'Tons doux, titres en pastilles, beaucoup d’air.' },
-    { id: 'technique', name: 'Technique', level: 'Professionnel', ats: true, accent: '#3b5bdb', side: '#edf1ff', sideInk: '#26346e', head: 'mono', body: 'sans', title: 'code', caps: false, photo: 'rounded', desc: 'Esprit bureau d’études : titres techniques, repères bleus, très lisible.' },
-    { id: 'pro', name: 'Électrique pro', level: 'Professionnel', ats: false, accent: '#e07a10', ink: '#0f2846', side: '#0f2846', sideInk: '#e9f1fb', head: 'sans', body: 'sans', title: 'bar', caps: true, photo: 'rounded', desc: 'Le style de L’Atelier : bleu nuit et orange, très affirmé.' },
-    { id: 'corporate', name: 'Corporate', level: 'Professionnel', ats: true, accent: '#0d3b66', side: '#0d3b66', sideInk: '#ffffff', head: 'sans', body: 'sans', title: 'rule', caps: true, photo: 'square', desc: 'Bleu profond et sobre, pour l’alternance et les grands groupes.' },
-    { id: 'elegant', name: 'Élégant', level: 'Professionnel', ats: true, accent: '#8a6d3b', side: '#faf6ee', sideInk: '#5b4523', head: 'serif', body: 'sans', title: 'caps', caps: false, photo: 'round', desc: 'Filets dorés, mise en page aérée et raffinée.' },
-    { id: 'creatif', name: 'Créatif', level: 'Créatif', ats: false, accent: '#7b2cbf', side: '#f3e8ff', sideInk: '#4a1c7a', head: 'sans', body: 'sans', title: 'pill', caps: false, photo: 'round', desc: 'Violet franc et pastilles, pour se démarquer.' },
-    { id: 'executif', name: 'Exécutif', level: 'Professionnel', ats: true, accent: '#1f2937', side: '#ffffff', sideInk: '#1f2937', head: 'serif', body: 'sans', title: 'rule', caps: true, photo: 'square', desc: 'Noir profond, nom en capitales à empattements : très sérieux, pour les grands groupes.' },
-    { id: 'ardoise', name: 'Ardoise', level: 'Professionnel', ats: true, accent: '#334155', side: '#f1f5f9', sideInk: '#1e293b', head: 'sans', body: 'sans', title: 'caps', caps: false, photo: 'rounded', desc: 'Gris ardoise discret, colonne claire : professionnel sans être austère.' },
-    { id: 'cuivre', name: 'Cuivre', level: 'Professionnel', ats: true, accent: '#b45309', ink: '#7c2d12', side: '#fff7ed', sideInk: '#7c2d12', head: 'sans', body: 'sans', title: 'rule', caps: true, photo: 'rounded', desc: 'La couleur du cuivre des conducteurs : chaleureux et professionnel.' },
-    { id: 'bordeaux', name: 'Bordeaux', level: 'Professionnel', ats: true, accent: '#7f1d1d', side: '#fdf2f2', sideInk: '#5b1414', head: 'serif', body: 'sans', title: 'caps', caps: false, photo: 'round', desc: 'Rouge profond et titres élégants : distingué et sobre.' },
-    { id: 'ocean', name: 'Océan', level: 'Moderne', ats: false, accent: '#0077b6', side: '#023e8a', sideInk: '#ffffff', head: 'sans', body: 'sans', title: 'bar', caps: false, photo: 'round', desc: 'Bleus profonds, colonne marine : moderne et rassurant.' },
-    { id: 'foret', name: 'Forêt', level: 'Moderne', ats: true, accent: '#2d6a4f', side: '#e3f4e8', sideInk: '#1b4332', head: 'sans', body: 'sans', title: 'pill', caps: false, photo: 'round', desc: 'Vert nature, idéal pour les métiers de l’énergie renouvelable.' },
-    { id: 'chantier', name: 'Chantier', level: 'Créatif', ats: false, accent: '#f2b705', ink: '#1f1f1f', side: '#1f1f1f', sideInk: '#fafafa', head: 'sans', body: 'sans', title: 'bar', caps: true, photo: 'square', desc: 'Noir et jaune sécurité : un CV qui se remarque, esprit terrain.' },
-    { id: 'electro', name: 'Électro', level: 'Créatif', ats: false, accent: '#0891b2', ink: '#0e7490', side: '#0f172a', sideInk: '#e2e8f0', head: 'mono', body: 'sans', title: 'code', caps: false, photo: 'rounded', desc: 'Bleu nuit et cyan, titres techniques : esprit électronique et réseaux.' },
-    { id: 'minuit', name: 'Minuit', level: 'Créatif', ats: false, accent: '#8b5cf6', ink: '#5b21b6', side: '#111827', sideInk: '#f3f4f6', head: 'sans', body: 'sans', title: 'pill', caps: false, photo: 'round', desc: 'Colonne nuit et violet lumineux : original et moderne.' },
-    { id: 'pastel', name: 'Pastel', level: 'Simple', ats: true, accent: '#3d7ea6', side: '#f4f8fb', sideInk: '#2a5470', head: 'sans', body: 'sans', title: 'rule', caps: false, photo: 'round', desc: 'Bleu doux et fond très clair : simple, lisible et agréable.' },
-    { id: 'graphite', name: 'Graphite', level: 'Créatif', ats: false, accent: '#ef8354', side: '#2b2d42', sideInk: '#edf2f4', head: 'sans', body: 'sans', title: 'bar', caps: true, photo: 'round', desc: 'Colonne anthracite et corail, très graphique.' }
+    { id: 'sobre', name: 'Sobre', level: 'Simple', ats: true, accent: '#222222', side: '#f2f2f2', sideInk: '#222222', head: 'arial', body: 'arial', title: 'rule', caps: false, photo: 'rounded', desc: 'Noir et blanc, une seule police : passe partout et s’imprime parfaitement.' },
+    { id: 'classique', name: 'Classique', level: 'Simple', ats: true, accent: '#1f3b63', side: '#eef2f7', sideInk: '#1f3b63', head: 'lora', body: 'archivo', title: 'rule', caps: false, photo: 'rounded', desc: 'Titres à empattements bleu marine, le CV « bien élevé ».' },
+    { id: 'harvard', name: 'Épuré ATS', level: 'Simple', ats: true, accent: '#111111', side: '#ffffff', sideInk: '#111111', head: 'times', body: 'times', title: 'caps', caps: true, photo: 'none', desc: 'Inspiré des CV universitaires : sans couleur, lu sans erreur par les logiciels de recrutement.' },
+    { id: 'moderne', name: 'Moderne', level: 'Moderne', ats: false, accent: '#0b7f74', side: '#0b7f74', sideInk: '#ffffff', head: 'archivo', body: 'archivo', title: 'bar', caps: false, photo: 'round', desc: 'Colonne colorée, photo ronde, barres de niveau : le standard actuel.' },
+    { id: 'suisse', name: 'Minimal suisse', level: 'Moderne', ats: true, accent: '#d62839', side: '#ffffff', sideInk: '#222222', head: 'archivo', body: 'archivo', title: 'caps', caps: false, photo: 'square', desc: 'Grille stricte, grand nom en gras, une seule couleur vive.' },
+    { id: 'nordique', name: 'Nordique', level: 'Moderne', ats: false, accent: '#4a6fa5', side: '#e9eff6', sideInk: '#2c3e57', head: 'archivo', body: 'archivo', title: 'pill', caps: false, photo: 'rounded', desc: 'Tons doux, titres en pastilles, beaucoup d’air.' },
+    { id: 'technique', name: 'Technique', level: 'Professionnel', ats: true, accent: '#3b5bdb', side: '#edf1ff', sideInk: '#26346e', head: 'jetbrains', body: 'archivo', title: 'code', caps: false, photo: 'rounded', desc: 'Esprit bureau d’études : titres techniques, repères bleus, très lisible.' },
+    { id: 'pro', name: 'Électrique pro', level: 'Professionnel', ats: false, accent: '#e07a10', ink: '#0f2846', side: '#0f2846', sideInk: '#e9f1fb', head: 'bigshoulders', body: 'archivo', title: 'bar', caps: true, photo: 'rounded', desc: 'Le style de L’Atelier : bleu nuit et orange, très affirmé.' },
+    { id: 'corporate', name: 'Corporate', level: 'Professionnel', ats: true, accent: '#0d3b66', side: '#0d3b66', sideInk: '#ffffff', head: 'montserrat', body: 'opensans', title: 'rule', caps: true, photo: 'square', desc: 'Bleu profond et sobre, pour l’alternance et les grands groupes.' },
+    { id: 'elegant', name: 'Élégant', level: 'Professionnel', ats: true, accent: '#8a6d3b', side: '#faf6ee', sideInk: '#5b4523', head: 'lora', body: 'archivo', title: 'caps', caps: false, photo: 'round', desc: 'Filets dorés, mise en page aérée et raffinée.' },
+    { id: 'creatif', name: 'Créatif', level: 'Créatif', ats: false, accent: '#7b2cbf', side: '#f3e8ff', sideInk: '#4a1c7a', head: 'poppins', body: 'poppins', title: 'pill', caps: false, photo: 'round', desc: 'Violet franc et pastilles, pour se démarquer.' },
+    { id: 'executif', name: 'Exécutif', level: 'Professionnel', ats: true, accent: '#1f2937', side: '#ffffff', sideInk: '#1f2937', head: 'playfair', body: 'sourcesans', title: 'rule', caps: true, photo: 'square', desc: 'Noir profond, nom en capitales à empattements : très sérieux, pour les grands groupes.' },
+    { id: 'ardoise', name: 'Ardoise', level: 'Professionnel', ats: true, accent: '#334155', side: '#f1f5f9', sideInk: '#1e293b', head: 'montserrat', body: 'opensans', title: 'caps', caps: false, photo: 'rounded', desc: 'Gris ardoise discret, colonne claire : professionnel sans être austère.' },
+    { id: 'cuivre', name: 'Cuivre', level: 'Professionnel', ats: true, accent: '#b45309', ink: '#7c2d12', side: '#fff7ed', sideInk: '#7c2d12', head: 'oswald', body: 'roboto', title: 'rule', caps: true, photo: 'rounded', desc: 'La couleur du cuivre des conducteurs : chaleureux et professionnel.' },
+    { id: 'bordeaux', name: 'Bordeaux', level: 'Professionnel', ats: true, accent: '#7f1d1d', side: '#fdf2f2', sideInk: '#5b1414', head: 'merriweather', body: 'opensans', title: 'caps', caps: false, photo: 'round', desc: 'Rouge profond et titres élégants : distingué et sobre.' },
+    { id: 'ocean', name: 'Océan', level: 'Moderne', ats: false, accent: '#0077b6', side: '#023e8a', sideInk: '#ffffff', head: 'poppins', body: 'opensans', title: 'bar', caps: false, photo: 'round', desc: 'Bleus profonds, colonne marine : moderne et rassurant.' },
+    { id: 'foret', name: 'Forêt', level: 'Moderne', ats: true, accent: '#2d6a4f', side: '#e3f4e8', sideInk: '#1b4332', head: 'montserrat', body: 'roboto', title: 'pill', caps: false, photo: 'round', desc: 'Vert nature, idéal pour les métiers de l’énergie renouvelable.' },
+    { id: 'chantier', name: 'Chantier', level: 'Créatif', ats: false, accent: '#f2b705', ink: '#1f1f1f', side: '#1f1f1f', sideInk: '#fafafa', head: 'oswald', body: 'roboto', title: 'bar', caps: true, photo: 'square', desc: 'Noir et jaune sécurité : un CV qui se remarque, esprit terrain.' },
+    { id: 'electro', name: 'Électro', level: 'Créatif', ats: false, accent: '#0891b2', ink: '#0e7490', side: '#0f172a', sideInk: '#e2e8f0', head: 'jetbrains', body: 'roboto', title: 'code', caps: false, photo: 'rounded', desc: 'Bleu nuit et cyan, titres techniques : esprit électronique et réseaux.' },
+    { id: 'minuit', name: 'Minuit', level: 'Créatif', ats: false, accent: '#8b5cf6', ink: '#5b21b6', side: '#111827', sideInk: '#f3f4f6', head: 'poppins', body: 'poppins', title: 'pill', caps: false, photo: 'round', desc: 'Colonne nuit et violet lumineux : original et moderne.' },
+    { id: 'pastel', name: 'Pastel', level: 'Simple', ats: true, accent: '#3d7ea6', side: '#f4f8fb', sideInk: '#2a5470', head: 'opensans', body: 'opensans', title: 'rule', caps: false, photo: 'round', desc: 'Bleu doux et fond très clair : simple, lisible et agréable.' },
+    { id: 'graphite', name: 'Graphite', level: 'Créatif', ats: false, accent: '#ef8354', side: '#2b2d42', sideInk: '#edf2f4', head: 'bigshoulders', body: 'archivo', title: 'bar', caps: true, photo: 'round', desc: 'Colonne anthracite et corail, très graphique.' }
   ];
   const THEME_LEVELS = ['Simple', 'Moderne', 'Professionnel', 'Créatif'];
-  const ACCENTS = [['', 'Couleur du thème'], ['#e07a10', 'Orange'], ['#0b7f74', 'Sarcelle'], ['#1f6feb', 'Bleu'], ['#0d3b66', 'Marine'], ['#d62839', 'Rouge'], ['#7b2cbf', 'Violet'], ['#2f855a', 'Vert'], ['#222222', 'Noir']];
+  const ACCENTS = [['', 'Couleur du thème'], ['#e07a10', 'Orange'], ['#f2b705', 'Jaune'], ['#d62839', 'Rouge'], ['#c2562b', 'Terre cuite'], ['#8c1c3a', 'Bordeaux'], ['#db2777', 'Framboise'], ['#7b2cbf', 'Violet'],
+    ['#4338ca', 'Indigo'], ['#1f6feb', 'Bleu'], ['#0d3b66', 'Marine'], ['#0891b2', 'Cyan'], ['#0b7f74', 'Sarcelle'], ['#2f855a', 'Vert'], ['#65a30d', 'Vert pomme'], ['#8a6d3b', 'Bronze'], ['#334155', 'Ardoise'], ['#222222', 'Noir']];
+  const SIDE_COLORS = [['', 'Couleur du thème'], ['#ffffff', 'Blanc'], ['#f3f5f8', 'Gris très clair'], ['#e9eff6', 'Bleu pâle'], ['#e3f4e8', 'Vert pâle'], ['#faf6ee', 'Crème'], ['#f3e8ff', 'Lavande'],
+    ['#0f2846', 'Bleu nuit'], ['#13294b', 'Marine'], ['#023e8a', 'Bleu profond'], ['#0b7f74', 'Sarcelle'], ['#1f4d3a', 'Vert sapin'], ['#2b2d42', 'Anthracite'], ['#1f1f1f', 'Noir'], ['#5b1414', 'Bordeaux'], ['#3b2f63', 'Prune']];
+  // Palettes prêtes : couleur principale, colonne ou bandeau, titres et nom.
+  const PALETTES = [
+    { id: 'nuit-orange', name: 'Bleu nuit et orange', accent: '#e07a10', side: '#0f2846', title: '#0f2846' },
+    { id: 'marine-dore', name: 'Marine et doré', accent: '#b08d3c', side: '#13294b', title: '#13294b' },
+    { id: 'anthracite-corail', name: 'Anthracite et corail', accent: '#ef8354', side: '#2b2d42', title: '#2b2d42' },
+    { id: 'sapin-sable', name: 'Vert sapin et sable', accent: '#b8955c', side: '#1f4d3a', title: '#1f4d3a' },
+    { id: 'bordeaux-gris', name: 'Bordeaux et gris perle', accent: '#8c1c3a', side: '#f1f1f3', title: '#8c1c3a' },
+    { id: 'acier', name: 'Bleu acier', accent: '#2f6690', side: '#e8f0f7', title: '#16425b' },
+    { id: 'sarcelle', name: 'Sarcelle', accent: '#0b7f74', side: '#0b7f74', title: '#0b5f57' },
+    { id: 'lavande', name: 'Violet et lavande', accent: '#6d28d9', side: '#f1ebff', title: '#4c1d95' },
+    { id: 'securite', name: 'Noir et jaune sécurité', accent: '#f2b705', side: '#1f1f1f', title: '#1f1f1f' },
+    { id: 'electrique', name: 'Gris et bleu électrique', accent: '#1f6feb', side: '#f3f4f6', title: '#111827' },
+    { id: 'terre', name: 'Terre cuite', accent: '#c2562b', side: '#fbf1ea', title: '#7c2d12' },
+    { id: 'mono', name: 'Monochrome', accent: '#222222', side: '#ffffff', title: '#111111' }
+  ];
+  const TITLE_STYLES = [['', 'Celui du thème'], ['rule', 'Filet'], ['caps', 'Capitales espacées'], ['bar', 'Barre'], ['pill', 'Pastille'], ['code', 'Technique']];
+  const STYLE_KEYS = ['theme', 'accent', 'sideColor', 'titleColor', 'levelColor', 'palette', 'headFont', 'bodyFont', 'textSize', 'nameSize', 'titleStyle', 'icons', 'sideWidth'];
+  const HEX = /^#[0-9a-f]{6}$/i;
+  // Contraste (WCAG) entre deux couleurs.
+  function luminance(hex) { const n = parseInt(hex.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0); }
+  function contrast(a, b) { const x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
 
   const LAYOUTS = [
     { id: 'lateral', name: 'Colonne à gauche', hint: 'Photo, coordonnées et compétences dans une colonne ; parcours à droite. Le plus répandu.' },
@@ -152,7 +188,7 @@
     sections.formation.items = [{ ...emptyItem(), title: 'Bac Pro MELEC (Métiers de l’électricité et de ses environnements connectés)' }];
     sections.langues.levels = [{ label: 'Français', level: 5, detail: 'Langue maternelle' }, { label: 'Anglais', level: 2, detail: 'A2' }];
     return clean('cv', {
-      v: 1, layout: 'lateral', theme: 'moderne', accent: '', font: '', photoShape: '', levelStyle: 'bars', density: 'normal', fit: true,
+      v: 1, layout: 'lateral', theme: 'moderne', accent: '', photoShape: '', levelStyle: 'bars', density: 'normal', fit: true,
       person: { first: person.first || '', last: person.last || '', title: '', email: person.email || '', phone: '', city: '', address: '', birth: '', web: '' },
       photo: '', order: CV_SECTIONS.map(s => s.id), sections
     });
@@ -161,7 +197,7 @@
     const blocks = {};
     for (const b of LETTER_BLOCKS) blocks[b.id] = { on: b.on !== false, text: '' };
     return clean('lm', {
-      v: 1, layout: 'fr', theme: 'moderne', accent: '', font: '', type, justify: true,
+      v: 1, layout: 'fr', theme: 'moderne', accent: '', type, justify: true,
       person: { first: person.first || '', last: person.last || '', title: '', email: person.email || '', phone: '', address: '', city: '' },
       recipient: { company: '', contact: '', service: '', address: '', city: '' },
       place: '', date: '', object: '', ref: '', ps: '', pj: 'Pièce jointe : curriculum vitae',
@@ -177,12 +213,24 @@
     const list = (Array.isArray(order) ? order : []).filter(id => ids.includes(id) && !seen.has(id) && seen.add(id));
     return [...list, ...ids.filter(id => !seen.has(id))];
   }
+  function cleanStyle(d) {
+    const keys = FONT_LIST.map(f => f[0]);
+    const old = OLD_FONT[d.font] || '';
+    return {
+      sideColor: HEX.test(d.sideColor || '') ? d.sideColor : '', titleColor: HEX.test(d.titleColor || '') ? d.titleColor : '',
+      levelColor: HEX.test(d.levelColor || '') ? d.levelColor : '', palette: PALETTES.some(p => p.id === d.palette) ? d.palette : '',
+      headFont: pick(d.headFont ?? old, ['', ...keys], ''), bodyFont: pick(d.bodyFont ?? old, ['', ...keys], ''),
+      textSize: pick(d.textSize, ['s', 'm', 'l'], 'm'), nameSize: pick(d.nameSize, ['s', 'm', 'l'], 'm'),
+      titleStyle: pick(d.titleStyle, ['', 'rule', 'caps', 'bar', 'pill', 'code'], ''), icons: d.icons !== false,
+      sideWidth: pick(d.sideWidth, ['narrow', 'normal', 'wide'], 'normal')
+    };
+  }
   function clean(kind, raw) {
     const d = raw && typeof raw === 'object' ? raw : {};
     const themeIds = THEMES.map(t => t.id);
     const common = {
       v: 1, theme: pick(d.theme, themeIds, 'moderne'), accent: /^#[0-9a-f]{6}$/i.test(d.accent || '') ? d.accent : '',
-      font: pick(d.font, ['', 'sans', 'serif', 'mono'], '')
+      ...cleanStyle(d)
     };
     const p = d.person || {};
     if (kind === 'cv') {
@@ -202,6 +250,7 @@
         ...common, layout: pick(d.layout, LAYOUTS.map(l => l.id), 'lateral'),
         photoShape: pick(d.photoShape, ['', 'round', 'rounded', 'square', 'none'], ''),
         levelStyle: pick(d.levelStyle, ['bars', 'dots', 'text'], 'bars'),
+        photoSize: pick(d.photoSize, ['s', 'm', 'l'], 'm'), photoBorder: Boolean(d.photoBorder),
         density: pick(d.density, ['airy', 'normal', 'compact'], 'normal'), fit: d.fit !== false,
         person: { first: str(p.first, 60), last: str(p.last, 60), title: str(p.title, 120), email: str(p.email, 120), phone: str(p.phone, 30), city: str(p.city, 80), address: str(p.address, 160), birth: str(p.birth, 40), web: str(p.web, 160) },
         photo: cleanImage(d.photo, 200000),
@@ -291,10 +340,24 @@
 
   function resolved(d) {
     const t = THEMES.find(x => x.id === d.theme) || THEMES[3];
+    const side = d.sideColor || t.side;
     return {
-      t, accent: d.accent || t.accent, head: FONTS[d.font || t.head], body: FONTS[d.font || t.body],
+      t, accent: d.accent || t.accent, side, sideInk: d.sideColor ? (isDark(d.sideColor) ? '#ffffff' : '#1d2530') : t.sideInk,
+      title: d.titleColor || (!d.accent && t.ink ? t.ink : d.accent || t.accent),
+      level: d.levelColor || '', titleStyle: d.titleStyle || t.title,
+      headKey: d.headFont || t.head, bodyKey: d.bodyFont || t.body,
+      head: FONTS[d.headFont || t.head], body: FONTS[d.bodyFont || t.body],
       photo: d.photoShape || t.photo
     };
+  }
+  // Alertes de lisibilité (contraste insuffisant).
+  function styleWarnings(d) {
+    const r = resolved(d), out = [];
+    if ((d.accent || d.titleColor) && contrast(r.title, '#ffffff') < 3) out.push('Les titres et le nom sont peu lisibles sur le fond blanc : choisissez une couleur de titres plus foncée.');
+    if (contrast(r.accent, '#ffffff') < 2 && r.titleStyle === 'pill') out.push('Le texte blanc des pastilles de titre est peu lisible sur cette couleur principale.');
+    if ((d.accent || d.sideColor) && r.side !== '#ffffff' && contrast(r.accent, r.side) < 1.6) out.push('La couleur principale se confond avec la colonne (icônes et barres peu visibles).');
+    if (r.level && contrast(r.level, isDark(r.side) ? r.side : '#ffffff') < 1.6) out.push('Les barres de niveau se voient mal : choisissez une autre couleur de barres.');
+    return out;
   }
 
   // ───── Fabrication de la page ─────
@@ -389,7 +452,7 @@
   function section(d, s, opts = {}) {
     const body = sectionBody(d, s, opts);
     if (!body) return null;
-    const node = h('section', 'od-sec od-sec-' + s.zone + ' od-sec-' + s.id + (opts.card ? ' od-card' : ''), h('h2', 'od-h od-keep od-keep-next', resolved(d).t.title === 'code' ? h('span', 'od-code-mark', '> ') : null, sectionTitle(d, s)), body);
+    const node = h('section', 'od-sec od-sec-' + s.zone + ' od-sec-' + s.id + (opts.card ? ' od-card' : ''), h('h2', 'od-h od-keep od-keep-next', resolved(d).titleStyle === 'code' ? h('span', 'od-code-mark', '> ') : null, sectionTitle(d, s)), body);
     return node;
   }
   function visibleSections(d, zone) {
@@ -398,17 +461,25 @@
   function nameBlock(p, cls = '') {
     return h('div', 'od-namebox ' + cls, h('h1', 'od-name', h('span', 'od-first', p.first), p.first && p.last ? ' ' : '', h('span', 'od-last', p.last)), p.title ? h('p', 'od-title', p.title) : null);
   }
+  const SIZE = { s: 0.94, m: 1, l: 1.07 }, NAME = { s: 0.82, m: 1, l: 1.18 }, PHOTO = { s: 0.8, m: 1, l: 1.2 }, SIDE_W = { narrow: 232, normal: 268, wide: 304 };
   function applyVars(page, d, r) {
     page.style.setProperty('--a', r.accent);
-    page.style.setProperty('--side', r.t.side);
-    page.style.setProperty('--side-ink', r.t.sideInk);
+    page.style.setProperty('--side', r.side);
+    page.style.setProperty('--side-ink', r.sideInk);
     page.style.setProperty('--ff-h', r.head);
     page.style.setProperty('--ff-b', r.body);
-    // Couleur d'accent lisible sur fond clair (titres) : le orange du thème pro devient bleu nuit pour les titres.
-    page.style.setProperty('--a-ink', !d.accent && r.t.ink ? r.t.ink : r.accent);
-    const dark = isDark(r.t.side);
-    page.classList.toggle('od-side-dark', dark);
-    page.classList.toggle('od-side-tinted', r.t.side !== '#ffffff');
+    page.style.setProperty('--a-ink', r.title);
+    page.style.setProperty('--lv', r.level || r.accent);
+    page.style.setProperty('--name-k', String(NAME[d.nameSize] || 1));
+    page.style.setProperty('--photo-k', String(PHOTO[d.photoSize] || 1));
+    page.style.setProperty('--side-w', (SIDE_W[d.sideWidth] || 268) + 'px');
+    page.dataset.size = String(SIZE[d.textSize] || 1);
+    page.classList.toggle('od-side-dark', isDark(r.side));
+    page.classList.toggle('od-side-tinted', r.side !== '#ffffff');
+    page.classList.toggle('od-no-icons', d.icons === false);
+    page.classList.toggle('od-lvc', Boolean(r.level));
+    page.classList.toggle('od-photo-bordered', Boolean(d.photoBorder));
+    page.classList.toggle('od-custom-side', Boolean(d.sideColor));
   }
   function isDark(hex) {
     const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
@@ -417,7 +488,7 @@
   function renderCv(d, options = {}) {
     d = clean('cv', d);
     const r = resolved(d);
-    const page = h('div', 'od-page od-cv od-l-' + d.layout + ' od-t-' + r.t.id + ' od-title-' + r.t.title + (r.t.caps ? ' od-caps' : '') + ' od-lv-' + d.levelStyle + ' od-d-' + d.density);
+    const page = h('div', 'od-page od-cv od-l-' + d.layout + ' od-t-' + r.t.id + ' od-title-' + r.titleStyle + (r.t.caps ? ' od-caps' : '') + ' od-lv-' + d.levelStyle + ' od-d-' + d.density);
     applyVars(page, d, r);
     page.style.setProperty('--k', String(options.scale || 1));
     const p = d.person;
@@ -459,7 +530,7 @@
   function renderLetter(d, options = {}) {
     d = clean('lm', d);
     const r = resolved(d);
-    const page = h('div', 'od-page od-lm od-ll-' + d.layout + ' od-t-' + r.t.id + ' od-title-' + r.t.title + (r.t.caps ? ' od-caps' : '') + (d.justify ? ' od-justify' : ''));
+    const page = h('div', 'od-page od-lm od-ll-' + d.layout + ' od-t-' + r.t.id + ' od-title-' + r.titleStyle + (r.t.caps ? ' od-caps' : '') + (d.justify ? ' od-justify' : ''));
     applyVars(page, d, r);
     page.style.setProperty('--k', String(options.scale || 1));
     const p = d.person, rc = d.recipient, show = d.show, L = d.layout;
@@ -497,7 +568,7 @@
   }
 
   window.MelecOutilsRendu = {
-    PAGE_W, PAGE_H, FONTS, FONT_LABELS, THEMES, THEME_LEVELS, ACCENTS, LAYOUTS, CV_SECTIONS, SUGGESTIONS, LEVEL_NAMES,
+    PAGE_W, PAGE_H, FONTS, FONT_LABELS, FONT_LIST, SIDE_COLORS, PALETTES, TITLE_STYLES, STYLE_KEYS, styleWarnings, contrast, THEMES, THEME_LEVELS, ACCENTS, LAYOUTS, CV_SECTIONS, SUGGESTIONS, LEVEL_NAMES,
     LETTER_LAYOUTS, LETTER_TYPES, LETTER_BLOCKS, LETTER_OPTIONAL, cvChecks, letterChecks,
     safe, clean, newCv, newLetter, emptyItem, letterWords, words, cvScore, resolved, renderCv, renderLetter, isDark
   };
