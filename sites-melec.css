@@ -1,0 +1,10 @@
+/* Barre « Autres sites MELEC » en bas des espaces enseignant et élève (même style que l'accueil). */
+.smf-foot{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:12px 18px;justify-content:space-between;align-items:center;margin-top:24px;padding:18px clamp(16px,3vw,42px);border-top:1px solid #1e4569;background:rgba(5,15,30,.72);font:.75rem 'JetBrains Mono',ui-monospace,Consolas,monospace;color:#93abc7}
+.smf-links{display:flex;flex-wrap:wrap;gap:10px}
+.smf-link{--acc:217,149,49;display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 16px;box-sizing:border-box;border-radius:8px;border:1px solid rgba(var(--acc),.75);background:linear-gradient(140deg,rgba(var(--acc),.26),rgba(var(--acc),.06) 60%,rgba(8,24,46,.55));color:#fff!important;font:700 .95rem 'Archivo',system-ui,sans-serif;text-decoration:none!important}
+.smf-link.smf-blue{--acc:107,169,223}.smf-link.smf-green{--acc:104,177,139}
+.smf-link span{font:1.25rem 'JetBrains Mono',ui-monospace,monospace;color:rgb(var(--acc))}
+.smf-link:hover{box-shadow:0 0 0 2px rgba(255,138,30,.3)}
+.smf-link:focus-visible{outline:2px solid #f39a13;outline-offset:2px}
+@media (max-width:520px){.smf-links,.smf-link{width:100%}.smf-link{justify-content:space-between}}
+@media print{.smf-foot{display:none!important}}

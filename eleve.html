@@ -69,6 +69,7 @@
   <link rel="stylesheet" href="connexion-melec.css?v=20261123-1">
   <link rel="stylesheet" href="affichage-ecrans.css?v=20261124-2">
   <script src="melec-circuit.js?v=20261014-veille" defer></script>
+  <link rel="stylesheet" href="sites-melec.css?v=20261124">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
@@ -114,6 +115,14 @@
         </form>
       </section>
     </main>
+    <footer class="smf-foot">
+      <nav class="smf-links" aria-label="Autres sites MELEC">
+        <a class="smf-link" href="https://www.melec-addict.fr">Aller à MELEC-Addict <span aria-hidden="true">›</span></a>
+        <a class="smf-link smf-blue" href="https://www.habil-melec.fr">Aller à Habil-MELEC <span aria-hidden="true">›</span></a>
+        <a class="smf-link smf-green" href="https://carnet.habil-melec.fr">Aller au Carnet de compétences <span aria-hidden="true">›</span></a>
+      </nav>
+      <span>Référentiel : arrêté du 1er mars 2024</span>
+    </footer>
     <script>(function(){var h=document.documentElement,auth=document.getElementById('studentAuth'),main=auth.parentNode,fond=null;
 function sync(){var on=!auth.hidden&&!h.classList.contains('student-resuming');h.classList.toggle('eleve-connexion',on);
 if(on&&!fond){fond=document.createElement('div');fond.className='cx-fond';fond.setAttribute('aria-hidden','true');fond.innerHTML='<iframe src="./index.html?fond=1" title="Accueil (arrière-plan)" tabindex="-1" inert></iframe>';main.insertBefore(fond,main.firstChild)}
