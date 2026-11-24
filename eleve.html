@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="fr">
 <head>
+  <script>/* iPhone et Safari avec « Bloquer tous les cookies » ou navigation privée stricte : le stockage de session
+     est refusé et la connexion échouait. On garde alors la session en mémoire (perdue en fermant la page). */
+  (function(){['sessionStorage','localStorage'].forEach(function(n){try{var s=window[n],k='__melec_test';s.setItem(k,'1');s.removeItem(k)}catch(e){try{var m={};Object.defineProperty(window,n,{configurable:true,value:{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null},setItem:function(k,v){m[k]=String(v)},removeItem:function(k){delete m[k]},clear:function(){m={}},key:function(i){return Object.keys(m)[i]||null},get length(){return Object.keys(m).length}}})}catch(e2){}}})})();</script>
   <meta charset="utf-8">
   <link rel="icon" href="icon-192.png"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#071b34"><title>BAC PRO MELEC — Élève</title>

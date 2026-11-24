@@ -26,7 +26,10 @@ self.addEventListener('fetch', event => {
     }
     return response;
   });
-  const cached = () => caches.match(event.request, {ignoreSearch: true});
+  // En ligne, un fichier dont le numéro de version (?v=…) a changé n'est jamais servi depuis le cache :
+  // la correspondance est exacte. Hors ligne seulement, n'importe quelle version déjà en cache convient.
+  const cached = () => caches.match(event.request);
+  const anyVersion = () => caches.match(event.request, {ignoreSearch: true});
   // Fichiers assemblés (nom contenant leur empreinte, ex. enseignant-2.67defb0a29.js) : leur contenu
   // ne change jamais, ils sont lus directement dans le cache sans attendre le réseau.
   if (/-\d+\.[0-9a-f]{10}\.(?:js|css)$/.test(new URL(event.request.url).pathname)) {
@@ -36,7 +39,7 @@ self.addEventListener('fetch', event => {
   const current = event.request.mode === 'navigate'
     || event.request.destination === 'script' || event.request.destination === 'style';
   event.respondWith(current
-    ? refresh().catch(async () => (await cached()) || (event.request.mode === 'navigate' && await caches.match('./index.html')) || Response.error())
-    : cached().then(hit => hit || refresh().catch(() => Response.error())));
+    ? refresh().catch(async () => (await anyVersion()) || (event.request.mode === 'navigate' && await caches.match('./index.html')) || Response.error())
+    : cached().then(hit => hit || refresh().catch(async () => (await anyVersion()) || Response.error())));
 });
 
