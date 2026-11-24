@@ -16,7 +16,7 @@
   // ───── Feuille de style de la page (zone isolée) et polices ─────
   let sheetPromise = null;
   function pageSheet() {
-    if (!sheetPromise) sheetPromise = fetch('./outils-page.css?v=20261124-1').then(r => { if (!r.ok) throw new Error('Mise en page indisponible'); return r.text(); })
+    if (!sheetPromise) sheetPromise = fetch('./outils-page.css?v=20261124-2').then(r => { if (!r.ok) throw new Error('Mise en page indisponible'); return r.text(); })
       .then(css => { const sheet = new CSSStyleSheet(); sheet.replaceSync(css); return sheet; })
       .catch(error => { sheetPromise = null; throw error; });
     return sheetPromise;
@@ -151,6 +151,16 @@
     return text;
   }
 
+  // Version noir et blanc (impression) : gris calculé selon la luminance.
+  const grayOf = c => { const v = Math.round(0.299 * c.r + 0.587 * c.g + 0.114 * c.b); return { r: v, g: v, b: v, a: c.a }; };
+  function grayCanvas(canvas) {
+    const ctx = canvas.getContext('2d');
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < img.data.length; i += 4) { const v = 0.299 * img.data[i] + 0.587 * img.data[i + 1] + 0.114 * img.data[i + 2]; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; }
+    ctx.putImageData(img, 0, 0);
+  }
+  let GRAY = false;
+
   // ───── Images : photo (JPEG), signature et icônes (PNG) ─────
   function loadImage(src) {
     return new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = () => reject(new Error('Image illisible')); img.src = src; });
@@ -172,11 +182,12 @@
       ctx.drawImage(img, (w - dw) * (isNaN(px) ? 0.5 : px), (h - dh) * (isNaN(py) ? 0.5 : py), dw, dh);
     } else ctx.drawImage(img, 0, 0, w, h);
     ctx.restore();
+    if (GRAY) grayCanvas(canvas);
     return photo ? { data: canvas.toDataURL('image/jpeg', 0.86), format: 'JPEG' } : { data: canvas.toDataURL('image/png'), format: 'PNG' };
   }
   const iconCache = new Map();
   async function rasterSvg(el, box, style) {
-    const key = el.innerHTML + style.color + Math.round(box.w);
+    const key = el.innerHTML + style.color + Math.round(box.w) + GRAY;
     if (iconCache.has(key)) return iconCache.get(key);
     const clone = el.cloneNode(true);
     const size = Math.round(box.w * 4);
@@ -187,6 +198,7 @@
     const img = await loadImage('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(clone)));
     const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
     canvas.getContext('2d').drawImage(img, 0, 0, size, size);
+    if (GRAY) grayCanvas(canvas);
     const out = { data: canvas.toDataURL('image/png'), format: 'PNG' };
     iconCache.set(key, out);
     return out;
@@ -269,11 +281,12 @@
   }
 
   // Dessine les relevés dans le PDF, page par page.
-  function draw(doc, ops, pages) {
+  function draw(doc, ops, pages, first = true) {
     let gstate = 1;
+    if (GRAY) for (const op of ops) if (op.color) op.color = grayOf(op.color);
     const alpha = a => { if (a !== gstate) { doc.setGState(new doc.GState({ opacity: a, 'stroke-opacity': a })); gstate = a; } };
     for (let p = 0; p < pages; p++) {
-      if (p) doc.addPage('a4', 'portrait');
+      if (p || !first) doc.addPage('a4', 'portrait');
       const top = p * PAGE_H, bottom = top + PAGE_H;
       for (const op of ops) {
         if (op.kind === 'text') {
@@ -319,33 +332,52 @@
     alpha(1);
   }
 
-  // Crée le PDF à partir d'une page déjà mise en page (copie hors écran, sans réduction d'affichage).
-  async function buildPdf(data, kind, meta = {}) {
+  // Crée un PDF à partir d'un ou plusieurs documents (CV puis lettre, par exemple).
+  // options : gray (noir et blanc), photo (false = sans photo), fit (true = tenir sur une page), title, author.
+  async function buildPdfs(items, options = {}) {
     await loadFonts();
     const host = document.createElement('div');
     host.className = 'ot-hidden-host';
     host.setAttribute('aria-hidden', 'true');
     document.body.append(host);
+    GRAY = Boolean(options.gray);
     try {
-      const page = kind === 'cv' ? R().renderCv(data) : R().renderLetter(data);
-      page.classList.add('od-export');
-      await mount(host, page);
-      const info = layout(page, data, kind);
-      const ops = await collect(page);
       const JsPDF = await loadJsPdf();
       const doc = new JsPDF({ unit: 'pt', format: 'a4', compress: true, putOnlyUsedFonts: true });
-      doc.setProperties({ title: meta.title || (kind === 'cv' ? 'Curriculum vitae' : 'Lettre de motivation'), author: meta.author || '', subject: kind === 'cv' ? 'Curriculum vitae' : 'Lettre de motivation', creator: 'L’Atelier MELEC' });
+      let total = 0;
+      for (const [index, item] of items.entries()) {
+        const data = R().clean(item.kind, JSON.parse(JSON.stringify(item.data)));
+        if (options.photo === false && item.kind === 'cv') data.photo = '';
+        if (options.fit && item.kind === 'cv') data.fit = true;
+        const page = item.kind === 'cv' ? R().renderCv(data) : R().renderLetter(data);
+        page.classList.add('od-export');
+        if (options.gray) { page.classList.add('od-print'); page.classList.remove('od-side-dark', 'od-side-tinted'); }
+        await mount(host, page);
+        const info = layout(page, data, item.kind);
+        const ops = await collect(page);
+        draw(doc, ops, info.pages, index === 0);
+        total += info.pages;
+      }
+      const kinds = [...new Set(items.map(i => i.kind))];
+      doc.setProperties({ title: options.title || (kinds.length > 1 ? 'CV et lettre de motivation' : kinds[0] === 'cv' ? 'Curriculum vitae' : 'Lettre de motivation'), author: options.author || '', subject: 'Candidature', creator: 'L’Atelier MELEC' });
       doc.setLanguage?.('fr-FR');
-      draw(doc, ops, info.pages);
-      return { blob: doc.output('blob'), pages: info.pages, k: info.k };
-    } finally { host.remove(); }
+      return { blob: doc.output('blob'), pages: total };
+    } finally { GRAY = false; host.remove(); }
   }
+  const buildPdf = (data, kind, meta = {}) => buildPdfs([{ data, kind }], meta);
   function fileName(data, kind) {
     const p = data.person || {};
     const part = v => R().safe(v).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const who = [part(p.first), part(p.last)].filter(Boolean).join('_') || 'document';
     const extra = kind === 'lm' && data.recipient?.company ? '_' + part(data.recipient.company).slice(0, 30) : '';
     return (kind === 'cv' ? 'CV_' : 'Lettre_motivation_') + who + extra + '.pdf';
+  }
+  function save(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
   }
   async function download(data, kind, meta) {
     const result = await buildPdf(data, kind, meta);
@@ -357,5 +389,5 @@
     return result;
   }
 
-  window.MelecOutilsPdf = { PAGE_W, PAGE_H, pageSheet, loadFonts, mount, layout, collect, buildPdf, download, fileName, rgba, loadJsPdf };
+  window.MelecOutilsPdf = { PAGE_W, PAGE_H, pageSheet, loadFonts, mount, layout, collect, buildPdf, buildPdfs, download, save, fileName, rgba, loadJsPdf };
 })();

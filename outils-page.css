@@ -195,3 +195,11 @@
 
 .od-grid-lm .od-side .od-name,.od-grid-lm .od-side .od-title{color:var(--side-ink)}
 .od-side-dark .od-grid-lm .od-side .od-ico{color:var(--side-ink)}
+/* Version noir et blanc pour l'impression : pas d'aplat foncé (économie d'encre). */
+.od-print{--side:#ffffff!important;--side-ink:#1d2530!important}
+.od-print.od-l-lateral .od-grid > .od-side{border-right:1.5px solid #9aa3ad}
+.od-print.od-l-lateral-d .od-grid > .od-side{border-left:1.5px solid #9aa3ad}
+.od-print .od-grid-lm > .od-side{border-right:1.5px solid #9aa3ad}
+.od-print .od-band{background:#ffffff!important;color:var(--ink)!important;border-bottom:2px solid #333}
+.od-print .od-band .od-ico{color:var(--a)!important}
+.od-print .od-side-soft{background:#ffffff!important}

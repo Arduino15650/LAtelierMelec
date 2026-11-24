@@ -52,3 +52,32 @@ test('score du CV et nombre de mots de la lettre', () => {
   lm.blocks.moi.text = 'Je sais câbler un tableau.';
   assert.equal(R.letterWords(lm), 5);
 });
+
+test('les exemples de CV sont complets et reprennent l’identité de l’élève', () => {
+  const win = { MelecOutilsRendu: R };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'outils-exemples.js'), 'utf8'), { window: win, Math, Object, String, Array, JSON });
+  const EX = win.MelecOutilsExemples;
+  assert.ok(EX.EXAMPLES.length >= 7);
+  for (const ex of EX.EXAMPLES) {
+    const d = EX.cvFromExample(ex.id, { first: 'Inès', last: 'Benali', email: 'ines@lycee.fr' });
+    assert.equal(d.person.first, 'Inès');
+    assert.ok(R.THEMES.some(t => t.id === ex.theme), ex.id + ' : thème inconnu');
+    assert.equal(d.theme, ex.theme);
+    assert.ok(d.sections.experiences.items.length >= 1);
+    assert.ok(R.cvScore(d).score >= 70, ex.id + ' : score ' + R.cvScore(d).score);
+  }
+});
+
+test('contrôles de qualité du CV et de la lettre', () => {
+  const lm = R.newLetter({}, 'pfmp');
+  lm.recipient.company = 'Dupont';
+  lm.blocks.vous.text = 'L’entreprise Dupont réalise des chantiers variés.';
+  lm.blocks.conclusion.text = 'Je serais heureux de vous rencontrer lors d’un entretien.';
+  lm.object = 'Demande de stage du 4 mai au 12 juin';
+  const checks = R.letterChecks(lm);
+  assert.ok(checks.some(([ok, t]) => ok && /Entreprise citée 1 fois/.test(t)));
+  assert.ok(checks.some(([ok, t]) => ok && /entretien/.test(t)));
+  const cv = R.newCv({});
+  assert.ok(R.cvChecks(cv, 2).some(([ok, t]) => !ok && /2 pages/.test(t)));
+  assert.ok(R.THEMES.length >= 22);
+});

@@ -96,3 +96,36 @@ html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-spell-fix but
 @container (max-width:900px){.ot-editor,.ot-teacher-view{grid-template-columns:1fr}.ot-preview{position:static}}
 @media (max-width:1000px){.ot-editor,.ot-teacher-view{grid-template-columns:1fr}.ot-preview{position:static}}
 @media (max-width:560px){.ot-level-row{grid-template-columns:1fr 1fr}.ot-photo-box{grid-template-columns:1fr}.ot-stage{padding:6px}}
+
+/* Accueil, bibliothèque, Mes PDF */
+.ot-cards{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-card{background:rgba(15,40,70,.85)!important;border:1px solid #2d6aa3!important;color:#e9f1fb!important;display:grid;gap:6px;justify-items:start;align-content:start;text-align:left;min-height:130px;padding:16px;border-radius:12px;white-space:normal}
+.ot-card-ico{font-size:1.6rem;line-height:1}
+.ot-card strong{font-size:1.08rem}
+.ot-steps{margin:0;padding-left:1.4em;display:grid;gap:8px}
+.ot-steps li{display:grid;gap:2px}
+.ot-steps li span{font-size:.88rem;opacity:.88}
+.ot-advice{border-color:#f6ad25}
+.ot-lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.ot-lib-card{display:grid;gap:10px;align-content:start;padding:12px;border-radius:12px;border:1px solid var(--st-line,#1e4569);background:rgba(8,24,46,.6)}
+.ot-thumb{position:relative;justify-self:center;width:200px;height:283px;overflow:hidden;border-radius:4px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.ot-thumb-page{position:absolute;left:0;top:0;width:794px;transform-origin:0 0;pointer-events:none}
+.ot-lib-info{display:grid;gap:6px}
+.ot-lib-info small{opacity:.8}
+.ot-lib-info select{width:100%;min-height:36px}
+.ot-check{display:flex;gap:10px;align-items:center;cursor:pointer}
+.ot-check input{width:20px;height:20px;flex:none}
+.ot-checks h3{margin:0;font-size:.95rem}
+.ot-checklist{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:.88rem}
+.ot-checklist li{display:flex;gap:8px;align-items:flex-start}
+.ot-check-mark{flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;font-weight:800;font-size:.8rem}
+.ot-checklist li.ok .ot-check-mark{background:#2f855a;color:#fff}
+.ot-checklist li.todo .ot-check-mark{background:#f6ad25;color:#1a0d00}
+.ot-checklist li.todo{color:#ffd06c}
+.ot-grip{cursor:grab;opacity:.6;font-size:1.1rem;padding:0 2px;user-select:none}
+.ot-sec.dragging{opacity:.45}
+.ot-sec.drop{outline:2px dashed #ff8a1e;outline-offset:2px}
+.ot-fromcv{display:grid;gap:6px}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-cvchip{border-color:#7cc4ff!important}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-generate{justify-self:start;min-height:46px;padding:10px 20px}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-card:hover{border-color:#ff8a1e!important}

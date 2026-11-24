@@ -194,7 +194,15 @@
     stageScale.append(pageHost);
     const stage = el('div', { class: 'ot-stage' }, stageScale);
     const info = el('div', { class: 'ot-preview-bar', role: 'status', 'aria-live': 'polite' });
-    const preview = el('div', { class: 'ot-preview' }, info, stage);
+    const checks = el('div', { class: 'ot-group ot-checks', 'aria-live': 'polite' });
+    const preview = el('div', { class: 'ot-preview' }, info, stage, checks);
+    async function drawChecks() {
+      let list;
+      if (doc.kind === 'cv') list = R.cvChecks(data, lastLayout.pages);
+      else { const h = await ctx.cvHints().catch(() => null); list = R.letterChecks(data, h?.text || ''); if (lastLayout.pages > 1) list.unshift([false, 'La lettre dépasse une page']); }
+      fill(checks, el('h3', { text: doc.kind === 'cv' ? 'Qualité du CV · ' + R.cvScore(data).score + ' / 100' : 'Qualité de la lettre' }),
+        el('ul', { class: 'ot-checklist' }, list.map(([ok, text]) => el('li', { class: ok ? 'ok' : 'todo' }, el('span', { class: 'ot-check-mark', 'aria-hidden': 'true', text: ok ? '✓' : '!' }), el('span', { text: ok ? text : 'À améliorer : ' + text })))));
+    }
     let lastLayout = { pages: 1, k: 1 };
     let renderTicket = 0;
     const paint = async () => {
@@ -211,6 +219,7 @@
       stage.style.height = (lastLayout.pages * R.PAGE_H * scale + 24) + 'px';
       fill(info, el('span', { text: lastLayout.pages + ' page' + (lastLayout.pages > 1 ? 's' : '') + ' A4' + (lastLayout.shrunk ? ' · texte ajusté à ' + Math.round(lastLayout.k * 100) + ' % pour tenir' : '') }),
         doc.kind === 'lm' ? el('span', { text: R.letterWords(data) + ' mots (conseillé : 250 à 400)' }) : el('span', { text: 'Score du CV : ' + R.cvScore(data).score + ' / 100' }));
+      drawChecks();
     };
     const repaint = debounce(paint, 220);
     const resize = new ResizeObserver(debounce(() => paint(), 150));
@@ -318,28 +327,41 @@
       }
       return parts;
     }
-    function sectionRows(defs, order, isOn, toggle, move, editor, label) {
+    let dragId = '';
+    function sectionRows(defs, order, isOn, toggle, move, editor, label, reorder, customLabel) {
       const on = order.filter(id => isOn(id)), off = order.filter(id => !isOn(id));
+      const offStd = off.filter(id => !defs.find(x => x.id === id).custom);
+      const offCustom = off.filter(id => defs.find(x => x.id === id).custom);
       return el('div', { class: 'ot-group' }, el('h3', { text: label + ' (' + on.length + ' affichées)' }),
-        el('p', { class: 'ot-help', text: 'Activez, masquez ou déplacez chaque rubrique ; cliquez sur son nom pour la remplir.' }),
+        el('p', { class: 'ot-help', text: 'Activez, masquez ou glissez chaque rubrique pour la déplacer (ou utilisez les flèches) ; cliquez sur son nom pour la remplir.' }),
         on.map((id, index) => {
           const s = defs.find(x => x.id === id);
           const open = openSection === id;
-          const title = (doc.kind === 'cv' ? (data.sections[id].title || '').trim() : '') || s.label;
-          return el('div', { class: 'ot-sec' + (open ? ' open' : '') },
-            el('div', { class: 'ot-sec-head' }, switchBtn(true, 'Masquer « ' + title + ' »', () => toggle(id)),
+          const own = doc.kind === 'cv' ? (data.sections[id].title || '').trim() : '';
+          const title = own || s.label;
+          const row = el('div', { class: 'ot-sec' + (open ? ' open' : ''), draggable: 'true', 'data-id': id },
+            el('div', { class: 'ot-sec-head' }, el('span', { class: 'ot-grip', 'aria-hidden': 'true', text: '⠿' }), switchBtn(true, 'Masquer « ' + title + ' »', () => toggle(id)),
               el('button', { type: 'button', class: 'ot-sec-name', 'aria-expanded': String(open), text: title, onclick: () => { openSection = open ? '' : id; drawPanel(); } }),
               el('button', { type: 'button', text: '▲', 'aria-label': 'Monter « ' + title + ' »', disabled: index === 0, onclick: () => move(id, on[index - 1]) }),
               el('button', { type: 'button', text: '▼', 'aria-label': 'Descendre « ' + title + ' »', disabled: index === on.length - 1, onclick: () => move(id, on[index + 1]) })),
             open ? el('div', { class: 'ot-sec-body' }, editor(s)) : null);
+          row.addEventListener('dragstart', e => { if (e.target.closest('input,textarea,select')) { e.preventDefault(); return; } dragId = id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); row.classList.add('dragging'); });
+          row.addEventListener('dragend', () => { row.classList.remove('dragging'); dragId = ''; });
+          row.addEventListener('dragover', e => { if (dragId && dragId !== id) { e.preventDefault(); row.classList.add('drop'); } });
+          row.addEventListener('dragleave', () => row.classList.remove('drop'));
+          row.addEventListener('drop', e => { e.preventDefault(); row.classList.remove('drop'); if (dragId && dragId !== id) reorder(dragId, id); });
+          return row;
         }),
-        off.length ? [el('p', { class: 'ot-help', text: 'Rubriques masquées — cliquez pour les ajouter :' }),
-          el('div', { class: 'ot-chips' }, off.map(id => el('button', { type: 'button', text: '＋ ' + defs.find(x => x.id === id).label, onclick: () => { openSection = id; toggle(id); } })))] : null);
+        offStd.length ? [el('p', { class: 'ot-help', text: (doc.kind === 'cv' ? 'Rubriques' : 'Paragraphes') + ' à ajouter :' }),
+          el('div', { class: 'ot-chips' }, offStd.map(id => el('button', { type: 'button', text: '＋ ' + defs.find(x => x.id === id).label, onclick: () => { openSection = id; toggle(id); } })))] : null,
+        offCustom.length ? el('button', { type: 'button', class: 'ot-mini', text: '＋ ' + customLabel, onclick: () => { openSection = offCustom[0]; toggle(offCustom[0]); } }) : null);
     }
+    const moveBefore = (list, a, b) => { const i = list.indexOf(a); if (i < 0) return; list.splice(i, 1); const j = list.indexOf(b); list.splice(j < 0 ? list.length : (i <= j ? j + 1 : j), 0, a); };
     const swap = (list, a, b) => { const i = list.indexOf(a), j = list.indexOf(b); if (i >= 0 && j >= 0) [list[i], list[j]] = [list[j], list[i]]; };
     function cvContent() {
       return [score(), identity(), sectionRows(R.CV_SECTIONS, data.order, id => data.sections[id].on,
-        id => restructure(d => { d.sections[id].on = !d.sections[id].on; }), (a, b) => restructure(d => swap(d.order, a, b)), sectionEditor, 'Rubriques')];
+        id => restructure(d => { d.sections[id].on = !d.sections[id].on; }), (a, b) => restructure(d => swap(d.order, a, b)), sectionEditor, 'Rubriques',
+        (a, b) => restructure(d => moveBefore(d.order, a, b)), 'Rubrique personnalisée')];
     }
 
     // ── Lettre : contenu
@@ -401,14 +423,24 @@
         const model = b.id === 'accroche' ? R.LETTER_TYPES[data.type].accroche : b.model;
         return [b.help ? el('p', { class: 'ot-help', text: b.help }) : null, area,
           el('p', { class: 'ot-help', text: 'Débuts de phrases (cliquez pour insérer) :' }), el('div', { class: 'ot-chips' }, (b.tips || []).map(t => el('button', { type: 'button', text: t, onclick: () => insert(t) }))),
+          fromCvBox(insert),
           model ? el('button', { type: 'button', class: 'ot-mini subtle', text: 'Utiliser le texte d’exemple', onclick: () => { ta.value = model; ta.dispatchEvent(new Event('input')); } }) : null];
-      }, 'Paragraphes');
+      }, 'Paragraphes', (a, b) => restructure(d => moveBefore(d.order, a, b)), 'Paragraphe libre');
       const show = data.show;
       const options = el('div', { class: 'ot-group' }, el('h3', { text: 'Éléments de la page' }),
         R.LETTER_OPTIONAL.map(o => el('div', { class: 'ot-sec-head' }, switchBtn(show[o.id], (show[o.id] ? 'Masquer ' : 'Afficher ') + o.label, () => restructure(d => { d.show[o.id] = !d.show[o.id]; })), el('span', { text: o.label }))),
         show.ps ? field('P.-S.', data.ps, v => set(d => { d.ps = v; }), { area: true, rows: 2, max: 400 }) : null,
         show.pj ? field('Mention des pièces jointes', data.pj, v => set(d => { d.pj = v; }), { max: 120 }) : null);
       return [typeGroup, who, to, blocks, options, show.signature ? signatureGroup() : null];
+    }
+    // « Reprendre de mon CV » : habilitations, compétences, stages et qualités du CV le plus récent.
+    function fromCvBox(insert) {
+      const box = el('div', { class: 'ot-fromcv' });
+      ctx.cvHints().then(h => {
+        if (!h || !h.items.length) { fill(box, el('p', { class: 'ot-help', text: 'Créez d’abord votre CV : ses habilitations, compétences et stages pourront être repris ici en un clic.' })); return; }
+        fill(box, el('p', { class: 'ot-help', text: 'Reprendre de mon CV :' }), el('div', { class: 'ot-chips' }, h.items.map(t => el('button', { type: 'button', class: 'ot-cvchip', text: '⛓ ' + t, onclick: () => insert(t) }))));
+      }).catch(() => fill(box));
+      return box;
     }
     function signatureGroup() {
       const s = data.sign;
@@ -440,11 +472,12 @@
       const r = R.resolved(data);
       const layouts = doc.kind === 'cv' ? R.LAYOUTS : R.LETTER_LAYOUTS;
       const sheetId = id => doc.kind === 'lm' && (id === 'bandeau' || id === 'lateral') ? id + '-lm' : id;
-      const layoutGroup = el('div', { class: 'ot-group' }, el('h3', { text: doc.kind === 'cv' ? 'Organisation du CV' : 'Organisation de la lettre' }),
+      const layoutGroup = el('div', { class: 'ot-group' }, el('div', { class: 'ot-toolbar' }, el('h3', { text: doc.kind === 'cv' ? 'Organisation du CV' : 'Organisation de la lettre' }),
+          ctx.openLibrary ? el('button', { type: 'button', class: 'ot-mini subtle', text: 'Voir la bibliothèque en grand', onclick: () => ctx.openLibrary() }) : null),
         el('div', { class: 'ot-tiles' }, layouts.map(l => el('button', { type: 'button', class: 'ot-tile', 'aria-pressed': String(data.layout === l.id), title: l.hint, onclick: () => restructure(d => { d.layout = l.id; }) },
           sheet(sheetId(l.id), r.accent), el('strong', { text: l.name }), el('small', { text: l.hint })))));
       const themes = R.THEMES.filter(t => !themeFilter || t.level === themeFilter || (themeFilter === 'ATS' && t.ats));
-      const themeGroup = el('div', { class: 'ot-group' }, el('h3', { text: 'Thème (12)' }),
+      const themeGroup = el('div', { class: 'ot-group' }, el('h3', { text: 'Thème (' + R.THEMES.length + ')' }),
         chips([['', 'Tous'], ...R.THEME_LEVELS.map(l => [l, l]), ['ATS', 'Compatibles ATS']], v => themeFilter === v, v => { themeFilter = v; drawPanel(); }, 'Filtrer les thèmes'),
         doc.kind === 'lm' ? cvPicker('Assortir à un de mes CV', 'theme') : null,
         el('div', { class: 'ot-tiles' }, themes.map(t => {
@@ -563,12 +596,38 @@
     };
   }
 
+  // ───── Miniatures réelles (bibliothèque) : la page A4 réduite ─────
+  // La miniature est placée dans la page avant la mise en page (les mesures en ont besoin).
+  async function thumb(slot, data, kind, width = 200) {
+    const host = el('div', { class: 'ot-thumb-page' });
+    const box = el('div', { class: 'ot-thumb', 'aria-hidden': 'true' }, host);
+    const scale = width / R.PAGE_W;
+    box.style.width = width + 'px'; box.style.height = Math.round(R.PAGE_H * scale) + 'px';
+    host.style.transform = 'scale(' + scale + ')';
+    slot.replaceWith(box);
+    const page = kind === 'cv' ? R.renderCv(data) : R.renderLetter(data);
+    await PDF.mount(host, page);
+    PDF.layout(page, data, kind);
+    return box;
+  }
+  function sampleLetter(layout, theme, base) {
+    const d = R.newLetter({ first: 'Lucas', last: 'Martin', email: 'lucas.martin@exemple.fr' }, 'pfmp');
+    Object.assign(d.person, { phone: '06 12 34 56 78', address: '12 rue des Lilas', city: '76000 Rouen' });
+    Object.assign(d.recipient, { company: 'Entreprise Dupont Électricité', contact: 'Madame Durand', address: '8 rue de l’Industrie', city: '76800 Saint-Étienne-du-Rouvray' });
+    d.place = 'Rouen'; d.object = 'Demande de stage (PFMP) du 4 mai au 12 juin';
+    for (const b of R.LETTER_BLOCKS) d.blocks[b.id].text = b.id === 'accroche' ? 'Élève en première Bac Pro MELEC, je recherche une entreprise d’accueil pour ma période de formation en milieu professionnel de six semaines.' : (b.model || '').replace(/\[[^\]]+\]/g, '…');
+    d.layout = layout; d.theme = theme;
+    if (base) { d.theme = base.theme; d.accent = base.accent; d.font = base.font; }
+    return d;
+  }
+
   // ───── Espace élève ─────
   function initStudent() {
     const tabs = document.getElementById('studentContentTabs');
     const dashboard = document.getElementById('studentDashboard');
     const tp = document.getElementById('studentTpPane');
     const api = window.MelecPortal;
+    const EX = window.MelecOutilsExemples;
     if (!tabs || !dashboard || !tp || !api) return;
     const button = el('button', { type: 'button', id: 'studentToolsTab', text: 'Mes outils' });
     tabs.append(button);
@@ -577,8 +636,12 @@
     const pane = el('section', { id: 'studentToolsPane', class: 'student-pane ot-pane' }, el('h2', { text: 'Mes outils · CV et lettres de motivation' }), message, content);
     pane.hidden = true;
     dashboard.append(pane);
-    let docs = [], current = null, editor = null, saveTimer = null, saving = Promise.resolve(), dirty = false, requestId = 0, statusLine = null, me = null;
+    let docs = [], current = null, editor = null, saveTimer = null, saving = Promise.resolve(), dirty = false, requestId = 0, statusLine = null, me = null, hints = null;
+    let libTab = 'examples', libFilter = '';
     const notify = text => { message.textContent = text; };
+    const historyKey = () => 'melec-outils-pdf:' + (me?.id || '');
+    const readHistory = () => { try { return JSON.parse(localStorage.getItem(historyKey()) || '[]').slice(0, 20); } catch { return []; } };
+    const writeHistory = list => { try { localStorage.setItem(historyKey(), JSON.stringify(list.slice(0, 20))); } catch { /* stockage indisponible */ } };
 
     async function whoAmI() {
       if (me) return me;
@@ -600,7 +663,7 @@
         pane.hidden = false;
       }
       PDF.loadFonts(); PDF.pageSheet().catch(() => {});
-      await showList();
+      await showHome();
     }
     async function loadList() {
       const user = await whoAmI();
@@ -612,48 +675,233 @@
       row.data = R.clean(row.kind, row.data);
       return row;
     }
-    async function showList(note) {
-      const ticket = ++requestId;
-      await flush();
-      editor?.destroy(); editor = null; current = null;
+    // Éléments du CV le plus récent, proposés dans la lettre (« Reprendre de mon CV »).
+    function cvHints() {
+      if (hints) return hints;
+      const cv = docs.find(d => d.kind === 'cv');
+      if (!cv) return Promise.resolve(null);
+      hints = loadDoc(cv.id).then(full => {
+        if (!full) return null;
+        const S = full.data.sections, items = [];
+        S.habilitations.tags.filter(t => t.trim()).forEach(t => items.push(t));
+        S.experiences.items.filter(i => i.title.trim()).forEach(i => items.push(i.title + (i.org ? ' chez ' + i.org : '')));
+        S.competences.levels.filter(l => l.label.trim()).forEach(l => items.push(l.label));
+        S.savoiretre.tags.filter(t => t.trim()).forEach(t => items.push(t));
+        const text = S.experiences.items.map(i => i.desc).concat(S.profil.text).join('\n');
+        return { items: [...new Set(items)].slice(0, 16), text, data: full.data };
+      }).catch(() => null);
+      return hints;
+    }
+    const prepare = async () => { const ticket = ++requestId; await flush(); editor?.destroy(); editor = null; current = null; return ticket; };
+
+    // Accueil : 4 cartes, parcours en 4 étapes, conseils, puis les documents.
+    async function showHome(note) {
+      const ticket = await prepare();
       notify('Chargement de vos documents…');
       try { await loadList(); } catch (error) { if (ticket === requestId) notify('Documents indisponibles : ' + error.message); return; }
       if (ticket !== requestId || pane.hidden) return;
-      notify(note || (docs.length ? 'Vos documents sont enregistrés automatiquement sur votre compte.' : 'Créez votre premier CV ou votre première lettre de motivation.'));
-      const create = el('div', { class: 'ot-intro' },
-        el('button', { type: 'button', class: 'ot-new', onclick: () => createDoc('cv') }, el('strong', { text: '＋ Nouveau CV' }), el('span', { text: '7 organisations et 12 thèmes, du plus sobre au plus professionnel, photo d’identité, rubriques à la carte.' })),
-        el('button', { type: 'button', class: 'ot-new', onclick: () => createDoc('lm') }, el('strong', { text: '＋ Nouvelle lettre de motivation' }), el('span', { text: 'Stage, apprentissage, emploi, candidature spontanée… avec modèle guidé et signature.' })));
-      const list = el('div', { class: 'ot-list' }, docs.map(row => el('div', { class: 'ot-doc' },
+      hints = null;
+      notify(note || 'Vos documents sont enregistrés automatiquement sur votre compte.');
+      const cvs = docs.filter(d => d.kind === 'cv'), lms = docs.filter(d => d.kind === 'lm');
+      const ago = row => row ? 'modifié le ' + dateFr.format(new Date(row.updated_at)) : '';
+      const card = (icon, title, text, onclick) => el('button', { type: 'button', class: 'ot-new ot-card', onclick }, el('span', { class: 'ot-card-ico', 'aria-hidden': 'true', text: icon }), el('strong', { text: title }), el('span', { text }));
+      const cards = el('div', { class: 'ot-intro ot-cards' },
+        card('📄', 'Mon CV', cvs.length ? cvs.length + ' CV · ' + (cvs[0].title || 'CV') + ' · ' + ago(cvs[0]) : 'Partir d’un exemple professionnel ou d’une page vierge', () => cvs.length === 1 ? showDoc(cvs[0].id) : cvs.length ? document.getElementById('otCvList')?.scrollIntoView({ behavior: 'smooth' }) : showLibrary('examples')),
+        card('✉', 'Mes lettres de motivation', lms.length ? lms.length + ' lettre' + (lms.length > 1 ? 's' : '') + ' : ' + lms.slice(0, 2).map(l => '« ' + (l.title || 'Lettre') + ' »').join(', ') : 'Stage, apprentissage, emploi… avec un modèle guidé', () => lms.length === 1 ? showDoc(lms[0].id) : lms.length ? document.getElementById('otLmList')?.scrollIntoView({ behavior: 'smooth' }) : createDoc('lm')),
+        card('🎨', 'Bibliothèque de modèles', R.THEMES.length + ' thèmes, ' + (EX?.EXAMPLES.length || 0) + ' exemples de CV, ' + R.LAYOUTS.length + ' organisations de CV et ' + R.LETTER_LAYOUTS.length + ' de lettre', () => showLibrary()),
+        card('⤓', 'Mes PDF', 'Générer le CV, la lettre ou les deux en un seul PDF A4', () => showPdf()));
+      const steps = el('div', { class: 'ot-group' }, el('h3', { text: 'Le parcours en 4 étapes' }), el('ol', { class: 'ot-steps' },
+        [['Je remplis mes informations', 'Identité, photo, formation, PFMP, compétences, langues, permis, loisirs.'],
+          ['Je choisis un modèle et un thème', 'Partez d’un exemple professionnel, puis changez l’organisation et le thème quand vous voulez.'],
+          ['J’écris ma lettre guidée', 'Vous · Moi · Nous · Conclusion, avec des phrases d’aide et les éléments repris de votre CV.'],
+          ['Je vérifie et je génère mes PDF', 'Correcteur d’orthographe, relecture de l’enseignant, puis PDF A4 net, prêt à envoyer ou à imprimer.']]
+          .map(([t, d]) => el('li', {}, el('strong', { text: t }), el('span', { text: d })))));
+      const advice = el('div', { class: 'ot-group ot-advice' }, el('h3', { text: 'Conseils du professeur' }), el('ul', { class: 'ot-tips' },
+        el('li', { text: 'Une page, des verbes d’action, vos habilitations (B1V, BR…) bien visibles.' }),
+        el('li', { text: 'Mettez vos PFMP en avant : ce sont vos vraies expériences. Ajoutez des chiffres (« 8 tableaux câblés »).' }),
+        el('li', { text: 'Une lettre par entreprise : citez-la et expliquez pourquoi vous la choisissez.' }),
+        el('li', { text: 'Votre enseignant peut relire votre CV et laisser des remarques avant l’envoi : utilisez « Envoyer à l’enseignant ».' })));
+      const docCard = row => el('div', { class: 'ot-doc' },
         el('span', { class: 'ot-doc-title', text: row.title || KIND[row.kind] }),
-        el('span', { class: 'ot-doc-meta' }, el('span', { text: KIND[row.kind] + ' · modifié le ' + dateFr.format(new Date(row.updated_at)) }), statusChip(row.review_status)),
+        el('span', { class: 'ot-doc-meta' }, el('span', { text: ago(row) }), statusChip(row.review_status)),
         row.teacher_comment ? el('span', { class: 'ot-doc-meta', text: '💬 ' + row.teacher_comment.slice(0, 120) + (row.teacher_comment.length > 120 ? '…' : '') }) : null,
         el('div', { class: 'ot-doc-actions' },
           el('button', { type: 'button', text: 'Ouvrir', onclick: () => showDoc(row.id) }),
-          el('button', { type: 'button', class: 'subtle', text: 'PDF', onclick: async e => { e.target.disabled = true; try { const full = await loadDoc(row.id); if (full) { await PDF.download(full.data, full.kind, { title: full.title, author: [full.data.person.first, full.data.person.last].join(' ') }); } } catch (error) { notify('PDF impossible : ' + error.message); } e.target.disabled = false; } }),
+          el('button', { type: 'button', class: 'subtle', text: 'PDF', onclick: () => showPdf(row.kind === 'cv' ? { cv: row.id, what: 'cv' } : { lm: row.id, what: 'lm' }) }),
           el('button', { type: 'button', class: 'subtle', text: 'Dupliquer', onclick: () => duplicate(row) }),
-          el('button', { type: 'button', class: 'warn', text: 'Supprimer', onclick: () => remove(row) })))));
-      fill(content, create, docs.length ? [el('h3', { text: 'Mes documents (' + docs.length + ')' }), list] : null);
+          el('button', { type: 'button', class: 'warn', text: 'Supprimer', onclick: () => remove(row) })));
+      fill(content, cards, el('div', { class: 'ot-intro' }, steps, advice),
+        el('div', { class: 'ot-toolbar', id: 'otCvList' }, el('h3', { text: 'Mes CV (' + cvs.length + ')' }),
+          el('button', { type: 'button', class: 'subtle', text: '＋ Partir d’un exemple', onclick: () => showLibrary('examples') }),
+          el('button', { type: 'button', class: 'subtle', text: '＋ CV vierge', onclick: () => createDoc('cv') })),
+        cvs.length ? el('div', { class: 'ot-list' }, cvs.map(docCard)) : el('p', { class: 'ot-help', text: 'Aucun CV pour l’instant.' }),
+        el('div', { class: 'ot-toolbar', id: 'otLmList' }, el('h3', { text: 'Mes lettres de motivation (' + lms.length + ')' }),
+          el('button', { type: 'button', class: 'subtle', text: '＋ Nouvelle lettre', onclick: () => createDoc('lm') })),
+        lms.length ? el('div', { class: 'ot-list' }, lms.map(docCard)) : el('p', { class: 'ot-help', text: 'Aucune lettre pour l’instant.' }));
     }
-    async function createDoc(kind, base) {
+
+    // Bibliothèque : exemples de CV, thèmes, organisations du CV et de la lettre.
+    async function showLibrary(tab) {
+      const ticket = await prepare();
+      if (tab) libTab = tab;
+      if (!docs.length) { try { await loadList(); } catch { /* liste indisponible */ } }
+      if (ticket !== requestId || pane.hidden) return;
+      notify('');
+      const cvs = docs.filter(d => d.kind === 'cv'), lms = docs.filter(d => d.kind === 'lm');
+      const latest = cvs[0] ? await loadDoc(cvs[0].id).catch(() => null) : null;
+      if (ticket !== requestId) return;
+      const base = latest?.data || (EX ? EX.sampleCv(EX.EXAMPLES[0].id) : R.newCv({ first: 'Lucas', last: 'Martin' }));
+      const tabsBar = el('div', { class: 'ot-tabs', role: 'tablist' }, [['examples', 'Exemples de CV (' + (EX?.EXAMPLES.length || 0) + ')'], ['themes', 'Thèmes (' + R.THEMES.length + ')'], ['cvlayouts', 'Organisations du CV (' + R.LAYOUTS.length + ')'], ['lmlayouts', 'Organisations de la lettre (' + R.LETTER_LAYOUTS.length + ')']]
+        .map(([id, label]) => el('button', { type: 'button', role: 'tab', 'aria-selected': String(libTab === id), text: label, onclick: () => showLibrary(id) })));
+      // Appliquer un thème ou une organisation à un document existant (ou en créer un).
+      async function apply(kind, change, choice) {
+        try {
+          if (choice === 'new') { const who = await whoAmI(); const data = kind === 'cv' ? (latest ? JSON.parse(JSON.stringify(latest.data)) : R.newCv(who)) : R.newLetter(who); change(data); if (kind === 'lm' && latest) Object.assign(data.person, Object.fromEntries(Object.entries(latest.data.person).filter(([k, v]) => v && k in data.person))); return createDoc(kind, data); }
+          const row = await loadDoc(choice); if (!row) return;
+          change(row.data);
+          await api.rest(TABLE + '?id=eq.' + encodeURIComponent(row.id), { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: R.clean(row.kind, row.data) }) });
+          await showDoc(row.id);
+          notify('Modèle appliqué à « ' + (row.title || KIND[row.kind]) + ' » : vos textes n’ont pas changé.');
+        } catch (error) { notify('Impossible d’appliquer le modèle : ' + error.message); }
+      }
+      const picker = (kind, change, label) => {
+        const list = kind === 'cv' ? cvs : lms;
+        const select = el('select', { 'aria-label': label }, el('option', { value: '', text: label + '…' }), list.map(d => el('option', { value: d.id, text: 'Appliquer à « ' + (d.title || KIND[d.kind]) + ' »' })), el('option', { value: 'new', text: kind === 'cv' ? '＋ Nouveau CV avec ce modèle' : '＋ Nouvelle lettre avec ce modèle' }));
+        select.addEventListener('change', () => { if (select.value) apply(kind, change, select.value); });
+        return select;
+      };
+      const grid = el('div', { class: 'ot-lib-grid' });
+      const cards = [];
+      if (libTab === 'examples' && EX) {
+        for (const ex of EX.EXAMPLES) cards.push([EX.sampleCv(ex.id), 'cv', el('div', { class: 'ot-lib-info' },
+          el('strong', { text: ex.name }), el('small', { text: ex.who + ' · thème ' + (R.THEMES.find(t => t.id === ex.theme)?.name || '') + ' · ' + (R.LAYOUTS.find(l => l.id === ex.layout)?.name || '') }),
+          el('span', { class: 'ot-help', text: ex.desc }),
+          el('button', { type: 'button', class: 'portal-button', text: 'Partir de cet exemple', onclick: async () => {
+            const who = await whoAmI();
+            const data = EX.cvFromExample(ex.id, who);
+            await createDoc('cv', data, 'CV · ' + ex.name);
+            notify('Exemple copié dans vos CV. Remplacez chaque expérience, entreprise et date par les vôtres : un CV doit être 100 % vrai.');
+          } }))]);
+      } else if (libTab === 'themes') {
+        const filters = el('div', { class: 'ot-chips' }, [['', 'Tous'], ...R.THEME_LEVELS.map(l => [l, l]), ['ATS', 'Compatibles ATS']].map(([v, t]) => el('button', { type: 'button', 'aria-pressed': String(libFilter === v), text: t, onclick: () => { libFilter = v; showLibrary('themes'); } })));
+        for (const t of R.THEMES.filter(t => !libFilter || t.level === libFilter || (libFilter === 'ATS' && t.ats))) {
+          const data = { ...JSON.parse(JSON.stringify(base)), theme: t.id, accent: '' };
+          cards.push([data, 'cv', el('div', { class: 'ot-lib-info' }, el('strong', { text: t.name + (t.ats ? ' · ATS ✓' : '') }), el('small', { text: t.level }), el('span', { class: 'ot-help', text: t.desc }),
+            el('div', { class: 'ot-doc-actions' }, picker('cv', d => { d.theme = t.id; d.accent = ''; }, 'Pour un CV'), picker('lm', d => { d.theme = t.id; d.accent = ''; }, 'Pour une lettre')))]);
+        }
+        fill(content, tabsBar, el('p', { class: 'ot-help', text: latest ? 'Aperçus réalisés avec votre CV « ' + (latest.title || 'CV') + ' ».' : 'Aperçus réalisés avec un exemple.' }), filters, grid);
+      } else if (libTab === 'cvlayouts') {
+        for (const l of R.LAYOUTS) {
+          const data = { ...JSON.parse(JSON.stringify(base)), layout: l.id };
+          cards.push([data, 'cv', el('div', { class: 'ot-lib-info' }, el('strong', { text: l.name }), el('span', { class: 'ot-help', text: l.hint }), picker('cv', d => { d.layout = l.id; }, 'Utiliser'))]);
+        }
+      } else {
+        for (const l of R.LETTER_LAYOUTS) {
+          cards.push([sampleLetter(l.id, 'moderne', latest?.data), 'lm', el('div', { class: 'ot-lib-info' }, el('strong', { text: l.name }), el('span', { class: 'ot-help', text: l.hint }), picker('lm', d => { d.layout = l.id; }, 'Utiliser'))]);
+        }
+      }
+      if (libTab !== 'themes') fill(content, tabsBar,
+        el('p', { class: 'ot-help', text: libTab === 'examples' ? 'Des CV complets et réalistes pour vous inspirer. Les entreprises sont fictives : gardez la mise en page et la façon d’écrire, remplacez tout le reste par votre parcours.' : 'Thème et organisation se combinent librement : vos textes ne changent pas. « ATS ✓ » : lu sans erreur par les logiciels de tri des candidatures.' }), grid);
+      content.prepend(el('div', { class: 'ot-toolbar' }, el('button', { type: 'button', text: '← Mes outils', onclick: () => showHome() }), el('strong', { text: 'Bibliothèque de modèles' })));
+      await PDF.loadFonts();
+      for (const [data, kind, info] of cards) {
+        if (ticket !== requestId) return;
+        const slot = el('div', { class: 'ot-thumb' });
+        grid.append(el('div', { class: 'ot-lib-card' }, slot, info));
+        await thumb(slot, data, kind, 200);
+      }
+    }
+
+    // Mes PDF : CV, lettre ou les deux en un seul fichier, avec options.
+    async function showPdf(preset = {}) {
+      const ticket = await prepare();
+      if (!docs.length) { try { await loadList(); } catch (error) { notify('Documents indisponibles : ' + error.message); return; } }
+      await whoAmI();
+      if (ticket !== requestId || pane.hidden) return;
+      notify('');
+      const cvs = docs.filter(d => d.kind === 'cv'), lms = docs.filter(d => d.kind === 'lm');
+      const state = { what: preset.what || (cvs.length && lms.length ? 'both' : cvs.length ? 'cv' : 'lm'), cv: preset.cv || cvs[0]?.id || '', lm: preset.lm || lms[0]?.id || '', photo: true, fit: true, gray: false, name: '' };
+      const result = el('div', { role: 'status', 'aria-live': 'polite' });
+      const body = el('div', { class: 'ot-panel' });
+      const defaultName = () => {
+        const who = [me.first, me.last].filter(Boolean).join('_').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9_]+/g, '-') || 'document';
+        return (state.what === 'both' ? 'Candidature_' : state.what === 'cv' ? 'CV_' : 'Lettre_motivation_') + who + (state.gray ? '_NB' : '') + '.pdf';
+      };
+      function draw() {
+        const select = (list, key, label) => el('label', { class: 'ot-field' }, el('span', { text: label }), (() => { const s = el('select', { onchange: e => { state[key] = e.target.value; } }, list.map(d => el('option', { value: d.id, text: d.title || KIND[d.kind], selected: d.id === state[key] }))); return s; })());
+        const check = (key, label) => el('label', { class: 'ot-check' }, el('input', { type: 'checkbox', checked: state[key], onchange: e => { state[key] = e.target.checked; nameInput.placeholder = defaultName(); } }), el('span', { text: label }));
+        const nameInput = el('input', { maxlength: 80, value: state.name, placeholder: defaultName(), 'aria-label': 'Nom du fichier', oninput: e => { state.name = e.target.value; } });
+        const options = [['cv', 'Le CV', cvs.length], ['lm', 'La lettre', lms.length], ['both', 'CV + lettre (un seul PDF)', cvs.length && lms.length]];
+        fill(body,
+          el('div', { class: 'ot-group' }, el('h3', { text: 'Que voulez-vous générer ?' }),
+            el('div', { class: 'ot-chips' }, options.map(([v, t, ok]) => el('button', { type: 'button', 'aria-pressed': String(state.what === v), disabled: !ok, text: t, onclick: () => { state.what = v; draw(); } }))),
+            state.what !== 'lm' && cvs.length ? select(cvs, 'cv', 'CV') : null,
+            state.what !== 'cv' && lms.length ? select(lms, 'lm', 'Lettre de motivation') : null,
+            !cvs.length && !lms.length ? el('p', { class: 'ot-warn', text: 'Créez d’abord un CV ou une lettre.' }) : null),
+          el('div', { class: 'ot-group' }, el('h3', { text: 'Options' }),
+            state.what !== 'lm' ? check('photo', 'Inclure la photo d’identité') : null,
+            state.what !== 'lm' ? check('fit', 'Tenir sur une page (réduit légèrement le texte si besoin)') : null,
+            check('gray', 'Version noir et blanc pour l’impression'),
+            el('label', { class: 'ot-field' }, el('span', { text: 'Nom du fichier' }), nameInput)),
+          el('button', { type: 'button', class: 'portal-button ot-generate', text: '⬇ Générer et télécharger le PDF', disabled: !cvs.length && !lms.length, onclick: e => generate(e.target) }),
+          result,
+          el('p', { class: 'ot-help', text: 'Les PDF sont créés sur votre appareil ; vos données restent dans votre espace élève.' }));
+      }
+      async function generate(btn, again) {
+        const opts = again || { ...state };
+        const ids = opts.what === 'both' ? [['cv', opts.cv], ['lm', opts.lm]] : [[opts.what, opts[opts.what]]];
+        btn.disabled = true; const label = btn.textContent; btn.textContent = 'Création du PDF…';
+        try {
+          const items = [];
+          for (const [kind, id] of ids) { const row = await loadDoc(id); if (!row) throw new Error('document introuvable (supprimé ?)'); items.push({ kind, data: row.data }); }
+          const res = await PDF.buildPdfs(items, { gray: opts.gray, photo: opts.photo, fit: opts.fit, author: [me.first, me.last].join(' ') });
+          let name = (opts.name || '').trim() || defaultName();
+          if (!/\.pdf$/i.test(name)) name += '.pdf';
+          name = name.replace(/[\\/:*?"<>|]+/g, '-');
+          PDF.save(res.blob, name);
+          const size = Math.max(1, Math.round(res.blob.size / 1024)) + ' Ko';
+          fill(result, el('p', { class: 'ot-ok', text: '✓ ' + name + ' créé (A4, ' + res.pages + ' page' + (res.pages > 1 ? 's' : '') + ', ' + size + '). Il est aussi rangé dans « Mes PDF » ci-dessous.' }));
+          writeHistory([{ name, date: new Date().toISOString(), pages: res.pages, size, opts: { ...opts, name } }, ...readHistory().filter(h => h.name !== name)]);
+          drawHistory();
+        } catch (error) { fill(result, el('p', { class: 'ot-warn', text: 'PDF impossible : ' + error.message })); }
+        btn.disabled = false; btn.textContent = label;
+      }
+      const historyBox = el('div', { class: 'ot-group' });
+      function drawHistory() {
+        const list = readHistory();
+        fill(historyBox, el('h3', { text: 'Mes PDF (' + list.length + ')' }),
+          list.length ? el('div', { class: 'ot-list' }, list.map(h => el('div', { class: 'ot-doc' }, el('span', { class: 'ot-doc-title', text: h.name }),
+            el('span', { class: 'ot-doc-meta', text: dateFr.format(new Date(h.date)) + ' · ' + h.pages + ' page' + (h.pages > 1 ? 's' : '') + ' · ' + h.size + (h.opts.gray ? ' · noir et blanc' : '') }),
+            el('div', { class: 'ot-doc-actions' }, el('button', { type: 'button', text: 'Télécharger à nouveau', title: 'Recrée le PDF avec la dernière version de vos documents', onclick: e => generate(e.target, h.opts) }),
+              el('button', { type: 'button', class: 'subtle', text: 'Retirer de la liste', onclick: () => { writeHistory(readHistory().filter(x => x.name !== h.name)); drawHistory(); } })))))
+            : el('p', { class: 'ot-help', text: 'Les PDF que vous créez apparaissent ici pour les retélécharger (toujours avec la dernière version de vos documents).' }));
+      }
+      draw(); drawHistory();
+      fill(content, el('div', { class: 'ot-toolbar' }, el('button', { type: 'button', text: '← Mes outils', onclick: () => showHome() }), el('strong', { text: 'Mes PDF' })),
+        el('div', { class: 'ot-intro' }, body, historyBox));
+    }
+
+    async function createDoc(kind, base, title) {
       try {
         const who = await whoAmI();
         const data = base ? R.clean(kind, base) : kind === 'cv' ? R.newCv(who) : R.newLetter(who);
         if (!base && kind === 'lm') {
           // Lettre : coordonnées et thème repris du CV le plus récent.
           const cv = docs.find(d => d.kind === 'cv');
-          if (cv) { const full = await loadDoc(cv.id).catch(() => null); if (full) { Object.assign(data.person, { ...data.person, ...Object.fromEntries(Object.entries(full.data.person).filter(([k, v]) => v && k in data.person)) }); data.theme = full.data.theme; data.accent = full.data.accent; data.font = full.data.font; } }
+          if (cv) { const full = await loadDoc(cv.id).catch(() => null); if (full) { Object.assign(data.person, Object.fromEntries(Object.entries(full.data.person).filter(([k, v]) => v && k in data.person))); data.theme = full.data.theme; data.accent = full.data.accent; data.font = full.data.font; } }
         }
-        const rows = await api.rest(TABLE + '?select=id', { method: 'POST', headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' }, body: JSON.stringify({ kind, title: defaultTitle(kind, data), data }) });
+        const rows = await api.rest(TABLE + '?select=id', { method: 'POST', headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' }, body: JSON.stringify({ kind, title: (title || defaultTitle(kind, data)).slice(0, 120), data }) });
+        try { await loadList(); } catch { /* liste rechargée plus tard */ }
         await showDoc(rows[0].id);
       } catch (error) { notify('Création impossible : ' + error.message); }
     }
     async function duplicate(row) {
-      try { const full = await loadDoc(row.id); if (!full) return; await createDoc(full.kind, full.data); notify('Copie créée : adaptez-la à la nouvelle candidature.'); }
+      try { const full = await loadDoc(row.id); if (!full) return; await createDoc(full.kind, full.data, 'Copie de ' + (full.title || KIND[full.kind])); notify('Copie créée : adaptez-la à la nouvelle candidature.'); }
       catch (error) { notify('Copie impossible : ' + error.message); }
     }
     async function remove(row) {
       if (!confirm('Supprimer définitivement « ' + (row.title || KIND[row.kind]) + ' » ? Cette action est irréversible.')) return;
-      try { await api.rest(TABLE + '?id=eq.' + encodeURIComponent(row.id), { method: 'DELETE' }); await showList('Document supprimé.'); }
+      try { await api.rest(TABLE + '?id=eq.' + encodeURIComponent(row.id), { method: 'DELETE' }); await showHome('Document supprimé.'); }
       catch (error) { notify('Suppression impossible : ' + error.message); }
     }
     async function showDoc(id) {
@@ -662,12 +910,12 @@
       notify('Ouverture…');
       let row;
       try { row = await loadDoc(id); } catch (error) { notify('Document indisponible : ' + error.message); return; }
-      if (!row) { notify('Ce document n’existe plus.'); return showList(); }
+      if (!row) { notify('Ce document n’existe plus.'); return showHome(); }
       if (ticket !== requestId || pane.hidden) return;
       editor?.destroy();
       current = row; dirty = false;
       notify('');
-      statusLine = el('span', { class: 'ot-help', role: 'status', text: 'Enregistré' });
+      statusLine = el('span', { class: 'ot-help', role: 'status', text: '✓ Enregistré' });
       const title = el('input', { value: row.title, maxlength: 120, 'aria-label': 'Nom du document', class: 'ot-title-input', oninput: e => { row.title = e.target.value; markDirty(); } });
       const chip = statusChip(row.review_status);
       const sendBtn = el('button', { type: 'button', class: 'subtle', text: row.review_status === 'submitted' ? 'Envoyé ✓ (renvoyer)' : 'Envoyer à l’enseignant', onclick: async () => {
@@ -682,19 +930,21 @@
           notify('Document envoyé à votre enseignant pour relecture. Vous pouvez continuer à le modifier : il voit toujours la dernière version.');
         } catch (error) { notify('Envoi impossible : ' + error.message); }
       } });
-      const pdfBtn = el('button', { type: 'button', class: 'portal-button', text: '⤓ Télécharger le PDF', onclick: async () => {
+      const pdfBtn = el('button', { type: 'button', class: 'portal-button', text: '⤓ Générer le PDF', onclick: async () => {
         const warn = editor.warnings();
         if (warn.length) notify('Attention : ' + warn.join(' '));
         pdfBtn.disabled = true; pdfBtn.textContent = 'Création du PDF…';
-        try { await flush(); const res = await PDF.download(row.data, row.kind, { title: row.title, author: [row.data.person.first, row.data.person.last].join(' ') }); if (!warn.length) notify('PDF créé (' + res.pages + ' page' + (res.pages > 1 ? 's' : '') + ', ' + Math.max(1, Math.round(res.blob.size / 1024)) + ' Ko).'); }
+        try { await flush(); const res = await PDF.download(row.data, row.kind, { title: row.title, author: [row.data.person.first, row.data.person.last].join(' ') }); if (!warn.length) notify('PDF créé (' + res.pages + ' page' + (res.pages > 1 ? 's' : '') + ', ' + Math.max(1, Math.round(res.blob.size / 1024)) + ' Ko). Pour combiner CV et lettre ou imprimer en noir et blanc : « Mes PDF ».'); }
         catch (error) { notify('PDF impossible : ' + error.message); }
-        pdfBtn.disabled = false; pdfBtn.textContent = '⤓ Télécharger le PDF';
+        pdfBtn.disabled = false; pdfBtn.textContent = '⤓ Générer le PDF';
       } });
-      editor = createEditor({ doc: row, onChange: markDirty, cvList: () => docs.filter(d => d.kind === 'cv' && d.id !== row.id), loadDoc, notify });
+      editor = createEditor({ doc: row, onChange: markDirty, cvList: () => docs.filter(d => d.kind === 'cv' && d.id !== row.id), loadDoc, notify, cvHints: () => row.kind === 'lm' ? cvHints() : Promise.resolve(null), openLibrary: () => showLibrary(row.kind === 'cv' ? 'themes' : 'lmlayouts') });
       const review = row.teacher_comment || row.review_status === 'changes' || row.review_status === 'approved'
         ? el('div', { class: 'ot-review' }, el('strong', { text: 'Avis de votre enseignant · ' + STATUS[row.review_status] + (row.reviewed_at ? ' · ' + dateFr.format(new Date(row.reviewed_at)) : '') }), row.teacher_comment ? el('p', { text: row.teacher_comment }) : null) : null;
       fill(content,
-        el('div', { class: 'ot-toolbar' }, el('button', { type: 'button', text: '← Mes documents', onclick: () => showList() }), el('strong', { text: KIND[row.kind] }), chip, statusLine),
+        el('div', { class: 'ot-toolbar' }, el('button', { type: 'button', text: '← Mes outils', onclick: () => showHome() }), el('strong', { text: KIND[row.kind] }), chip, statusLine,
+          el('button', { type: 'button', class: 'subtle', text: '🎨 Bibliothèque', onclick: () => showLibrary(row.kind === 'cv' ? 'themes' : 'lmlayouts') }),
+          el('button', { type: 'button', class: 'subtle', text: '⤓ Mes PDF', onclick: async () => { await flush(); showPdf(row.kind === 'cv' ? { cv: row.id, what: 'cv' } : { lm: row.id, what: 'lm' }); } })),
         el('div', { class: 'ot-toolbar' }, el('label', { class: 'ot-field', style: 'flex:1 1 260px' }, el('span', { text: 'Nom du document (pour vous retrouver)' }), title), sendBtn, pdfBtn),
         review, editor.node);
     }
@@ -711,7 +961,8 @@
         if (!rows.length) { if (current === row) notify('Ce document n’existe plus (supprimé ?).'); return; }
         const summary = docs.find(d => d.id === row.id);
         if (summary) { summary.title = row.title; summary.updated_at = rows[0].updated_at; }
-        if (statusLine && current === row && !dirty) statusLine.textContent = 'Enregistré à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        if (row.kind === 'cv') hints = null;
+        if (statusLine && current === row && !dirty) statusLine.textContent = '✓ Enregistré à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
       }).catch(error => {
         dirty = true;
         if (statusLine && current === row) statusLine.textContent = 'Échec de l’enregistrement : ' + error.message + ' — nouvel essai dans 5 s.';
@@ -724,8 +975,9 @@
     tabs.addEventListener('click', event => { const target = event.target.closest('button'); if (target && target !== button && !pane.hidden && !tpRunning()) close(); }, true);
     new MutationObserver(() => { if (!tp.hidden && !pane.hidden && !tpRunning()) close(); }).observe(tp, { attributes: true, attributeFilter: ['hidden'] });
     // Déconnexion : plus rien en mémoire.
-    new MutationObserver(() => { if (dashboard.hidden || tabs.hidden) { close(); fill(content); docs = []; current = null; me = null; } }).observe(dashboard, { attributes: true, attributeFilter: ['hidden'] });
-    new MutationObserver(() => { if (tabs.hidden) { close(); fill(content); docs = []; current = null; me = null; } }).observe(tabs, { attributes: true, attributeFilter: ['hidden'] });
+    const forget = () => { close(); fill(content); docs = []; current = null; me = null; hints = null; };
+    new MutationObserver(() => { if (dashboard.hidden || tabs.hidden) forget(); }).observe(dashboard, { attributes: true, attributeFilter: ['hidden'] });
+    new MutationObserver(() => { if (tabs.hidden) forget(); }).observe(tabs, { attributes: true, attributeFilter: ['hidden'] });
     document.getElementById('studentRefresh')?.addEventListener('click', () => { if (!pane.hidden) close(); }, true);
     window.addEventListener('pagehide', () => { if (dirty) save(); });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && dirty) save(); });
