@@ -63,3 +63,8 @@ html body:not(#fx-a):not(#fx-b) #referentialView .attitudes span{font-size:11.5p
   html body:not(#fx-a):not(#fx-b):not(#fx-c) #teachBody label:has(>#tpFilter){display:grid!important;gap:6px;width:100%}
   html body:not(#fx-a):not(#fx-b):not(#fx-c) #tpFilter{width:100%!important;min-width:0}
 }
+
+/* Connexion : bouton « Afficher / Masquer » dans le champ mot de passe. */
+.mdp-champ{position:relative;display:block;width:100%}
+html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) .mdp-champ>input{padding-right:92px!important}
+html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) .mdp-champ>.mdp-voir{position:absolute;top:50%;right:6px;transform:translateY(-50%);min-height:34px!important;width:auto!important;padding:4px 10px!important;margin:0!important;border-radius:5px!important;border:1px solid #9fb3c8!important;background:#e3ecf6!important;color:#14263d!important;-webkit-text-fill-color:#14263d!important;font:700 13px/1 system-ui,sans-serif!important;box-shadow:none!important}
