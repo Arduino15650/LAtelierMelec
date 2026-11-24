@@ -15,17 +15,21 @@
   const dateFr = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
   const LT_URL = 'https://api.languagetool.org/v2/check';
 
+  // Typographie française : espace insécable avant « : ; ! ? » et à l'intérieur des guillemets,
+  // pour qu'aucune ligne ne commence par un deux-points ou un guillemet isolé.
+  const fr = text => String(text).replace(/ ([:;!?»])/g, '\u00a0$1').replace(/« /g, '«\u00a0');
   function el(tag, attrs = {}, ...children) {
     const node = document.createElement(tag);
     for (const [key, value] of Object.entries(attrs || {})) {
       if (value === undefined || value === null || value === false) continue;
       if (key === 'class') node.className = value;
-      else if (key === 'text') node.textContent = value;
+      else if (key === 'text') node.textContent = fr(value);
       else if (key === 'value') node.value = value;
+      else if (key === 'placeholder') node.setAttribute(key, fr(value));
       else if (key.startsWith('on')) node.addEventListener(key.slice(2), value);
       else node.setAttribute(key, value === true ? '' : value);
     }
-    for (const child of children.flat(Infinity)) if (child !== null && child !== undefined && child !== false) node.append(child);
+    for (const child of children.flat(Infinity)) if (child !== null && child !== undefined && child !== false) node.append(typeof child === 'string' ? fr(child) : child);
     return node;
   }
   const fill = (node, ...children) => node.replaceChildren(...children.flat(Infinity).filter(c => c !== null && c !== undefined && c !== false));
@@ -690,7 +694,7 @@
     dashboard.append(pane);
     let docs = [], current = null, editor = null, saveTimer = null, saving = Promise.resolve(), dirty = false, requestId = 0, statusLine = null, me = null, hints = null;
     let libTab = 'models', libFilter = '', modelCat = '', modelLayout = '', modelPage = 0, exCat = '';
-    const notify = text => { message.textContent = text; };
+    const notify = text => { message.textContent = fr(text); };
     const historyKey = () => 'melec-outils-pdf:' + (me?.id || '');
     const readHistory = () => { try { return JSON.parse(localStorage.getItem(historyKey()) || '[]').slice(0, 20); } catch { return []; } };
     const writeHistory = list => { try { localStorage.setItem(historyKey(), JSON.stringify(list.slice(0, 20))); } catch { /* stockage indisponible */ } };
@@ -746,50 +750,66 @@
     }
     const prepare = async () => { const ticket = ++requestId; await flush(); editor?.destroy(); editor = null; current = null; return ticket; };
 
-    // Accueil : 4 cartes, parcours en 4 étapes, conseils, puis les documents.
+    // Accueil : en-tête, 4 accès, mes documents (CV et lettres), puis parcours et conseils.
+    const ICONS = {
+      cv: 'M7 3h7l5 5v13H7z M14 3v5h5 M10 12h6 M10 15.5h6 M10 19h4',
+      lm: 'M3 6h18v12H3z M3 7l9 6 9-6',
+      lib: 'M4 4h7v7H4z M13 4h7v7h-7z M4 13h7v7H4z M13 13h7v7h-7z',
+      pdf: 'M12 4v11 M7 10l5 5 5-5 M5 20h14'
+    };
+    const icon = key => { const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true'); svg.innerHTML = '<path d="' + ICONS[key] + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'; return svg; };
     async function showHome(note) {
       const ticket = await prepare();
       notify('Chargement de vos documents…');
       try { await loadList(); } catch (error) { if (ticket === requestId) notify('Documents indisponibles : ' + error.message); return; }
       if (ticket !== requestId || pane.hidden) return;
       hints = null;
-      notify(note || 'Vos documents sont enregistrés automatiquement sur votre compte.');
+      notify(note || '');
       const cvs = docs.filter(d => d.kind === 'cv'), lms = docs.filter(d => d.kind === 'lm');
       const ago = row => row ? 'modifié le ' + dateFr.format(new Date(row.updated_at)) : '';
-      const card = (icon, title, text, onclick) => el('button', { type: 'button', class: 'ot-new ot-card', onclick }, el('span', { class: 'ot-card-ico', 'aria-hidden': 'true', text: icon }), el('strong', { text: title }), el('span', { text }));
-      const cards = el('div', { class: 'ot-intro ot-cards' },
-        card('📄', 'Mon CV', cvs.length ? cvs.length + ' CV · ' + (cvs[0].title || 'CV') + ' · ' + ago(cvs[0]) : 'Partir d’un exemple professionnel ou d’une page vierge', () => cvs.length === 1 ? showDoc(cvs[0].id) : cvs.length ? document.getElementById('otCvList')?.scrollIntoView({ behavior: 'smooth' }) : showLibrary('examples')),
-        card('✉', 'Mes lettres de motivation', lms.length ? lms.length + ' lettre' + (lms.length > 1 ? 's' : '') + ' : ' + lms.slice(0, 2).map(l => '« ' + (l.title || 'Lettre') + ' »').join(', ') : 'Stage, apprentissage, emploi… avec un modèle guidé', () => lms.length === 1 ? showDoc(lms[0].id) : lms.length ? document.getElementById('otLmList')?.scrollIntoView({ behavior: 'smooth' }) : createDoc('lm')),
-        card('🎨', 'Bibliothèque de modèles', (EX?.MODELS.length || 0) + ' modèles, ' + (EX?.EXAMPLES.length || 0) + ' exemples de CV, ' + (EX?.LETTERS.length || 0) + ' lettres complètes, ' + R.THEMES.length + ' thèmes', () => showLibrary()),
-        card('⤓', 'Mes PDF', 'CV, lettre ou les deux en PDF ou en Word, et des versions vierges à remplir à la main', () => showPdf()));
-      const steps = el('div', { class: 'ot-group' }, el('h3', { text: 'Le parcours en 4 étapes' }), el('ol', { class: 'ot-steps' },
-        [['Je remplis mes informations', 'Identité, photo, formation, PFMP, compétences, langues, permis, loisirs.'],
-          ['Je choisis un modèle et un thème', 'Partez d’un exemple professionnel, puis changez l’organisation et le thème quand vous voulez.'],
-          ['J’écris ma lettre guidée', 'Vous · Moi · Nous · Conclusion, avec des phrases d’aide et les éléments repris de votre CV.'],
-          ['Je vérifie et je génère mes PDF', 'Correcteur d’orthographe, relecture de l’enseignant, puis PDF A4 net, prêt à envoyer ou à imprimer.']]
-          .map(([t, d]) => el('li', {}, el('strong', { text: t }), el('span', { text: d })))));
-      const advice = el('div', { class: 'ot-group ot-advice' }, el('h3', { text: 'Conseils du professeur' }), el('ul', { class: 'ot-tips' },
-        el('li', { text: 'Une page, des verbes d’action, vos habilitations (B1V, BR…) bien visibles.' }),
-        el('li', { text: 'Mettez vos PFMP en avant : ce sont vos vraies expériences. Ajoutez des chiffres (« 8 tableaux câblés »).' }),
-        el('li', { text: 'Une lettre par entreprise : citez-la et expliquez pourquoi vous la choisissez.' }),
-        el('li', { text: 'Votre enseignant peut relire votre CV et laisser des remarques avant l’envoi : utilisez « Envoyer à l’enseignant ».' })));
-      const docCard = row => el('div', { class: 'ot-doc' },
-        el('span', { class: 'ot-doc-title', text: row.title || KIND[row.kind] }),
-        el('span', { class: 'ot-doc-meta' }, el('span', { text: ago(row) }), statusChip(row.review_status)),
-        row.teacher_comment ? el('span', { class: 'ot-doc-meta', text: '💬 ' + row.teacher_comment.slice(0, 120) + (row.teacher_comment.length > 120 ? '…' : '') }) : null,
+      const toFix = docs.filter(d => d.review_status === 'changes').length, sent = docs.filter(d => d.review_status === 'submitted').length, ok = docs.filter(d => d.review_status === 'approved').length;
+      const hero = el('div', { class: 'ot-hero' },
+        el('div', { class: 'ot-hero-txt' }, el('p', { class: 'ot-eyebrow', text: 'Ma candidature' }), el('h3', { text: 'Mon CV et mes lettres de motivation' }),
+          el('p', { text: 'Créez vos documents à partir de modèles professionnels, faites-les relire par votre enseignant et téléchargez-les en PDF ou en Word. Tout est enregistré automatiquement sur votre compte.' })),
+        el('div', { class: 'ot-hero-stats', role: 'list' },
+          [[cvs.length, 'CV'], [lms.length, lms.length > 1 ? 'lettres' : 'lettre'], [sent, 'en relecture'], [toFix, 'à corriger'], [ok, ok > 1 ? 'validés' : 'validé']]
+            .filter(([n], i) => i < 2 || n > 0).map(([n, t]) => el('span', { class: 'ot-stat', role: 'listitem' }, el('strong', { text: String(n) }), el('span', { text: t })))));
+      const action = (key, title, text, cta, onclick) => el('button', { type: 'button', class: 'ot-action ot-action-' + key, onclick },
+        el('span', { class: 'ot-action-ico' }, icon(key)), el('span', { class: 'ot-action-txt' }, el('strong', { text: title }), el('span', { text })), el('span', { class: 'ot-action-cta', text: cta + ' →' }));
+      const actions = el('div', { class: 'ot-actions' },
+        action('cv', 'Mon CV', cvs.length ? (cvs[0].title || 'CV') + ' · ' + ago(cvs[0]) : 'Partir d’un exemple professionnel ou d’une page vierge.', cvs.length ? 'Ouvrir' : 'Commencer', () => cvs.length === 1 ? showDoc(cvs[0].id) : cvs.length ? document.getElementById('otCvList')?.scrollIntoView({ behavior: 'smooth' }) : showLibrary('examples')),
+        action('lm', 'Mes lettres', lms.length ? lms.length + ' lettre' + (lms.length > 1 ? 's' : '') + ' · ' + (lms[0].title || 'Lettre') : 'Stage, apprentissage, emploi : une lettre guidée, assortie à votre CV.', lms.length ? 'Ouvrir' : 'Écrire', () => lms.length === 1 ? showDoc(lms[0].id) : lms.length ? document.getElementById('otLmList')?.scrollIntoView({ behavior: 'smooth' }) : createDoc('lm')),
+        action('lib', 'Bibliothèque', (EX?.MODELS.length || 0) + ' modèles, ' + (EX?.EXAMPLES.length || 0) + ' exemples de CV et ' + (EX?.LETTERS.length || 0) + ' lettres complètes.', 'Parcourir', () => showLibrary()),
+        action('pdf', 'Mes PDF', 'CV, lettre ou les deux en PDF ou en Word, et des versions vierges à imprimer.', 'Télécharger', () => showPdf()));
+      const docRow = row => el('article', { class: 'ot-doc ot-doc-' + row.kind },
+        el('div', { class: 'ot-doc-head' }, el('span', { class: 'ot-doc-ico' }, icon(row.kind)), el('div', { class: 'ot-doc-id' }, el('span', { class: 'ot-doc-title', text: row.title || KIND[row.kind] }), el('span', { class: 'ot-doc-meta' }, statusChip(row.review_status), el('span', { text: ago(row) })))),
+        row.teacher_comment ? el('p', { class: 'ot-doc-note' }, el('strong', { text: 'Remarque de l’enseignant : ' }), row.teacher_comment.slice(0, 160) + (row.teacher_comment.length > 160 ? '…' : '')) : null,
         el('div', { class: 'ot-doc-actions' },
-          el('button', { type: 'button', text: 'Ouvrir', onclick: () => showDoc(row.id) }),
-          el('button', { type: 'button', class: 'subtle', text: 'PDF', onclick: () => showPdf(row.kind === 'cv' ? { cv: row.id, what: 'cv' } : { lm: row.id, what: 'lm' }) }),
+          el('button', { type: 'button', class: 'ot-open', text: 'Ouvrir', onclick: () => showDoc(row.id) }),
+          el('button', { type: 'button', class: 'subtle', text: 'PDF', title: 'Télécharger en PDF ou en Word', onclick: () => showPdf(row.kind === 'cv' ? { cv: row.id, what: 'cv' } : { lm: row.id, what: 'lm' }) }),
           el('button', { type: 'button', class: 'subtle', text: 'Dupliquer', onclick: () => duplicate(row) }),
           el('button', { type: 'button', class: 'warn', text: 'Supprimer', onclick: () => remove(row) })));
-      fill(content, cards, el('div', { class: 'ot-intro' }, steps, advice),
-        el('div', { class: 'ot-toolbar', id: 'otCvList' }, el('h3', { text: 'Mes CV (' + cvs.length + ')' }),
-          el('button', { type: 'button', class: 'subtle', text: '＋ Partir d’un exemple', onclick: () => showLibrary('examples') }),
-          el('button', { type: 'button', class: 'subtle', text: '＋ CV vierge', onclick: () => createDoc('cv') })),
-        cvs.length ? el('div', { class: 'ot-list' }, cvs.map(docCard)) : el('p', { class: 'ot-help', text: 'Aucun CV pour l’instant.' }),
-        el('div', { class: 'ot-toolbar', id: 'otLmList' }, el('h3', { text: 'Mes lettres de motivation (' + lms.length + ')' }),
-          el('button', { type: 'button', class: 'subtle', text: '＋ Nouvelle lettre', onclick: () => createDoc('lm') })),
-        lms.length ? el('div', { class: 'ot-list' }, lms.map(docCard)) : el('p', { class: 'ot-help', text: 'Aucune lettre pour l’instant.' }));
+      const empty = (text, ...buttons) => el('div', { class: 'ot-empty' }, el('p', { text }), el('div', { class: 'ot-doc-actions' }, buttons));
+      const column = (id, title, rows, buttons, emptyBox) => el('section', { class: 'ot-docs-col', id },
+        el('div', { class: 'ot-docs-head' }, el('h3', {}, title, el('span', { class: 'ot-count', text: String(rows.length) })), el('div', { class: 'ot-doc-actions' }, buttons)),
+        rows.length ? el('div', { class: 'ot-doc-list' }, rows.map(docRow)) : emptyBox);
+      const docsBox = el('div', { class: 'ot-docs' },
+        column('otCvList', 'Mes CV', cvs, [el('button', { type: 'button', class: 'subtle', text: '＋ Depuis un exemple', onclick: () => showLibrary('examples') }), el('button', { type: 'button', class: 'subtle', text: '＋ CV vierge', onclick: () => createDoc('cv') })],
+          empty('Aucun CV pour l’instant. Partez d’un des ' + (EX?.EXAMPLES.length || 0) + ' exemples : vous n’aurez plus qu’à remplacer les informations par les vôtres.', el('button', { type: 'button', class: 'portal-button', text: 'Choisir un exemple', onclick: () => showLibrary('examples') }))),
+        column('otLmList', 'Mes lettres de motivation', lms, [el('button', { type: 'button', class: 'subtle', text: '＋ Nouvelle lettre', onclick: () => createDoc('lm') }), el('button', { type: 'button', class: 'subtle', text: '＋ Depuis un exemple', onclick: () => showLibrary('letters') })],
+          empty('Aucune lettre pour l’instant. Elle reprendra vos coordonnées et les couleurs de votre CV.', el('button', { type: 'button', class: 'portal-button', text: 'Écrire une lettre', onclick: () => createDoc('lm') }))));
+      const steps = el('section', { class: 'ot-guide' }, el('h3', { text: 'Le parcours en 4 étapes' }), el('ol', { class: 'ot-steps' },
+        [['Je remplis mes informations', 'Identité, photo, formation, PFMP, compétences, langues, permis, loisirs.'],
+          ['Je choisis un modèle', 'Un exemple ou un modèle de la bibliothèque ; je change l’organisation et les couleurs quand je veux.'],
+          ['J’écris ma lettre', 'Vous · Moi · Nous · Conclusion, avec des phrases d’aide et les éléments repris de mon CV.'],
+          ['Je vérifie et je télécharge', 'Correcteur, relecture de l’enseignant, puis PDF prêt à envoyer ou Word à modifier.']]
+          .map(([t, d]) => el('li', {}, el('strong', { text: t }), el('span', { text: d })))));
+      const advice = el('section', { class: 'ot-guide ot-advice' }, el('h3', { text: 'Conseils du professeur' }), el('ul', { class: 'ot-tips' },
+        el('li', { text: 'Une seule page, des verbes d’action et vos habilitations (B1V, BR…) bien visibles.' }),
+        el('li', { text: 'Vos PFMP sont de vraies expériences : mettez-les en avant, avec des chiffres (« 8 tableaux câblés »).' }),
+        el('li', { text: 'Une lettre par entreprise : citez\u2011la et expliquez pourquoi vous la choisissez.' }),
+        el('li', { text: 'Avant d’envoyer, faites relire votre CV : bouton « Envoyer à l’enseignant » dans le document.' })));
+      fill(content, el('div', { class: 'ot-home' }, hero, actions, docsBox, el('div', { class: 'ot-guides' }, steps, advice)));
     }
 
     // Bibliothèque : exemples de CV, thèmes, organisations du CV et de la lettre.

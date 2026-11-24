@@ -768,7 +768,7 @@
               el('button', { type: 'button', 'aria-label': 'Vue liste', class: view === 'list' ? 'active' : '', text: '☰', onclick: () => { view = 'list'; render(); } }))),
           filtered.length || added.length ? el('div', { class: 'mg-inventory ' + view }, filtered.map(i => row(i, false)), added.map(l => row({ ...l, id: null }, true))) :
             el('div', { class: 'mg-empty' }, el('h3', { text: 'Aucun article pour cette sélection' }), el('p', { text: 'Si vous trouvez du matériel qui n’est pas dans la liste, ajoutez-le.' }))) :
-          el('p', { class: 'mg-hint', text: catalog.length ? catalog.length + ' article(s) dans le catalogue. Choisissez un type, une catégorie ou un fournisseur pour commencer à compter.' : 'Le catalogue du magasin est encore vide : ajoutez les articles que vous trouvez avec « Article absent de la liste ».' }),
+          el('p', { class: 'mg-hint', text: catalog.length ? catalog.length + ' article(s) dans le catalogue. Choisissez un type, une catégorie ou un fournisseur pour commencer à compter.' : 'Le catalogue du magasin est encore vide\u00a0: ajoutez les articles que vous trouvez avec «\u00a0Article absent de la liste\u00a0».' }),
         !selected && !catalog.length ? el('button', { type: 'button', class: 'subtle', text: '＋ Article absent de la liste', onclick: addMissing }) : null,
         summaryBox));
       summary();

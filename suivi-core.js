@@ -16,7 +16,7 @@
     { code: 'N4', title: 'Très bien maîtrisé', factor: 1, color: '#24713a' }
   ];
   const levelDescriptions = [
-    'La compétence n’est pas maîtrisée ; un accompagnement constant est nécessaire.',
+    'La compétence n’est pas maîtrisée\u00a0; un accompagnement constant est nécessaire.',
     'La maîtrise reste fragile et nécessite un accompagnement régulier.',
     'La compétence est maîtrisée dans les situations usuelles.',
     'La compétence est pleinement maîtrisée, transférable et exercée avec autonomie.'
