@@ -138,7 +138,16 @@
     if (!window.MelecCaptcha || authPane.hidden || document.documentElement.classList.contains('student-resuming')) return;
     [$('studentLoginForm'), $('studentSignupForm')].forEach(form => { if (!form.hidden) window.MelecCaptcha.mount(form); });
   }
-  const captchaMessage = error => /captcha/i.test(error.code || error.message) ? 'Le contrôle anti-robot a expiré. Validez-le à nouveau.' : error.message;
+  // Messages de connexion en français clair (Supabase et Safari répondent en anglais).
+  const captchaMessage = error => {
+    const text = String(error && error.message || ''), code = String(error && error.code || '');
+    if (/captcha/i.test(code + text)) return 'Le contrôle anti-robot a expiré. Validez-le à nouveau.';
+    if (/invalid_credentials|invalid login credentials/i.test(code + text)) return 'E-mail ou mot de passe incorrect. Sur iPhone, vérifiez que Safari n’a pas rempli automatiquement un autre compte (par exemple un compte enseignant) et que l’e-mail ne contient ni majuscule ni espace en trop.';
+    if (/email_not_confirmed|email not confirmed/i.test(code + text)) return 'Adresse e-mail pas encore confirmée : ouvrez le lien reçu par e-mail (pensez aux courriers indésirables), puis reconnectez-vous.';
+    if (/load failed|failed to fetch|networkerror|network request failed/i.test(text)) return 'Le serveur n’a pas pu être joint depuis cet appareil. Vérifiez la connexion Internet ; sur iPhone, désactivez un éventuel bloqueur de contenu ou le « Relais privé iCloud » pour ce site, puis réessayez.';
+    if (/storage|sessionstorage|securityerror|quota/i.test(text)) return 'Le navigateur refuse d’enregistrer la session. Sur iPhone : Réglages › Safari, désactivez « Bloquer tous les cookies », puis réessayez.';
+    return text || 'Connexion impossible. Réessayez.';
+  };
   function switchTab(tab) {
     if (tab === 'signup') $('studentSignupForm').reset();
     $('studentLoginForm').hidden = tab !== 'login';
@@ -162,7 +171,15 @@
     try {
       const captchaToken = window.MelecCaptcha ? await window.MelecCaptcha.waitToken(form, () => message(authStatus, 'Vérification anti-robot en cours… Si la case « Vérifiez que vous êtes humain » apparaît, cochez-la : l’envoi partira toute seule.')) : '';
       message(authStatus, 'Connexion…');
-      await api.signIn(form.elements.email.value.trim(), form.elements.password.value, captchaToken);
+      const email = form.elements.email.value.trim().toLowerCase(), password = form.elements.password.value;
+      try { await api.signIn(email, password, captchaToken); }
+      catch (error) {
+        // Clavier iPhone : la « ponctuation intelligente » transforme ' en ’, " en « », -- en —.
+        // Le mot de passe ne correspond alors plus : on réessaie une fois avec la ponctuation simple.
+        const plain = password.replace(/[‘’‚′]/g, "'").replace(/[“”„″«»]/g, '"').replace(/[–—]/g, '-').replace(/\u00a0/g, ' ');
+        if (plain === password || !/invalid_credentials|invalid login credentials/i.test(String(error.code) + error.message)) throw error;
+        await api.signIn(email, plain, captchaToken);
+      }
       form.elements.password.value = '';
       await openDashboard();
     } catch (error) { message(authStatus, captchaMessage(error), true); }
@@ -192,7 +209,7 @@
       api.rest('student_profiles?user_id=eq.' + encodeURIComponent(user.id) + '&select=*')
     ]);
     if (teacher.length) { location.href = './enseignant.html'; return; }
-    if (!profiles.length) throw new Error('Profil élève introuvable. Contactez votre enseignant.');
+    if (!profiles.length) throw new Error('Ce compte n’a pas de profil élève (s’agit-il d’un compte enseignant ?). Connectez-vous avec votre compte élève ou contactez votre enseignant.');
     const dashboardWasVisible = Boolean(profile) && !dashboard.hidden;
     profile = profiles[0];
     rememberView(user.id, profile);
