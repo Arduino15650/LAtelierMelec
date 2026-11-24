@@ -208,6 +208,8 @@
     const paint = async () => {
       const ticket = ++renderTicket;
       await PDF.loadFonts();
+      await PDF.useFonts(data);
+      if (ticket !== renderTicket) return;
       const page = doc.kind === 'cv' ? R.renderCv(data) : R.renderLetter(data);
       await PDF.mount(pageHost, page);
       if (ticket !== renderTicket) return;
@@ -308,7 +310,7 @@
         parts.push(el('p', { class: 'ot-help', text: 'Demandez toujours l’accord de la personne avant de la citer.' }));
       }
       if (s.type === 'tags') {
-        x.tags.forEach((tag, index) => parts.push(el('div', { class: 'ot-level-row', style: 'grid-template-columns:1fr auto' },
+        x.tags.forEach((tag, index) => parts.push(el('div', { class: 'ot-tag-row' },
           el('input', { value: tag, maxlength: 120, 'aria-label': s.label + ' ' + (index + 1), spellcheck: 'true', lang: 'fr', oninput: e => set(d => { d.sections[s.id].tags[index] = e.target.value; }) }),
           el('button', { type: 'button', class: 'ot-mini warn', text: '×', 'aria-label': 'Retirer', onclick: () => restructure(d => { d.sections[s.id].tags.splice(index, 1); }) }))));
         if (x.tags.length < 16) parts.push(el('button', { type: 'button', class: 'ot-mini', text: '＋ Ajouter', onclick: () => restructure(d => { d.sections[s.id].tags.push('Nouvel élément'); }) }));
@@ -317,10 +319,10 @@
       }
       if (s.type === 'levels') {
         x.levels.forEach((lv, index) => parts.push(el('div', { class: 'ot-level-row' },
-          el('input', { value: lv.label, maxlength: 80, 'aria-label': 'Intitulé', spellcheck: 'true', lang: 'fr', oninput: e => set(d => { d.sections[s.id].levels[index].label = e.target.value; }) }),
-          el('select', { 'aria-label': 'Niveau', onchange: e => set(d => { d.sections[s.id].levels[index].level = Number(e.target.value); }) }, [1, 2, 3, 4, 5].map(n => el('option', { value: n, text: n + ' · ' + R.LEVEL_NAMES[n], selected: lv.level === n }))),
-          el('input', { value: lv.detail, maxlength: 40, placeholder: s.id === 'langues' ? 'Ex. : B1' : 'Précision (facultatif)', 'aria-label': 'Précision', oninput: e => set(d => { d.sections[s.id].levels[index].detail = e.target.value; }) }),
-          el('button', { type: 'button', class: 'ot-mini warn', text: '×', 'aria-label': 'Retirer', onclick: () => restructure(d => { d.sections[s.id].levels.splice(index, 1); }) }))));
+          el('input', { value: lv.label, maxlength: 80, 'aria-label': 'Intitulé', placeholder: 'Intitulé', spellcheck: 'true', lang: 'fr', oninput: e => set(d => { d.sections[s.id].levels[index].label = e.target.value; }) }),
+          el('div', { class: 'ot-level-sub' }, el('select', { 'aria-label': 'Niveau', onchange: e => set(d => { d.sections[s.id].levels[index].level = Number(e.target.value); }) }, [1, 2, 3, 4, 5].map(n => el('option', { value: n, text: n + ' · ' + R.LEVEL_NAMES[n], selected: lv.level === n }))),
+          el('input', { value: lv.detail, maxlength: 40, placeholder: s.id === 'langues' ? 'Ex. : B1' : 'Précision', title: 'Précision facultative (ex. : B1, 3 ans…)', 'aria-label': 'Précision facultative', oninput: e => set(d => { d.sections[s.id].levels[index].detail = e.target.value; }) }),
+          el('button', { type: 'button', class: 'ot-mini warn', text: '×', 'aria-label': 'Retirer', onclick: () => restructure(d => { d.sections[s.id].levels.splice(index, 1); }) })))));
         if (x.levels.length < 14) parts.push(el('button', { type: 'button', class: 'ot-mini', text: '＋ Ajouter', onclick: () => restructure(d => { d.sections[s.id].levels.push({ label: '', level: 3, detail: '' }); }) }));
         if (R.SUGGESTIONS[s.id]) parts.push(el('p', { class: 'ot-help', text: 'Suggestions :' }),
           chips(R.SUGGESTIONS[s.id].map(v => [v, v]), v => x.levels.some(l => l.label === v), v => restructure(d => { const l = d.sections[s.id].levels; const i = l.findIndex(e => e.label === v); if (i >= 0) l.splice(i, 1); else if (l.length < 14) l.push({ label: v, level: 3, detail: '' }); }), 'Suggestions'));
@@ -381,9 +383,9 @@
         if (!cv) return;
         restructure(d => {
           if (what === 'person') { for (const k of ['first', 'last', 'email', 'phone', 'address', 'city', 'title']) d.person[k] = cv.data.person[k] || d.person[k]; }
-          else { d.theme = cv.data.theme; d.accent = cv.data.accent; d.font = cv.data.font; }
+          else for (const k of R.STYLE_KEYS) d[k] = cv.data[k];
         });
-        ctx.notify(what === 'person' ? 'Coordonnées reprises du CV.' : 'Thème, couleur et police repris du CV.');
+        ctx.notify(what === 'person' ? 'Coordonnées reprises du CV.' : 'Thème, couleurs, polices, tailles et style des titres repris du CV.');
       } catch (error) { ctx.notify(error.message); }
     }
     function cvPicker(label, what) {
@@ -467,11 +469,21 @@
       return el('div', { class: 'ot-group' }, parts);
     }
 
-    // ── Apparence (CV et lettre)
+    // ── Apparence (CV et lettre) : organisation, thème, puis « Personnaliser » juste dessous.
+    function swatchRow(list, current, label, onPick, themeColor) {
+      const color = el('input', { type: 'color', value: current || themeColor || '#0b7f74', 'aria-label': label + ' : couleur libre', title: 'Couleur libre', onchange: e => onPick(e.target.value) });
+      return el('div', { class: 'ot-swatches', role: 'group', 'aria-label': label }, list.map(([value, name]) => {
+        const b = el('button', { type: 'button', class: 'ot-swatch' + (value === '' ? ' ot-swatch-theme' : ''), title: name, 'aria-label': name, 'aria-pressed': String(current === value), onclick: () => onPick(value) });
+        b.style.setProperty('--sw', value || themeColor || '#888');
+        if (!value) b.textContent = '↺';
+        return b;
+      }), color);
+    }
     function look() {
       const r = R.resolved(data);
       const layouts = doc.kind === 'cv' ? R.LAYOUTS : R.LETTER_LAYOUTS;
       const sheetId = id => doc.kind === 'lm' && (id === 'bandeau' || id === 'lateral') ? id + '-lm' : id;
+      const theme = R.THEMES.find(t => t.id === data.theme) || R.THEMES[0];
       const layoutGroup = el('div', { class: 'ot-group' }, el('div', { class: 'ot-toolbar' }, el('h3', { text: doc.kind === 'cv' ? 'Organisation du CV' : 'Organisation de la lettre' }),
           ctx.openLibrary ? el('button', { type: 'button', class: 'ot-mini subtle', text: 'Voir la bibliothèque en grand', onclick: () => ctx.openLibrary() }) : null),
         el('div', { class: 'ot-tiles' }, layouts.map(l => el('button', { type: 'button', class: 'ot-tile', 'aria-pressed': String(data.layout === l.id), title: l.hint, onclick: () => restructure(d => { d.layout = l.id; }) },
@@ -479,30 +491,54 @@
       const themes = R.THEMES.filter(t => !themeFilter || t.level === themeFilter || (themeFilter === 'ATS' && t.ats));
       const themeGroup = el('div', { class: 'ot-group' }, el('h3', { text: 'Thème (' + R.THEMES.length + ')' }),
         chips([['', 'Tous'], ...R.THEME_LEVELS.map(l => [l, l]), ['ATS', 'Compatibles ATS']], v => themeFilter === v, v => { themeFilter = v; drawPanel(); }, 'Filtrer les thèmes'),
-        doc.kind === 'lm' ? cvPicker('Assortir à un de mes CV', 'theme') : null,
+        doc.kind === 'lm' ? cvPicker('Assortir à un de mes CV (thème, couleurs, polices…)', 'theme') : null,
         el('div', { class: 'ot-tiles' }, themes.map(t => {
-          const tile = el('button', { type: 'button', class: 'ot-tile', 'aria-pressed': String(data.theme === t.id), title: t.desc, onclick: () => restructure(d => { d.theme = t.id; d.accent = ''; }) },
+          const tile = el('button', { type: 'button', class: 'ot-tile', 'aria-pressed': String(data.theme === t.id), title: t.desc, onclick: () => restructure(d => { d.theme = t.id; d.accent = ''; d.sideColor = ''; d.titleColor = ''; d.levelColor = ''; d.palette = ''; d.headFont = ''; d.bodyFont = ''; d.titleStyle = ''; }) },
             sheet(doc.kind === 'cv' ? (data.layout || 'lateral') : sheetId(data.layout), t.accent), el('strong', { text: t.name + (t.ats ? ' · ATS' : '') }), el('small', { text: t.level }));
           const side = tile.querySelector('.ot-tile-sheet span');
           if (side && doc.kind === 'cv' && (data.layout === 'lateral' || data.layout === 'lateral-d')) side.style.background = t.side === '#ffffff' ? '#eef1f5' : t.side;
           return tile;
         })),
-        el('p', { class: 'ot-help', text: (R.THEMES.find(t => t.id === data.theme) || {}).desc || '' }));
-      const color = el('input', { type: 'color', value: r.accent, 'aria-label': 'Autre couleur', onchange: e => restructure(d => { d.accent = e.target.value; }) });
-      const custom = el('div', { class: 'ot-group' }, el('h3', { text: 'Personnaliser' }),
-        el('div', { class: 'ot-field' }, el('span', { text: 'Couleur d’accent' }), el('div', { class: 'ot-swatches' }, R.ACCENTS.map(([value, name]) => {
-          const b = el('button', { type: 'button', class: 'ot-swatch', title: name, 'aria-label': name, 'aria-pressed': String(data.accent === value), onclick: () => restructure(d => { d.accent = value; }) });
-          b.style.setProperty('--sw', value || (R.THEMES.find(t => t.id === data.theme) || {}).accent);
-          if (!value) b.textContent = '↺';
-          return b;
-        }), color)),
-        el('div', { class: 'ot-field' }, el('span', { text: 'Police' }), chips(Object.entries(R.FONT_LABELS), v => data.font === v, v => restructure(d => { d.font = v; }), 'Police')),
-        doc.kind === 'cv' ? [
-          el('div', { class: 'ot-field' }, el('span', { text: 'Photo' }), chips([['', 'Comme le thème'], ['round', 'Ronde'], ['rounded', 'Coins arrondis'], ['square', 'Carrée'], ['none', 'Sans photo']], v => data.photoShape === v, v => restructure(d => { d.photoShape = v; }), 'Forme de la photo')),
-          el('div', { class: 'ot-field' }, el('span', { text: 'Niveaux' }), chips([['bars', 'Barres'], ['dots', 'Points'], ['text', 'Texte (ATS)']], v => data.levelStyle === v, v => restructure(d => { d.levelStyle = v; }), 'Affichage des niveaux')),
-          el('div', { class: 'ot-field' }, el('span', { text: 'Densité' }), chips([['airy', 'Aérée'], ['normal', 'Normale'], ['compact', 'Compacte']], v => data.density === v, v => restructure(d => { d.density = v; }), 'Densité')),
-          el('div', { class: 'ot-sec-head' }, switchBtn(data.fit, 'Ajuster automatiquement sur une page', () => restructure(d => { d.fit = !d.fit; })), el('span', { text: 'Ajuster automatiquement le texte pour tenir sur une page' }))
-        ] : el('div', { class: 'ot-field' }, el('span', { text: 'Alignement du texte' }), chips([[true, 'Justifié'], [false, 'Aligné à gauche']], v => data.justify === v, v => restructure(d => { d.justify = v; }), 'Alignement')));
+        el('p', { class: 'ot-help', text: theme.desc || '' }));
+
+      // Personnaliser
+      const sub = (title, ...children) => el('div', { class: 'ot-subgroup' }, el('h4', { text: title }), children);
+      const warnings = R.styleWarnings(data);
+      const palettes = el('div', { class: 'ot-palettes' }, R.PALETTES.map(pal => el('button', { type: 'button', class: 'ot-palette', 'aria-pressed': String(data.palette === pal.id), title: pal.name, onclick: () => restructure(d => { d.palette = pal.id; d.accent = pal.accent; d.sideColor = pal.side; d.titleColor = pal.title; d.levelColor = ''; }) },
+        el('span', { class: 'ot-palette-dots', 'aria-hidden': 'true' }, [pal.side, pal.accent, pal.title].map(c => { const dot = el('span'); dot.style.background = c; return dot; })), el('span', { text: pal.name }))));
+      const fontSelect = (label, key, current) => {
+        const select = el('select', { 'aria-label': label, onchange: e => restructure(d => { d[key] = e.target.value; }) },
+          el('option', { value: '', text: 'Celle du thème (' + (R.FONT_LABELS[key === 'headFont' ? theme.head : theme.body] || '') + ')', selected: !current }),
+          el('optgroup', { label: 'Polices modernes (intégrées au PDF)' }, R.FONT_LIST.filter(f => f[3]).map(f => el('option', { value: f[0], text: f[1], selected: current === f[0] }))),
+          el('optgroup', { label: 'Polices très légères' }, R.FONT_LIST.filter(f => !f[3]).map(f => el('option', { value: f[0], text: f[1], selected: current === f[0] }))));
+        return el('label', { class: 'ot-field' }, el('span', { text: label }), select);
+      };
+      const sample = el('div', { class: 'ot-font-sample' }, el('strong', { text: [data.person.first, data.person.last].filter(Boolean).join(' ') || 'Lucas Martin' }), el('span', { text: 'Électricien · câblage, mise en service et dépannage.' }));
+      sample.firstChild.style.fontFamily = r.head; sample.lastChild.style.fontFamily = r.body;
+      PDF.useFonts(data).then(() => { sample.classList.add('ready'); });
+      const opt = (label, key, list) => el('div', { class: 'ot-field' }, el('span', { text: label }), chips(list, v => data[key] === v, v => restructure(d => { d[key] = v; }), label));
+      const custom = el('div', { class: 'ot-group ot-custom' },
+        el('div', { class: 'ot-toolbar' }, el('h3', { text: '⚙ Personnaliser' }),
+          el('button', { type: 'button', class: 'ot-mini subtle', text: '↺ Revenir au thème « ' + theme.name + ' »', onclick: () => restructure(d => { for (const k of ['accent', 'sideColor', 'titleColor', 'levelColor', 'palette', 'headFont', 'bodyFont', 'titleStyle']) d[k] = ''; d.textSize = 'm'; d.nameSize = 'm'; d.icons = true; d.sideWidth = 'normal'; if (d.photoSize) { d.photoSize = 'm'; d.photoBorder = false; d.photoShape = ''; } }) })),
+        warnings.length ? el('div', { class: 'ot-warn', role: 'alert' }, el('strong', { text: 'Lisibilité : ' }), warnings.join(' ')) : el('p', { class: 'ot-ok', text: '✓ Couleurs bien lisibles.' }),
+        sub('Palettes prêtes', palettes),
+        sub('Couleur principale', swatchRow(R.ACCENTS, data.accent, 'Couleur principale', v => restructure(d => { d.accent = v; d.palette = ''; }), theme.accent)),
+        sub(doc.kind === 'cv' ? 'Couleur de la colonne ou du bandeau' : 'Couleur de la colonne ou du bandeau (organisations concernées)', swatchRow(R.SIDE_COLORS, data.sideColor, 'Couleur de la colonne', v => restructure(d => { d.sideColor = v; d.palette = ''; }), theme.side),
+          el('p', { class: 'ot-help', text: 'Le texte de la colonne passe automatiquement en clair ou en foncé.' })),
+        sub('Couleur des titres et du nom', swatchRow(R.ACCENTS.map(([v, n]) => [v, n === 'Couleur du thème' ? 'Comme la couleur principale' : n]), data.titleColor, 'Couleur des titres', v => restructure(d => { d.titleColor = v; d.palette = ''; }), r.title)),
+        doc.kind === 'cv' ? sub('Couleur des barres et points de niveau', swatchRow(R.ACCENTS.map(([v, n]) => [v, n === 'Couleur du thème' ? 'Comme la couleur principale' : n]), data.levelColor, 'Couleur des niveaux', v => restructure(d => { d.levelColor = v; }), r.accent)) : null,
+        sub('Polices', el('div', { class: 'ot-row' }, fontSelect('Titres et nom', 'headFont', data.headFont), fontSelect('Texte', 'bodyFont', data.bodyFont)), sample,
+          el('p', { class: 'ot-help', text: 'Les polices modernes sont intégrées au PDF : il s’affiche à l’identique partout (PDF d’environ 50 à 200 Ko).' })),
+        sub('Tailles', opt('Taille du texte', 'textSize', [['s', 'Petite'], ['m', 'Normale'], ['l', 'Grande']]), opt('Taille du nom', 'nameSize', [['s', 'Petite'], ['m', 'Normale'], ['l', 'Grande']])),
+        sub('Titres des rubriques', opt('Style', 'titleStyle', R.TITLE_STYLES)),
+        doc.kind === 'cv' ? sub('Photo', opt('Forme', 'photoShape', [['', 'Comme le thème'], ['round', 'Ronde'], ['rounded', 'Coins arrondis'], ['square', 'Carrée'], ['none', 'Sans photo']]),
+          opt('Taille', 'photoSize', [['s', 'Petite'], ['m', 'Moyenne'], ['l', 'Grande']]),
+          el('div', { class: 'ot-sec-head' }, switchBtn(data.photoBorder, 'Bordure colorée autour de la photo', () => restructure(d => { d.photoBorder = !d.photoBorder; })), el('span', { text: 'Bordure colorée autour de la photo' }))) : null,
+        sub('Mise en page', opt('Largeur de la colonne', 'sideWidth', [['narrow', 'Étroite'], ['normal', 'Normale'], ['wide', 'Large']]),
+          el('div', { class: 'ot-sec-head' }, switchBtn(data.icons, 'Icônes devant les coordonnées', () => restructure(d => { d.icons = !d.icons; })), el('span', { text: 'Icônes devant les coordonnées' })),
+          doc.kind === 'cv' ? [opt('Niveaux', 'levelStyle', [['bars', 'Barres'], ['dots', 'Points'], ['text', 'Texte (ATS)']]), opt('Densité', 'density', [['airy', 'Aérée'], ['normal', 'Normale'], ['compact', 'Compacte']]),
+            el('div', { class: 'ot-sec-head' }, switchBtn(data.fit, 'Ajuster automatiquement sur une page', () => restructure(d => { d.fit = !d.fit; })), el('span', { text: 'Ajuster automatiquement le texte pour tenir sur une page' }))]
+            : opt('Alignement du texte', 'justify', [[true, 'Justifié'], [false, 'Aligné à gauche']])));
       return [layoutGroup, themeGroup, custom];
     }
 
@@ -605,6 +641,7 @@
     box.style.width = width + 'px'; box.style.height = Math.round(R.PAGE_H * scale) + 'px';
     host.style.transform = 'scale(' + scale + ')';
     slot.replaceWith(box);
+    await PDF.useFonts(data);
     const page = kind === 'cv' ? R.renderCv(data) : R.renderLetter(data);
     await PDF.mount(host, page);
     PDF.layout(page, data, kind);
@@ -617,7 +654,7 @@
     d.place = 'Rouen'; d.object = 'Demande de stage (PFMP) du 4 mai au 12 juin';
     for (const b of R.LETTER_BLOCKS) d.blocks[b.id].text = b.id === 'accroche' ? 'Élève en première Bac Pro MELEC, je recherche une entreprise d’accueil pour ma période de formation en milieu professionnel de six semaines.' : (b.model || '').replace(/\[[^\]]+\]/g, '…');
     d.layout = layout; d.theme = theme;
-    if (base) { d.theme = base.theme; d.accent = base.accent; d.font = base.font; }
+    if (base) for (const k of R.STYLE_KEYS) d[k] = base[k];
     return d;
   }
 
@@ -888,7 +925,7 @@
         if (!base && kind === 'lm') {
           // Lettre : coordonnées et thème repris du CV le plus récent.
           const cv = docs.find(d => d.kind === 'cv');
-          if (cv) { const full = await loadDoc(cv.id).catch(() => null); if (full) { Object.assign(data.person, Object.fromEntries(Object.entries(full.data.person).filter(([k, v]) => v && k in data.person))); data.theme = full.data.theme; data.accent = full.data.accent; data.font = full.data.font; } }
+          if (cv) { const full = await loadDoc(cv.id).catch(() => null); if (full) { Object.assign(data.person, Object.fromEntries(Object.entries(full.data.person).filter(([k, v]) => v && k in data.person))); for (const k of R.STYLE_KEYS) data[k] = full.data[k]; } }
         }
         const rows = await api.rest(TABLE + '?select=id', { method: 'POST', headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' }, body: JSON.stringify({ kind, title: (title || defaultTitle(kind, data)).slice(0, 120), data }) });
         try { await loadList(); } catch { /* liste rechargée plus tard */ }
@@ -1048,6 +1085,7 @@
             el('div', { class: 'ot-doc-actions' }, el('button', { type: 'button', class: 'warn', text: 'À corriger', onclick: () => answer('changes') }), el('button', { type: 'button', text: 'Valider', onclick: () => answer('approved') })),
             el('p', { class: 'teach-help', text: 'L’élève voit votre commentaire en haut de son document. Vous ne pouvez pas modifier son contenu.' })))));
         await PDF.loadFonts();
+        await PDF.useFonts(data);
         const page = row.kind === 'cv' ? R.renderCv(data) : R.renderLetter(data);
         await PDF.mount(pageHost, page);
         const info = PDF.layout(page, data, row.kind);

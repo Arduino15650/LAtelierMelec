@@ -16,7 +16,7 @@
   // ───── Feuille de style de la page (zone isolée) et polices ─────
   let sheetPromise = null;
   function pageSheet() {
-    if (!sheetPromise) sheetPromise = fetch('./outils-page.css?v=20261124-2').then(r => { if (!r.ok) throw new Error('Mise en page indisponible'); return r.text(); })
+    if (!sheetPromise) sheetPromise = fetch('./outils-page.css?v=20261124-3').then(r => { if (!r.ok) throw new Error('Mise en page indisponible'); return r.text(); })
       .then(css => { const sheet = new CSSStyleSheet(); sheet.replaceSync(css); return sheet; })
       .catch(error => { sheetPromise = null; throw error; });
     return sheetPromise;
@@ -35,6 +35,32 @@
       fontsPromise = Promise.race([all, new Promise(resolve => setTimeout(resolve, 4000))]).then(() => document.fonts.ready);
     }
     return fontsPromise;
+  }
+  // Polices embarquées (fichiers /fonts) : chargées à la demande, pour l'aperçu et pour le PDF.
+  const faceCache = new Map();
+  function fontInfo(key) { return R().FONT_LIST.find(f => f[0] === key); }
+  function ensureFont(key) {
+    const f = fontInfo(key);
+    if (!f || !f[3]) return Promise.resolve();
+    if (!faceCache.has(key)) {
+      const faces = [...f[3]].map(st => new FontFace('OT-' + key, 'url(./fonts/' + key + '-' + st + '.ttf)', { weight: st === 'b' ? '700' : '400', style: st === 'i' ? 'italic' : 'normal', display: 'swap' }));
+      faceCache.set(key, Promise.all(faces.map(face => face.load().then(loaded => document.fonts.add(loaded)).catch(() => null))));
+    }
+    return faceCache.get(key);
+  }
+  async function useFonts(data) {
+    const r = R().resolved(data);
+    await Promise.race([Promise.all([ensureFont(r.headKey), ensureFont(r.bodyKey)]), new Promise(resolve => setTimeout(resolve, 6000))]);
+  }
+  const fileCache = new Map();
+  async function fontFile(key, st) {
+    const name = key + '-' + st;
+    if (!fileCache.has(name)) fileCache.set(name, fetch('./fonts/' + name + '.ttf').then(r => { if (!r.ok) throw new Error('Police indisponible'); return r.arrayBuffer(); }).then(buf => {
+      const bytes = new Uint8Array(buf); let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return btoa(bin);
+    }).catch(error => { fileCache.delete(name); throw error; }));
+    return fileCache.get(name);
   }
   async function mount(host, page) {
     const sheet = await pageSheet();
@@ -93,7 +119,7 @@
   // sur deux pages (trois au plus) en coupant proprement entre les blocs.
   function layout(page, data, kind) {
     page.querySelectorAll('.od-break').forEach(n => n.remove());
-    const base = kind === 'cv' ? DENSITY[data.density] || 1 : 1;
+    const base = (kind === 'cv' ? DENSITY[data.density] || 1 : 1) * (Number(page.dataset.size) || 1);
     const fit = kind === 'lm' || data.fit !== false;
     let k = base;
     page.style.setProperty('--k', String(k));
@@ -139,11 +165,29 @@
     return { r: 255, g: 255, b: 255, a: 1 };
   }
   function fontOf(style) {
-    const first = style.fontFamily.split(',')[0].trim().replace(/^["']|["']$/g, '').toLowerCase();
-    const fam = FAMILY[first] || (/mono|courier/.test(first) ? 'courier' : /serif/.test(first) && !/sans/.test(first) ? 'times' : 'helvetica');
+    const first = style.fontFamily.split(',')[0].trim().replace(/^["']|["']$/g, '');
+    const lower = first.toLowerCase();
     const bold = (parseInt(style.fontWeight, 10) || 400) >= 600;
     const italic = style.fontStyle === 'italic' || style.fontStyle === 'oblique';
+    if (lower.startsWith('ot-')) {
+      const key = lower.slice(3), f = fontInfo(key), has = f?.[3] || 'r';
+      const st = bold && has.includes('b') ? 'b' : italic && has.includes('i') ? 'i' : 'r';
+      return { fam: 'ot-' + key, style: st === 'b' ? 'bold' : st === 'i' ? 'italic' : 'normal', file: [key, st] };
+    }
+    const fam = FAMILY[lower] || (/mono|courier/.test(lower) ? 'courier' : /serif/.test(lower) && !/sans/.test(lower) ? 'times' : 'helvetica');
     return { fam, style: bold && italic ? 'bolditalic' : bold ? 'bold' : italic ? 'italic' : 'normal' };
+  }
+  // Position de la ligne de base : mesurée sur la police réellement affichée.
+  const metricCanvas = typeof document !== 'undefined' ? document.createElement('canvas').getContext('2d') : null;
+  const metricCache = new Map();
+  function fontMetrics(style, size) {
+    const key = style.fontStyle + '|' + style.fontWeight + '|' + size + '|' + style.fontFamily;
+    if (!metricCache.has(key)) {
+      metricCanvas.font = style.fontStyle + ' ' + style.fontWeight + ' ' + size + 'px ' + style.fontFamily;
+      const m = metricCanvas.measureText('Hg');
+      metricCache.set(key, m.fontBoundingBoxAscent ? { asc: m.fontBoundingBoxAscent, desc: m.fontBoundingBoxDescent } : null);
+    }
+    return metricCache.get(key);
   }
   function transformText(text, style) {
     if (style.textTransform === 'uppercase') return text.toLocaleUpperCase('fr');
@@ -219,13 +263,21 @@
         if (el.tagName.toLowerCase() === 'svg' && b.w > 0) ops.push({ kind: 'image', ...b, image: await rasterSvg(el, b, style) });
         return;
       }
+      const rad = radius(style.borderTopLeftRadius, b.w, b.h);
       if (el.tagName === 'IMG') {
         if (b.w > 0 && b.h > 0) { try { ops.push({ kind: 'image', ...b, image: await rasterImg(el, b, style) }); } catch { /* image absente */ } }
+        borders(style, b, rad);
         return;
       }
       const bg = rgba(style.backgroundColor);
-      const rad = radius(style.borderTopLeftRadius, b.w, b.h);
       if (bg && bg.a > 0 && b.w > 0 && b.h > 0) ops.push({ kind: 'rect', ...b, color: bg, rad, fill: true });
+      borders(style, b, rad);
+      for (const child of el.childNodes) {
+        if (child.nodeType === 1) await walk(child);
+        else if (child.nodeType === 3 && child.data.trim()) text(child, style);
+      }
+    }
+    function borders(style, b, rad) {
       const sides = ['Top', 'Right', 'Bottom', 'Left'].map(side => ({ side, w: parseFloat(style['border' + side + 'Width']) || 0, color: rgba(style['border' + side + 'Color']), style: style['border' + side + 'Style'] }));
       const visible = sides.filter(x => x.w > 0 && x.style !== 'none' && x.color && x.color.a > 0);
       if (visible.length === 4 && rad > 0 && visible.every(x => x.w === visible[0].w)) {
@@ -235,28 +287,26 @@
           : x.side === 'Left' ? { x: b.x, y: b.y, w: x.w, h: b.h } : { x: b.x + b.w - x.w, y: b.y, w: x.w, h: b.h };
         ops.push({ kind: 'rect', ...strip, color: x.color, rad: 0, fill: true });
       }
-      for (const child of el.childNodes) {
-        if (child.nodeType === 1) await walk(child);
-        else if (child.nodeType === 3 && child.data.trim()) text(child, style);
-      }
     }
     function text(node, style) {
       const color = rgba(style.color) || { r: 0, g: 0, b: 0, a: 1 };
       const font = fontOf(style);
       const size = parseFloat(style.fontSize);
+      const metrics = fontMetrics(style, size);
       const re = /\S+/g;
       let m;
       while ((m = re.exec(node.data))) {
         range.setStart(node, m.index); range.setEnd(node, m.index + m[0].length);
         const rects = [...range.getClientRects()].filter(r => r.width > 0);
         if (!rects.length) continue;
-        if (rects.length === 1) ops.push({ kind: 'text', ...box(rects[0]), str: transformText(m[0], style), font, size, color });
+        const withBase = b => ({ ...b, base: metrics ? b.y + (b.h - (metrics.asc + metrics.desc) / s) / 2 + metrics.asc / s : null });
+        if (rects.length === 1) ops.push({ kind: 'text', ...withBase(box(rects[0])), str: transformText(m[0], style), font, size, color });
         else {
           // Mot coupé sur deux lignes : lettre par lettre.
           for (let i = 0; i < m[0].length; i++) {
             range.setStart(node, m.index + i); range.setEnd(node, m.index + i + 1);
             const r = range.getClientRects()[0];
-            if (r && r.width > 0) ops.push({ kind: 'text', ...box(r), str: transformText(m[0][i], style), font, size, color });
+            if (r && r.width > 0) ops.push({ kind: 'text', ...withBase(box(r)), str: transformText(m[0][i], style), font, size, color });
           }
         }
         if (/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(m[0])) ops.at(-1).link = 'mailto:' + m[0];
@@ -299,7 +349,7 @@
           const target = op.w * PT, actual = doc.getTextWidth(op.str);
           let space = (target - actual) / Math.max(1, op.str.length);
           if (Math.abs(space) > op.size * PT * 0.25) space = 0;
-          const baseline = op.y + op.h - DESCENT[op.font.fam] * op.size - (op.h - op.size * 1.117) / 2;
+          const baseline = op.base ?? (op.y + op.h - (DESCENT[op.font.fam] ?? 0.22) * op.size - (op.h - op.size * 1.117) / 2);
           doc.text(op.str, op.x * PT, (baseline - top) * PT, { charSpace: space, baseline: 'alphabetic' });
           if (op.link) doc.link(op.x * PT, (op.y - top) * PT, op.w * PT, op.h * PT, { url: op.link });
           continue;
@@ -319,7 +369,8 @@
         if (op.stroke) {
           doc.setDrawColor(op.color.r, op.color.g, op.color.b); doc.setLineWidth(op.stroke * PT);
           const inset = op.stroke * PT / 2;
-          if (rad > 0) doc.roundedRect(x + inset, y + inset, w - 2 * inset, h - 2 * inset, rad, rad, 'S');
+          if (rad > 0 && rad >= w / 2 - 0.01 && rad >= h / 2 - 0.01) doc.ellipse(x + w / 2, y + h / 2, w / 2 - inset, h / 2 - inset, 'S');
+          else if (rad > 0) doc.roundedRect(x + inset, y + inset, w - 2 * inset, h - 2 * inset, rad, rad, 'S');
           else doc.rect(x + inset, y + inset, w - 2 * inset, h - 2 * inset, 'S');
         } else {
           doc.setFillColor(op.color.r, op.color.g, op.color.b);
@@ -345,16 +396,26 @@
       const JsPDF = await loadJsPdf();
       const doc = new JsPDF({ unit: 'pt', format: 'a4', compress: true, putOnlyUsedFonts: true });
       let total = 0;
+      const registered = new Set();
       for (const [index, item] of items.entries()) {
         const data = R().clean(item.kind, JSON.parse(JSON.stringify(item.data)));
         if (options.photo === false && item.kind === 'cv') data.photo = '';
         if (options.fit && item.kind === 'cv') data.fit = true;
+        await useFonts(data);
         const page = item.kind === 'cv' ? R().renderCv(data) : R().renderLetter(data);
         page.classList.add('od-export');
         if (options.gray) { page.classList.add('od-print'); page.classList.remove('od-side-dark', 'od-side-tinted'); }
         await mount(host, page);
         const info = layout(page, data, item.kind);
         const ops = await collect(page);
+        for (const op of ops) {
+          if (!op.font?.file) continue;
+          const [key, st] = op.font.file, name = key + '-' + st + '.ttf';
+          if (registered.has(name)) continue;
+          registered.add(name);
+          doc.addFileToVFS(name, await fontFile(key, st));
+          doc.addFont(name, 'ot-' + key, st === 'b' ? 'bold' : st === 'i' ? 'italic' : 'normal');
+        }
         draw(doc, ops, info.pages, index === 0);
         total += info.pages;
       }
@@ -389,5 +450,5 @@
     return result;
   }
 
-  window.MelecOutilsPdf = { PAGE_W, PAGE_H, pageSheet, loadFonts, mount, layout, collect, buildPdf, buildPdfs, download, save, fileName, rgba, loadJsPdf };
+  window.MelecOutilsPdf = { PAGE_W, PAGE_H, pageSheet, loadFonts, useFonts, ensureFont, mount, layout, collect, buildPdf, buildPdfs, download, save, fileName, rgba, loadJsPdf };
 })();

@@ -1,0 +1,6 @@
+Polices utilisées par « Mes outils » (CV et lettres de motivation), réduites aux caractères latins.
+Toutes sont libres d'utilisation et d'intégration dans des documents PDF :
+- Archivo, Lora, Montserrat, Merriweather, Playfair Display, Poppins, Source Sans 3, Oswald,
+  Big Shoulders Display, JetBrains Mono, Open Sans : SIL Open Font License 1.1 (https://openfontlicense.org).
+- Roboto : Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0).
+Source : Google Fonts (fichiers statiques du projet expo-google-fonts).

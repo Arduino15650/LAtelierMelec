@@ -19,7 +19,7 @@ html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-doc-actions b
 html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-chip.ot-st-submitted{background:rgba(246,173,37,.2)!important;color:#ffd06c!important}
 html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-chip.ot-st-changes{background:rgba(255,90,95,.18)!important;color:#ff9a9d!important}
 html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-chip.ot-st-approved{background:rgba(63,224,138,.16)!important;color:#5fe8a0!important}
-.ot-editor{display:grid;grid-template-columns:minmax(330px,430px) minmax(0,1fr);gap:16px;align-items:start;min-width:0}
+.ot-editor{display:grid;grid-template-columns:minmax(380px,5fr) minmax(0,6fr);gap:18px;align-items:start;min-width:0}
 .ot-panel{display:grid;gap:12px;min-width:0}
 .ot-tabs{display:flex;gap:6px;flex-wrap:wrap}
 html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-tabs button{min-height:38px;padding:6px 14px}
@@ -50,7 +50,9 @@ html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-item-tools bu
 .ot-chips{display:flex;flex-wrap:wrap;gap:6px}
 html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-chips button{min-height:30px;padding:3px 10px;border-radius:99px;font-size:.82rem;white-space:normal;text-align:left}
 html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-chips button[aria-pressed=true]{background:#ff8a1e!important;color:#1a0d00!important;border-color:#ff8a1e!important}
-.ot-level-row{display:grid;grid-template-columns:1fr 92px 120px auto;gap:6px;align-items:center}
+.ot-level-row{display:grid;gap:6px;padding:8px;border-radius:8px;border:1px dashed var(--st-line,#1e4569)}
+.ot-level-sub{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) auto;gap:6px;align-items:center}
+.ot-tag-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
 .ot-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
 html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-tile{display:grid;gap:6px;justify-items:stretch;min-height:0;padding:8px;border-radius:9px;white-space:normal;text-align:left;font-size:.84rem}
 html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-tile[aria-pressed=true]{outline:3px solid #ff8a1e;outline-offset:1px}
@@ -95,7 +97,7 @@ html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-spell-fix but
 .ot-teacher-view{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,380px);gap:16px;align-items:start}
 @container (max-width:900px){.ot-editor,.ot-teacher-view{grid-template-columns:1fr}.ot-preview{position:static}}
 @media (max-width:1000px){.ot-editor,.ot-teacher-view{grid-template-columns:1fr}.ot-preview{position:static}}
-@media (max-width:560px){.ot-level-row{grid-template-columns:1fr 1fr}.ot-photo-box{grid-template-columns:1fr}.ot-stage{padding:6px}}
+@media (max-width:560px){.ot-level-sub{grid-template-columns:minmax(0,1fr) auto}.ot-level-sub input{grid-column:1 / -1;grid-row:2}.ot-photo-box{grid-template-columns:1fr}.ot-stage{padding:6px}}
 
 /* Accueil, bibliothèque, Mes PDF */
 .ot-cards{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
@@ -129,3 +131,27 @@ html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-card{ba
 html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-cvchip{border-color:#7cc4ff!important}
 html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-generate{justify-self:start;min-height:46px;padding:10px 20px}
 html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-card:hover{border-color:#ff8a1e!important}
+
+/* Champs : jamais plus larges que leur colonne (bureau comme téléphone). */
+.ot-pane input,.ot-pane select,.ot-pane textarea,.ot-teacher textarea{min-width:0;max-width:100%;box-sizing:border-box}
+.ot-pane .ot-panel,.ot-pane .ot-group,.ot-pane .ot-sec,.ot-pane .ot-sec-body,.ot-pane .ot-item,.ot-pane .ot-field,.ot-pane .ot-level-row{min-width:0;max-width:100%}
+.ot-pane .ot-panel{overflow-wrap:anywhere}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-chips button,html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-tile{max-width:100%;white-space:normal!important;overflow-wrap:anywhere}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-level-row select,html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-level-sub input{min-height:40px;font-size:.95rem}
+/* Personnaliser */
+.ot-custom{border-color:#ff8a1e}
+.ot-subgroup{display:grid;gap:8px;padding-top:10px;border-top:1px solid var(--st-line,#1e4569)}
+.ot-subgroup h4{margin:0;font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;opacity:.9}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-swatch-theme{background:conic-gradient(#e07a10,#0b7f74,#1f6feb,#7b2cbf,#e07a10)!important;font-size:.9rem}
+.ot-palettes{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-palette{display:flex!important;align-items:center;gap:8px;min-height:40px;padding:6px 10px;border-radius:9px;white-space:normal;text-align:left;font-size:.86rem}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-palette[aria-pressed=true]{outline:3px solid #ff8a1e;outline-offset:1px}
+.ot-palette-dots{display:flex;flex:none}
+.ot-palette-dots span{width:18px;height:18px;border-radius:50%;border:2px solid #fff;margin-left:-5px}
+.ot-palette-dots span:first-child{margin-left:0}
+.ot-font-sample{display:grid;gap:2px;padding:10px 12px;border-radius:8px;background:#fff;color:#1d2530}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-font-sample strong,html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-font-sample span{color:#1d2530!important;background:none!important}
+.ot-font-sample strong{font-size:1.25rem}
+.ot-font-sample span{font-size:.95rem}
+/* Mes outils ouvert : l'espace élève s'élargit sur les grands écrans (éditeur et aperçu côte à côte). */
+html body .portal-shell:has(#studentToolsPane:not([hidden])){width:min(1680px,100%)!important;max-width:none!important}
