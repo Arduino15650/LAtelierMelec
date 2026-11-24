@@ -101,3 +101,110 @@ test('personnalisation : couleurs, polices, tailles et anciennes valeurs', () =>
   for (const t of R.THEMES) { assert.ok(R.FONT_LIST.some(f => f[0] === t.head), t.id); assert.ok(R.FONT_LIST.some(f => f[0] === t.body), t.id); }
   assert.ok(R.styleWarnings({ ...d, titleColor: '#f2f2f2' }).length >= 1);
 });
+
+const loadExamples = () => {
+  const win = { MelecOutilsRendu: R };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'outils-exemples.js'), 'utf8'), { window: win, Math, Object, String, Array, JSON, Set });
+  return win.MelecOutilsExemples;
+};
+
+test('14 organisations de CV, langues et pays : valeurs gardées ou corrigées', () => {
+  const ids = ['lateral', 'lateral-d', 'ats', 'bandeau', 'deux', 'frise', 'bento', 'hybride', 'competences', 'europass', 'infographie', 'centre', 'minimal', 'asym'];
+  assert.deepEqual(Array.from(R.LAYOUTS, l => l.id), ids);
+  for (const id of ids) assert.equal(R.clean('cv', { layout: id }).layout, id);
+  const cv = R.clean('cv', { lang: 'en', country: 'ch' });
+  assert.equal(cv.lang, 'en'); assert.equal(cv.country, 'ch');
+  const bad = R.clean('cv', { lang: 'de', country: 'mars' });
+  assert.equal(bad.lang, 'fr'); assert.equal(bad.country, 'fr');
+  assert.equal(R.clean('lm', { lang: 'es' }).lang, 'es');
+});
+
+test('titres des rubriques en anglais et en espagnol, niveaux traduits', () => {
+  for (const lang of ['en', 'es']) {
+    const t = R.I18N[lang];
+    for (const s of R.CV_SECTIONS) assert.ok(t[s.id], lang + ' : ' + s.id);
+    assert.equal(t.levels.length, 6);
+    for (const k of ['object', 'ref', 'ps', 'date', 'blank', 'keys', 'key']) assert.ok(t[k], lang + ' : ' + k);
+  }
+  const d = R.newCv({}); d.lang = 'en';
+  assert.equal(R.sectionTitle(d, R.CV_SECTIONS.find(s => s.id === 'experiences')), 'Work experience');
+  d.sections.experiences.title = 'Internships';
+  assert.equal(R.sectionTitle(d, R.CV_SECTIONS.find(s => s.id === 'experiences')), 'Internships');
+  assert.equal(R.tr({ lang: 'fr' }).object, 'Objet : ');
+});
+
+test('conseils par pays : Royaume-Uni, États-Unis, Canada, Suisse, Europass', () => {
+  const photo = 'data:image/png;base64,AAAA';
+  const uk = R.clean('cv', { ...R.newCv({}), country: 'uk', lang: 'fr', photo });
+  const ukChecks = R.cvChecks(uk, 1);
+  assert.ok(ukChecks.some(([ok, t]) => !ok && /retirez la photo/.test(t)));
+  assert.ok(ukChecks.some(([ok, t]) => !ok && /anglais/.test(t)));
+  const us = R.clean('cv', { ...R.newCv({}), country: 'us', lang: 'en' });
+  assert.ok(R.cvChecks(us, 1).some(([ok, t]) => ok && /États-Unis/.test(t)));
+  const ch = R.clean('cv', { ...R.newCv({}), country: 'ch' });
+  assert.ok(R.cvChecks(ch, 1).some(([ok, t]) => !ok && /Suisse/.test(t)));
+  const eu = R.clean('cv', { ...R.newCv({}), country: 'eu', layout: 'europass' });
+  assert.ok(R.cvChecks(eu, 1).some(([ok, t]) => ok && /Europass/.test(t)));
+});
+
+test('20 exemples de CV : les 13 nouveaux profils, pays et langues', () => {
+  const EX = loadExamples();
+  assert.ok(EX.EXAMPLES.length >= 20);
+  assert.equal(new Set(EX.EXAMPLES.map(e => e.id)).size, EX.EXAMPLES.length);
+  for (const id of ['lyceen', 'stage-3e', 'job-ete', 'interim', 'cap', 'reconversion', 'france-travail', 'anglais', 'canadien', 'suisse', 'europass', 'courants-faibles', 'genie-climatique']) assert.ok(EX.EXAMPLES.some(e => e.id === id), id);
+  for (const ex of EX.EXAMPLES) {
+    assert.ok(['Débutant', 'Profil', 'Métier', 'Pays'].includes(ex.cat), ex.id + ' : catégorie ' + ex.cat);
+    assert.ok(R.LAYOUTS.some(l => l.id === ex.layout), ex.id + ' : organisation');
+    const d = EX.cvFromExample(ex.id, { first: 'Inès', last: 'Benali' });
+    assert.equal(d.lang, ex.lang || 'fr');
+    assert.equal(d.country, ex.country || 'fr');
+    assert.ok(R.cvScore(d).score >= 70, ex.id + ' : score ' + R.cvScore(d).score);
+  }
+  const en = EX.cvFromExample('anglais', {});
+  assert.equal(en.lang, 'en'); assert.equal(en.photo, '');
+  assert.equal(EX.cvFromExample('europass', {}).layout, 'europass');
+});
+
+test('11 lettres d’exemple complètes (250 mots et plus), reprenant l’identité de l’élève', () => {
+  const EX = loadExamples();
+  assert.ok(EX.LETTERS.length >= 11);
+  assert.equal(new Set(EX.LETTERS.map(l => l.id)).size, EX.LETTERS.length);
+  for (const ex of EX.LETTERS) {
+    assert.ok(R.LETTER_TYPES[ex.type], ex.id + ' : type');
+    assert.ok(R.LETTER_LAYOUTS.some(l => l.id === ex.layout), ex.id + ' : organisation');
+    const d = EX.letterFromExample(ex.id, { first: 'Inès', last: 'Benali', email: 'ines@lycee.fr' });
+    assert.equal(d.person.first, 'Inès');
+    assert.ok(d.recipient.company && d.object, ex.id + ' : entreprise et objet');
+    const n = R.letterWords(d);
+    assert.ok(n >= 250, ex.id + ' : ' + n + ' mots');
+  }
+});
+
+test('galerie : plus de 200 modèles originaux, sans répétition', () => {
+  const EX = loadExamples();
+  assert.ok(EX.MODELS.length >= 200);
+  assert.equal(new Set(EX.MODELS.map(m => m.id)).size, EX.MODELS.length);
+  assert.equal(new Set(EX.MODELS.map(m => JSON.stringify(m.style))).size, EX.MODELS.length, 'deux modèles identiques');
+  for (const l of R.LAYOUTS) assert.ok(EX.MODELS.some(m => m.layout === l.id), l.id);
+  for (const m of EX.MODELS) {
+    assert.ok(EX.MODEL_CATS.includes(m.cat), m.id);
+    const d = R.clean('cv', { ...R.newCv({}), ...m.style });
+    assert.equal(d.layout, m.style.layout, m.id + ' : organisation');
+    assert.equal(d.theme, m.style.theme, m.id + ' : thème');
+    if (m.style.headFont) assert.equal(d.headFont, m.style.headFont, m.id + ' : police');
+    if (m.ats) assert.ok(['ats', 'europass', 'minimal', 'hybride', 'competences'].includes(m.layout), m.id + ' : ATS sur deux colonnes');
+  }
+  assert.ok(EX.MODELS.some(m => m.ats));
+});
+
+test('export Word : bibliothèque et licence présentes, script chargé dans l’espace élève', () => {
+  const root = path.join(__dirname, '..');
+  assert.ok(fs.statSync(path.join(root, 'docx.min.js')).size > 100000);
+  assert.match(fs.readFileSync(path.join(root, 'DOCX-LICENSE.txt'), 'utf8'), /MIT/);
+  const html = fs.readFileSync(path.join(root, 'eleve.html'), 'utf8');
+  const word = html.indexOf('outils-word.js'), main = html.indexOf('src="outils.js');
+  assert.ok(word > 0 && word < main, 'outils-word.js avant outils.js');
+  const code = fs.readFileSync(path.join(root, 'outils-word.js'), 'utf8');
+  assert.match(code, /window\.MelecOutilsWord = \{ build/);
+  assert.match(code, /\.\/docx\.min\.js/);
+});

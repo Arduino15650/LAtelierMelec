@@ -61,6 +61,13 @@
     deux: [[8, 6, 50, 6, 'd'], [76, 4, 16, 12, 'p'], [8, 18, 84, 1.5, 'a'], [8, 26, 38, 3, 'l'], [8, 32, 36, 3, 'l'], [54, 26, 38, 3, 'l'], [54, 32, 34, 3, 'l'], [8, 42, 38, 3, 'l'], [54, 42, 38, 3, 'l']],
     frise: [[8, 5, 14, 11, 'p'], [27, 7, 40, 6, 'd'], [26, 24, 1, 60, 'a'], [24, 26, 5, 3.5, 'a'], [24, 44, 5, 3.5, 'a'], [31, 26, 36, 3, 'l'], [31, 44, 34, 3, 'l'], [74, 24, 20, 3, 'l']],
     bento: [[8, 5, 14, 11, 'p'], [27, 7, 40, 6, 'd'], [6, 22, 52, 22, 'c'], [62, 22, 32, 30, 'c'], [6, 48, 52, 24, 'c'], [62, 56, 32, 16, 'c']],
+    hybride: [[8, 6, 44, 6, 'd'], [78, 4, 14, 12, 'p'], [8, 18, 84, 1.5, 'a'], [8, 23, 40, 14, 'c'], [52, 23, 40, 14, 'c'], [8, 44, 84, 3, 'l'], [8, 50, 80, 3, 'l'], [8, 58, 84, 3, 'l'], [8, 64, 76, 3, 'l']],
+    competences: [[8, 6, 44, 6, 'd'], [78, 4, 14, 12, 'p'], [8, 18, 84, 1.5, 'a'], [8, 24, 84, 4, 'l'], [8, 32, 40, 16, 'c'], [52, 32, 40, 16, 'c'], [8, 54, 84, 3, 'l'], [8, 60, 70, 3, 'l']],
+    europass: [[30, 5, 40, 6, 'd'], [8, 15, 84, 1.2, 'a'], [8, 22, 20, 3, 'a'], [33, 22, 58, 3, 'l'], [8, 32, 20, 3, 'a'], [33, 32, 55, 3, 'l'], [33, 38, 58, 3, 'l'], [8, 48, 20, 3, 'a'], [33, 48, 50, 3, 'l']],
+    infographie: [[0, 0, 100, 18, 'a'], [6, 3, 12, 12, 'p'], [24, 6, 40, 5, 'w'], [8, 22, 18, 9, 'c'], [30, 22, 18, 9, 'c'], [52, 22, 18, 9, 'c'], [74, 22, 18, 9, 'c'], [8, 38, 54, 3, 'l'], [70, 38, 22, 5, 'a'], [70, 48, 18, 5, 'a']],
+    centre: [[42, 4, 16, 12, 'p'], [28, 18, 44, 6, 'd'], [30, 27, 40, 2, 'l'], [8, 32, 84, 1, 'l'], [8, 38, 54, 3, 'l'], [8, 44, 50, 3, 'l'], [70, 38, 22, 3, 'l'], [70, 44, 20, 3, 'l']],
+    minimal: [[10, 7, 44, 6, 'd'], [10, 15, 40, 2, 'l'], [10, 24, 80, 1, 'l'], [10, 29, 76, 3, 'l'], [10, 35, 70, 3, 'l'], [10, 45, 80, 1, 'l'], [10, 50, 72, 3, 'l']],
+    asym: [[0, 0, 4, 100, 'a'], [10, 6, 44, 6, 'd'], [78, 4, 14, 12, 'p'], [10, 24, 50, 3, 'l'], [10, 30, 46, 3, 'l'], [68, 22, 32, 40, 'c'], [10, 40, 50, 3, 'l']],
     fr: [[8, 6, 30, 10, 'd'], [58, 20, 34, 8, 'c'], [58, 32, 28, 3, 'l'], [8, 40, 40, 3, 'a'], [8, 48, 84, 3, 'l'], [8, 54, 80, 3, 'l'], [8, 62, 84, 3, 'l'], [64, 82, 24, 4, 'a']],
     'bandeau-lm': [[0, 0, 100, 15, 'a'], [8, 5, 40, 5, 'w'], [58, 22, 34, 8, 'c'], [8, 36, 40, 3, 'a'], [8, 46, 84, 3, 'l'], [8, 52, 80, 3, 'l'], [8, 60, 84, 3, 'l'], [64, 82, 24, 4, 'a']],
     cv: [[8, 6, 50, 7, 'd'], [8, 16, 84, 1.5, 'a'], [58, 24, 34, 8, 'c'], [8, 38, 40, 3, 'a'], [8, 48, 84, 3, 'l'], [8, 54, 80, 3, 'l'], [8, 62, 84, 3, 'l'], [64, 82, 24, 4, 'a']],
@@ -360,8 +367,16 @@
     }
     const moveBefore = (list, a, b) => { const i = list.indexOf(a); if (i < 0) return; list.splice(i, 1); const j = list.indexOf(b); list.splice(j < 0 ? list.length : (i <= j ? j + 1 : j), 0, a); };
     const swap = (list, a, b) => { const i = list.indexOf(a), j = list.indexOf(b); if (i >= 0 && j >= 0) [list[i], list[j]] = [list[j], list[i]]; };
+    function langGroup() {
+      const country = el('select', { 'aria-label': 'Pays visé', onchange: e => restructure(d => { d.country = e.target.value; if (['uk', 'us'].includes(d.country) && d.lang === 'fr') d.lang = 'en'; if (d.country === 'eu' && doc.kind === 'cv') d.layout = 'europass'; }) },
+        R.COUNTRIES.map(([v, t]) => el('option', { value: v, text: t, selected: data.country === v })));
+      const advice = { fr: 'Photo facultative, une page, titres en français.', uk: 'Au Royaume-Uni : pas de photo, pas d’âge, titres en anglais (CV).', us: 'Aux États-Unis : pas de photo, pas d’âge, une page (« Resume »).', ca: 'Au Canada : pas de photo ni d’âge, réalisations chiffrées, références disponibles.', ch: 'En Suisse : photo, âge, nationalité ou permis de travail, certificats mentionnés.', eu: 'Europass : structure européenne, niveaux de langue A1 à C2.' }[data.country];
+      return el('div', { class: 'ot-group' }, el('h3', { text: 'Langue et pays' }),
+        el('div', { class: 'ot-field' }, el('span', { text: 'Langue des titres et mentions' }), chips(R.LANGS, v => data.lang === v, v => restructure(d => { d.lang = v; }), 'Langue')),
+        el('label', { class: 'ot-field' }, el('span', { text: 'Pays visé' }), country), el('p', { class: 'ot-help', text: advice + ' Votre texte n’est jamais traduit automatiquement : écrivez-le dans la langue choisie.' }));
+    }
     function cvContent() {
-      return [score(), identity(), sectionRows(R.CV_SECTIONS, data.order, id => data.sections[id].on,
+      return [score(), langGroup(), identity(), sectionRows(R.CV_SECTIONS, data.order, id => data.sections[id].on,
         id => restructure(d => { d.sections[id].on = !d.sections[id].on; }), (a, b) => restructure(d => swap(d.order, a, b)), sectionEditor, 'Rubriques',
         (a, b) => restructure(d => moveBefore(d.order, a, b)), 'Rubrique personnalisée')];
     }
@@ -433,7 +448,7 @@
         R.LETTER_OPTIONAL.map(o => el('div', { class: 'ot-sec-head' }, switchBtn(show[o.id], (show[o.id] ? 'Masquer ' : 'Afficher ') + o.label, () => restructure(d => { d.show[o.id] = !d.show[o.id]; })), el('span', { text: o.label }))),
         show.ps ? field('P.-S.', data.ps, v => set(d => { d.ps = v; }), { area: true, rows: 2, max: 400 }) : null,
         show.pj ? field('Mention des pièces jointes', data.pj, v => set(d => { d.pj = v; }), { max: 120 }) : null);
-      return [typeGroup, who, to, blocks, options, show.signature ? signatureGroup() : null];
+      return [typeGroup, langGroup(), who, to, blocks, options, show.signature ? signatureGroup() : null];
     }
     // « Reprendre de mon CV » : habilitations, compétences, stages et qualités du CV le plus récent.
     function fromCvBox(insert) {
@@ -674,7 +689,7 @@
     pane.hidden = true;
     dashboard.append(pane);
     let docs = [], current = null, editor = null, saveTimer = null, saving = Promise.resolve(), dirty = false, requestId = 0, statusLine = null, me = null, hints = null;
-    let libTab = 'examples', libFilter = '';
+    let libTab = 'models', libFilter = '', modelCat = '', modelLayout = '', modelPage = 0, exCat = '';
     const notify = text => { message.textContent = text; };
     const historyKey = () => 'melec-outils-pdf:' + (me?.id || '');
     const readHistory = () => { try { return JSON.parse(localStorage.getItem(historyKey()) || '[]').slice(0, 20); } catch { return []; } };
@@ -745,8 +760,8 @@
       const cards = el('div', { class: 'ot-intro ot-cards' },
         card('📄', 'Mon CV', cvs.length ? cvs.length + ' CV · ' + (cvs[0].title || 'CV') + ' · ' + ago(cvs[0]) : 'Partir d’un exemple professionnel ou d’une page vierge', () => cvs.length === 1 ? showDoc(cvs[0].id) : cvs.length ? document.getElementById('otCvList')?.scrollIntoView({ behavior: 'smooth' }) : showLibrary('examples')),
         card('✉', 'Mes lettres de motivation', lms.length ? lms.length + ' lettre' + (lms.length > 1 ? 's' : '') + ' : ' + lms.slice(0, 2).map(l => '« ' + (l.title || 'Lettre') + ' »').join(', ') : 'Stage, apprentissage, emploi… avec un modèle guidé', () => lms.length === 1 ? showDoc(lms[0].id) : lms.length ? document.getElementById('otLmList')?.scrollIntoView({ behavior: 'smooth' }) : createDoc('lm')),
-        card('🎨', 'Bibliothèque de modèles', R.THEMES.length + ' thèmes, ' + (EX?.EXAMPLES.length || 0) + ' exemples de CV, ' + R.LAYOUTS.length + ' organisations de CV et ' + R.LETTER_LAYOUTS.length + ' de lettre', () => showLibrary()),
-        card('⤓', 'Mes PDF', 'Générer le CV, la lettre ou les deux en un seul PDF A4', () => showPdf()));
+        card('🎨', 'Bibliothèque de modèles', (EX?.MODELS.length || 0) + ' modèles, ' + (EX?.EXAMPLES.length || 0) + ' exemples de CV, ' + (EX?.LETTERS.length || 0) + ' lettres complètes, ' + R.THEMES.length + ' thèmes', () => showLibrary()),
+        card('⤓', 'Mes PDF', 'CV, lettre ou les deux en PDF ou en Word, et des versions vierges à remplir à la main', () => showPdf()));
       const steps = el('div', { class: 'ot-group' }, el('h3', { text: 'Le parcours en 4 étapes' }), el('ol', { class: 'ot-steps' },
         [['Je remplis mes informations', 'Identité, photo, formation, PFMP, compétences, langues, permis, loisirs.'],
           ['Je choisis un modèle et un thème', 'Partez d’un exemple professionnel, puis changez l’organisation et le thème quand vous voulez.'],
@@ -788,7 +803,7 @@
       const latest = cvs[0] ? await loadDoc(cvs[0].id).catch(() => null) : null;
       if (ticket !== requestId) return;
       const base = latest?.data || (EX ? EX.sampleCv(EX.EXAMPLES[0].id) : R.newCv({ first: 'Lucas', last: 'Martin' }));
-      const tabsBar = el('div', { class: 'ot-tabs', role: 'tablist' }, [['examples', 'Exemples de CV (' + (EX?.EXAMPLES.length || 0) + ')'], ['themes', 'Thèmes (' + R.THEMES.length + ')'], ['cvlayouts', 'Organisations du CV (' + R.LAYOUTS.length + ')'], ['lmlayouts', 'Organisations de la lettre (' + R.LETTER_LAYOUTS.length + ')']]
+      const tabsBar = el('div', { class: 'ot-tabs', role: 'tablist' }, [['models', 'Modèles (' + (EX?.MODELS.length || 0) + ')'], ['examples', 'Exemples de CV (' + (EX?.EXAMPLES.length || 0) + ')'], ['letters', 'Exemples de lettres (' + (EX?.LETTERS.length || 0) + ')'], ['themes', 'Thèmes (' + R.THEMES.length + ')'], ['cvlayouts', 'Organisations du CV (' + R.LAYOUTS.length + ')'], ['lmlayouts', 'Organisations de la lettre (' + R.LETTER_LAYOUTS.length + ')']]
         .map(([id, label]) => el('button', { type: 'button', role: 'tab', 'aria-selected': String(libTab === id), text: label, onclick: () => showLibrary(id) })));
       // Appliquer un thème ou une organisation à un document existant (ou en créer un).
       async function apply(kind, change, choice) {
@@ -809,8 +824,39 @@
       };
       const grid = el('div', { class: 'ot-lib-grid' });
       const cards = [];
-      if (libTab === 'examples' && EX) {
-        for (const ex of EX.EXAMPLES) cards.push([EX.sampleCv(ex.id), 'cv', el('div', { class: 'ot-lib-info' },
+      let intro = null;
+      if (libTab === 'models' && EX) {
+        const list = EX.MODELS.filter(m => (!modelCat || (modelCat === 'ATS' ? m.ats : m.cat === modelCat)) && (!modelLayout || m.layout === modelLayout));
+        const per = 24, pages = Math.max(1, Math.ceil(list.length / per));
+        modelPage = Math.min(modelPage, pages - 1);
+        const layoutSel = el('select', { 'aria-label': 'Organisation', onchange: e => { modelLayout = e.target.value; modelPage = 0; showLibrary('models'); } }, el('option', { value: '', text: 'Toutes les organisations' }), R.LAYOUTS.map(l => el('option', { value: l.id, text: l.name, selected: modelLayout === l.id })));
+        const pager = () => el('div', { class: 'ot-pager' }, el('button', { type: 'button', class: 'subtle', text: '← Précédents', disabled: modelPage === 0, onclick: () => { modelPage--; showLibrary('models'); } }),
+          el('span', { text: 'Page ' + (modelPage + 1) + ' / ' + pages + ' · ' + list.length + ' modèles' }), el('button', { type: 'button', class: 'subtle', text: 'Suivants →', disabled: modelPage >= pages - 1, onclick: () => { modelPage++; showLibrary('models'); } }));
+        intro = [el('p', { class: 'ot-help', text: (latest ? 'Aperçus réalisés avec votre CV « ' + (latest.title || 'CV') + ' ». ' : 'Aperçus réalisés avec un exemple. ') + 'Chaque modèle combine une organisation, un thème, des couleurs et des polices : vous pourrez tout personnaliser ensuite.' }),
+          el('div', { class: 'ot-toolbar' }, chips([['', 'Tous'], ...EX.MODEL_CATS.map(c => [c, c]), ['ATS', 'Optimisés ATS']], v => modelCat === v, v => { modelCat = v; modelPage = 0; showLibrary('models'); }, 'Catégorie'), layoutSel), pager()];
+        for (const m of list.slice(modelPage * per, modelPage * per + per)) {
+          const data = { ...JSON.parse(JSON.stringify(base)), ...m.style };
+          cards.push([data, 'cv', el('div', { class: 'ot-lib-info' }, el('strong', { text: m.name + (m.ats ? ' · ATS ✓' : '') }), el('small', { text: m.cat }),
+            picker('cv', d => Object.assign(d, m.style), 'Utiliser ce modèle'))]);
+        }
+        cards.after = pager;
+      } else if (libTab === 'letters' && EX) {
+        intro = [el('p', { class: 'ot-help', text: 'Des lettres complètes (250 mots et plus) pour chaque situation. Les entreprises sont fictives : gardez la structure, remplacez l’entreprise, les dates et les exemples par les vôtres.' })];
+        for (const ex of EX.LETTERS) cards.push([EX.sampleLetter(ex.id), 'lm', el('div', { class: 'ot-lib-info' },
+          el('strong', { text: ex.name }), el('small', { text: (R.LETTER_TYPES[ex.type]?.name || '') + ' · ' + (R.LETTER_LAYOUTS.find(l => l.id === ex.layout)?.name || '') + (ex.lang === 'en' ? ' · en anglais' : '') }),
+          el('button', { type: 'button', class: 'portal-button', text: 'Partir de cet exemple', onclick: async () => {
+            const who = await whoAmI();
+            const data = EX.letterFromExample(ex.id, who, latest?.data);
+            // Lettre assortie au CV : mêmes thème, couleurs et polices ; l'organisation de l'exemple est gardée.
+            if (latest) for (const k of R.STYLE_KEYS) data[k] = latest.data[k];
+            await createDoc('lm', data, 'Lettre · ' + ex.name);
+            notify('Lettre copiée. Remplacez l’entreprise, les dates et les exemples par les vôtres, puis lancez le correcteur.');
+          } }))]);
+      } else if (libTab === 'examples' && EX) {
+        const cats = [...new Set(EX.EXAMPLES.map(e => e.cat))];
+        intro = [el('p', { class: 'ot-help', text: 'Des CV complets et réalistes pour vous inspirer. Les entreprises sont fictives : gardez la mise en page et la façon d’écrire, remplacez tout le reste par votre parcours.' }),
+          chips([['', 'Tous'], ...cats.map(c => [c, c === 'Pays' ? 'Par pays et langue' : c === 'Métier' ? 'Par métier' : c === 'Profil' ? 'Par profil' : 'Débutants'])], v => exCat === v, v => { exCat = v; showLibrary('examples'); }, 'Catégorie')];
+        for (const ex of EX.EXAMPLES.filter(e => !exCat || e.cat === exCat)) cards.push([EX.sampleCv(ex.id), 'cv', el('div', { class: 'ot-lib-info' },
           el('strong', { text: ex.name }), el('small', { text: ex.who + ' · thème ' + (R.THEMES.find(t => t.id === ex.theme)?.name || '') + ' · ' + (R.LAYOUTS.find(l => l.id === ex.layout)?.name || '') }),
           el('span', { class: 'ot-help', text: ex.desc }),
           el('button', { type: 'button', class: 'portal-button', text: 'Partir de cet exemple', onclick: async () => {
@@ -838,7 +884,7 @@
         }
       }
       if (libTab !== 'themes') fill(content, tabsBar,
-        el('p', { class: 'ot-help', text: libTab === 'examples' ? 'Des CV complets et réalistes pour vous inspirer. Les entreprises sont fictives : gardez la mise en page et la façon d’écrire, remplacez tout le reste par votre parcours.' : 'Thème et organisation se combinent librement : vos textes ne changent pas. « ATS ✓ » : lu sans erreur par les logiciels de tri des candidatures.' }), grid);
+        intro || el('p', { class: 'ot-help', text: 'Thème et organisation se combinent librement : vos textes ne changent pas. « ATS ✓ » : lu sans erreur par les logiciels de tri des candidatures.' }), grid, cards.after ? cards.after() : null);
       content.prepend(el('div', { class: 'ot-toolbar' }, el('button', { type: 'button', text: '← Mes outils', onclick: () => showHome() }), el('strong', { text: 'Bibliothèque de modèles' })));
       await PDF.loadFonts();
       for (const [data, kind, info] of cards) {
@@ -857,61 +903,76 @@
       if (ticket !== requestId || pane.hidden) return;
       notify('');
       const cvs = docs.filter(d => d.kind === 'cv'), lms = docs.filter(d => d.kind === 'lm');
-      const state = { what: preset.what || (cvs.length && lms.length ? 'both' : cvs.length ? 'cv' : 'lm'), cv: preset.cv || cvs[0]?.id || '', lm: preset.lm || lms[0]?.id || '', photo: true, fit: true, gray: false, name: '' };
+      const state = { what: preset.what || (cvs.length && lms.length ? 'both' : cvs.length ? 'cv' : lms.length ? 'lm' : 'blank-cv'), cv: preset.cv || cvs[0]?.id || '', lm: preset.lm || lms[0]?.id || '', photo: true, fit: true, gray: false, name: '', format: 'pdf' };
       const result = el('div', { role: 'status', 'aria-live': 'polite' });
       const body = el('div', { class: 'ot-panel' });
       const defaultName = () => {
         const who = [me.first, me.last].filter(Boolean).join('_').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9_]+/g, '-') || 'document';
-        return (state.what === 'both' ? 'Candidature_' : state.what === 'cv' ? 'CV_' : 'Lettre_motivation_') + who + (state.gray ? '_NB' : '') + '.pdf';
+        const ext = state.format === 'docx' && !state.what.startsWith('blank') ? '.docx' : '.pdf';
+        if (state.what === 'blank-cv') return 'CV_vierge_a_remplir.pdf';
+        if (state.what === 'blank-lm') return 'Lettre_vierge_a_remplir.pdf';
+        return (state.what === 'both' ? 'Candidature_' : state.what === 'cv' ? 'CV_' : 'Lettre_motivation_') + who + (state.gray ? '_NB' : '') + ext;
       };
       function draw() {
         const select = (list, key, label) => el('label', { class: 'ot-field' }, el('span', { text: label }), (() => { const s = el('select', { onchange: e => { state[key] = e.target.value; } }, list.map(d => el('option', { value: d.id, text: d.title || KIND[d.kind], selected: d.id === state[key] }))); return s; })());
         const check = (key, label) => el('label', { class: 'ot-check' }, el('input', { type: 'checkbox', checked: state[key], onchange: e => { state[key] = e.target.checked; nameInput.placeholder = defaultName(); } }), el('span', { text: label }));
         const nameInput = el('input', { maxlength: 80, value: state.name, placeholder: defaultName(), 'aria-label': 'Nom du fichier', oninput: e => { state.name = e.target.value; } });
-        const options = [['cv', 'Le CV', cvs.length], ['lm', 'La lettre', lms.length], ['both', 'CV + lettre (un seul PDF)', cvs.length && lms.length]];
+        const options = [['cv', 'Le CV', cvs.length], ['lm', 'La lettre', lms.length], ['both', 'CV + lettre (un seul fichier)', cvs.length && lms.length], ['blank-cv', 'CV vierge à remplir à la main', true], ['blank-lm', 'Lettre vierge à remplir à la main', true]];
+        const blank = state.what.startsWith('blank');
         fill(body,
           el('div', { class: 'ot-group' }, el('h3', { text: 'Que voulez-vous générer ?' }),
             el('div', { class: 'ot-chips' }, options.map(([v, t, ok]) => el('button', { type: 'button', 'aria-pressed': String(state.what === v), disabled: !ok, text: t, onclick: () => { state.what = v; draw(); } }))),
-            state.what !== 'lm' && cvs.length ? select(cvs, 'cv', 'CV') : null,
-            state.what !== 'cv' && lms.length ? select(lms, 'lm', 'Lettre de motivation') : null,
-            !cvs.length && !lms.length ? el('p', { class: 'ot-warn', text: 'Créez d’abord un CV ou une lettre.' }) : null),
+            ['cv', 'both', 'blank-cv'].includes(state.what) && cvs.length ? select(cvs, 'cv', blank ? 'Couleurs et polices reprises du CV' : 'CV') : null,
+            ['lm', 'both', 'blank-lm'].includes(state.what) && lms.length ? select(lms, 'lm', blank ? 'Couleurs et polices reprises de la lettre' : 'Lettre de motivation') : null,
+            blank ? el('p', { class: 'ot-help', text: 'Une page avec des lignes à remplir au stylo : pratique en classe ou pour préparer son brouillon.' }) : null,
+            !blank && !cvs.length && !lms.length ? el('p', { class: 'ot-warn', text: 'Créez d’abord un CV ou une lettre (ou choisissez une version vierge).' }) : null),
           el('div', { class: 'ot-group' }, el('h3', { text: 'Options' }),
-            state.what !== 'lm' ? check('photo', 'Inclure la photo d’identité') : null,
-            state.what !== 'lm' ? check('fit', 'Tenir sur une page (réduit légèrement le texte si besoin)') : null,
-            check('gray', 'Version noir et blanc pour l’impression'),
+            !blank ? el('div', { class: 'ot-field' }, el('span', { text: 'Format' }), chips([['pdf', 'PDF (à envoyer)'], ['docx', 'Word .docx (à modifier)']], v => state.format === v, v => { state.format = v; draw(); }, 'Format')) : null,
+            !blank && state.format === 'docx' ? el('p', { class: 'ot-help', text: 'Le fichier Word reprend vos textes, couleurs, polices et photo, pour le modifier dans Word, LibreOffice ou Google Docs. La mise en page peut varier légèrement : pour envoyer votre candidature, préférez le PDF.' }) : null,
+            !blank && state.what !== 'lm' ? check('photo', 'Inclure la photo d’identité') : null,
+            !blank && state.what !== 'lm' && state.format === 'pdf' ? check('fit', 'Tenir sur une page (réduit légèrement le texte si besoin)') : null,
+            blank || state.format === 'pdf' ? check('gray', 'Version noir et blanc pour l’impression') : null,
             el('label', { class: 'ot-field' }, el('span', { text: 'Nom du fichier' }), nameInput)),
-          el('button', { type: 'button', class: 'portal-button ot-generate', text: '⬇ Générer et télécharger le PDF', disabled: !cvs.length && !lms.length, onclick: e => generate(e.target) }),
+          el('button', { type: 'button', class: 'portal-button ot-generate', text: '⬇ Générer et télécharger' + (state.format === 'docx' && !blank ? ' le fichier Word' : ' le PDF'), disabled: !blank && !cvs.length && !lms.length, onclick: e => generate(e.target) }),
           result,
-          el('p', { class: 'ot-help', text: 'Les PDF sont créés sur votre appareil ; vos données restent dans votre espace élève.' }));
+          el('p', { class: 'ot-help', text: 'Les fichiers sont créés sur votre appareil ; vos données restent dans votre espace élève.' }));
       }
       async function generate(btn, again) {
         const opts = again || { ...state };
-        const ids = opts.what === 'both' ? [['cv', opts.cv], ['lm', opts.lm]] : [[opts.what, opts[opts.what]]];
-        btn.disabled = true; const label = btn.textContent; btn.textContent = 'Création du PDF…';
+        const blank = opts.what.startsWith('blank');
+        const word = opts.format === 'docx' && !blank;
+        const ids = opts.what === 'both' ? [['cv', opts.cv], ['lm', opts.lm]] : blank ? [[opts.what.slice(6), opts[opts.what.slice(6)]]] : [[opts.what, opts[opts.what]]];
+        btn.disabled = true; const label = btn.textContent; btn.textContent = word ? 'Création du fichier Word…' : 'Création du PDF…';
         try {
           const items = [];
-          for (const [kind, id] of ids) { const row = await loadDoc(id); if (!row) throw new Error('document introuvable (supprimé ?)'); items.push({ kind, data: row.data }); }
-          const res = await PDF.buildPdfs(items, { gray: opts.gray, photo: opts.photo, fit: opts.fit, author: [me.first, me.last].join(' ') });
+          for (const [kind, id] of ids) {
+            const row = id ? await loadDoc(id) : null;
+            if (!row && !blank) throw new Error('document introuvable (supprimé ?)');
+            items.push({ kind, data: row ? row.data : (kind === 'cv' ? R.newCv({}) : R.newLetter({})), blank });
+          }
+          const res = word ? await window.MelecOutilsWord.build(items, { photo: opts.photo, author: [me.first, me.last].join(' ') })
+            : await PDF.buildPdfs(items, { gray: opts.gray, photo: opts.photo, fit: opts.fit, author: [me.first, me.last].join(' ') });
           let name = (opts.name || '').trim() || defaultName();
-          if (!/\.pdf$/i.test(name)) name += '.pdf';
+          const ext = word ? '.docx' : '.pdf';
+          name = name.replace(/\.(pdf|docx)$/i, '') + ext;
           name = name.replace(/[\\/:*?"<>|]+/g, '-');
           PDF.save(res.blob, name);
           const size = Math.max(1, Math.round(res.blob.size / 1024)) + ' Ko';
-          fill(result, el('p', { class: 'ot-ok', text: '✓ ' + name + ' créé (A4, ' + res.pages + ' page' + (res.pages > 1 ? 's' : '') + ', ' + size + '). Il est aussi rangé dans « Mes PDF » ci-dessous.' }));
+          fill(result, el('p', { class: 'ot-ok', text: '✓ ' + name + ' créé (' + (word ? 'Word' : 'A4, ' + res.pages + ' page' + (res.pages > 1 ? 's' : '')) + ', ' + size + '). Il est aussi rangé dans « Mes fichiers ».' }));
           writeHistory([{ name, date: new Date().toISOString(), pages: res.pages, size, opts: { ...opts, name } }, ...readHistory().filter(h => h.name !== name)]);
           drawHistory();
-        } catch (error) { fill(result, el('p', { class: 'ot-warn', text: 'PDF impossible : ' + error.message })); }
+        } catch (error) { fill(result, el('p', { class: 'ot-warn', text: (word ? 'Fichier Word impossible : ' : 'PDF impossible : ') + error.message })); }
         btn.disabled = false; btn.textContent = label;
       }
       const historyBox = el('div', { class: 'ot-group' });
       function drawHistory() {
         const list = readHistory();
-        fill(historyBox, el('h3', { text: 'Mes PDF (' + list.length + ')' }),
+        fill(historyBox, el('h3', { text: 'Mes fichiers (' + list.length + ')' }),
           list.length ? el('div', { class: 'ot-list' }, list.map(h => el('div', { class: 'ot-doc' }, el('span', { class: 'ot-doc-title', text: h.name }),
-            el('span', { class: 'ot-doc-meta', text: dateFr.format(new Date(h.date)) + ' · ' + h.pages + ' page' + (h.pages > 1 ? 's' : '') + ' · ' + h.size + (h.opts.gray ? ' · noir et blanc' : '') }),
-            el('div', { class: 'ot-doc-actions' }, el('button', { type: 'button', text: 'Télécharger à nouveau', title: 'Recrée le PDF avec la dernière version de vos documents', onclick: e => generate(e.target, h.opts) }),
+            el('span', { class: 'ot-doc-meta', text: dateFr.format(new Date(h.date)) + ' · ' + (h.opts.format === 'docx' && !h.opts.what.startsWith('blank') ? 'Word' : h.pages + ' page' + (h.pages > 1 ? 's' : '')) + ' · ' + h.size + (h.opts.gray ? ' · noir et blanc' : '') }),
+            el('div', { class: 'ot-doc-actions' }, el('button', { type: 'button', text: 'Télécharger à nouveau', title: 'Recrée le fichier avec la dernière version de vos documents', onclick: e => generate(e.target, h.opts) }),
               el('button', { type: 'button', class: 'subtle', text: 'Retirer de la liste', onclick: () => { writeHistory(readHistory().filter(x => x.name !== h.name)); drawHistory(); } })))))
-            : el('p', { class: 'ot-help', text: 'Les PDF que vous créez apparaissent ici pour les retélécharger (toujours avec la dernière version de vos documents).' }));
+            : el('p', { class: 'ot-help', text: 'Les fichiers que vous créez apparaissent ici pour les retélécharger (toujours avec la dernière version de vos documents).' }));
       }
       draw(); drawHistory();
       fill(content, el('div', { class: 'ot-toolbar' }, el('button', { type: 'button', text: '← Mes outils', onclick: () => showHome() }), el('strong', { text: 'Mes PDF' })),
