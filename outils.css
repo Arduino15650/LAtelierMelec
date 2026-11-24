@@ -1,5 +1,5 @@
 /* L'Atelier MELEC · Mes outils (CV et lettre de motivation) : l'éditeur, dans le style « sous tension » du site.
-   La page A4 elle-même est dans outils-page.css. */
+   La page A4 elle-même est dans outils-mise-en-page.css. */
 /* ───────── 2. Éditeur ───────── */
 .ot-space{display:grid;gap:14px;min-width:0;container-type:inline-size}
 .ot-teacher{container-type:inline-size}

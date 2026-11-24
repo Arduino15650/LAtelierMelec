@@ -16,7 +16,7 @@
   // ───── Feuille de style de la page (zone isolée) et polices ─────
   let sheetPromise = null;
   function pageSheet() {
-    if (!sheetPromise) sheetPromise = fetch('./outils-page.css?v=20261124-4').then(r => { if (!r.ok) throw new Error('Mise en page indisponible'); return r.text(); })
+    if (!sheetPromise) sheetPromise = fetch('./outils-mise-en-page.css?v=20261124-6').then(r => { if (!r.ok) throw new Error('Mise en page indisponible'); return r.text(); })
       .then(css => { const sheet = new CSSStyleSheet(); sheet.replaceSync(css); return sheet; })
       .catch(error => { sheetPromise = null; throw error; });
     return sheetPromise;
