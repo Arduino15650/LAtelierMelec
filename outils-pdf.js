@@ -16,7 +16,7 @@
   // ───── Feuille de style de la page (zone isolée) et polices ─────
   let sheetPromise = null;
   function pageSheet() {
-    if (!sheetPromise) sheetPromise = fetch('./outils-page.css?v=20261124-3').then(r => { if (!r.ok) throw new Error('Mise en page indisponible'); return r.text(); })
+    if (!sheetPromise) sheetPromise = fetch('./outils-page.css?v=20261124-4').then(r => { if (!r.ok) throw new Error('Mise en page indisponible'); return r.text(); })
       .then(css => { const sheet = new CSSStyleSheet(); sheet.replaceSync(css); return sheet; })
       .catch(error => { sheetPromise = null; throw error; });
     return sheetPromise;
@@ -401,8 +401,9 @@
         const data = R().clean(item.kind, JSON.parse(JSON.stringify(item.data)));
         if (options.photo === false && item.kind === 'cv') data.photo = '';
         if (options.fit && item.kind === 'cv') data.fit = true;
+        if (item.blank) data.fit = false;
         await useFonts(data);
-        const page = item.kind === 'cv' ? R().renderCv(data) : R().renderLetter(data);
+        const page = item.blank ? R().renderBlank(item.kind, data) : item.kind === 'cv' ? R().renderCv(data) : R().renderLetter(data);
         page.classList.add('od-export');
         if (options.gray) { page.classList.add('od-print'); page.classList.remove('od-side-dark', 'od-side-tinted'); }
         await mount(host, page);
@@ -420,7 +421,7 @@
         total += info.pages;
       }
       const kinds = [...new Set(items.map(i => i.kind))];
-      doc.setProperties({ title: options.title || (kinds.length > 1 ? 'CV et lettre de motivation' : kinds[0] === 'cv' ? 'Curriculum vitae' : 'Lettre de motivation'), author: options.author || '', subject: 'Candidature', creator: 'L’Atelier MELEC' });
+      doc.setProperties({ title: options.title || (items[0]?.blank ? (kinds[0] === 'cv' ? 'CV vierge à remplir' : 'Lettre de motivation vierge à remplir') : kinds.length > 1 ? 'CV et lettre de motivation' : kinds[0] === 'cv' ? 'Curriculum vitae' : 'Lettre de motivation'), author: options.author || '', subject: 'Candidature', creator: 'L’Atelier MELEC' });
       doc.setLanguage?.('fr-FR');
       return { blob: doc.output('blob'), pages: total };
     } finally { GRAY = false; host.remove(); }

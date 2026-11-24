@@ -84,7 +84,14 @@
     { id: 'bandeau', name: 'Bandeau', hint: 'Un grand bandeau en haut avec nom, photo et coordonnées, puis deux colonnes.' },
     { id: 'deux', name: 'Deux colonnes', hint: 'Deux colonnes équilibrées sous l’en-tête : expériences à gauche, formation et atouts à droite.' },
     { id: 'frise', name: 'Frise chronologique', hint: 'Expériences et formations sur une ligne de temps : le parcours se lit d’un coup d’œil.' },
-    { id: 'bento', name: 'Cartes (bento)', hint: 'Chaque rubrique dans une carte : très moderne et aéré.' }
+    { id: 'bento', name: 'Cartes (bento)', hint: 'Chaque rubrique dans une carte : très moderne et aéré.' },
+    { id: 'hybride', name: 'Hybride', hint: 'Compétences clés en tête, puis le parcours : idéal quand on a peu d’expérience.' },
+    { id: 'competences', name: 'Par compétences', hint: 'Compétences regroupées par domaine en premier, parcours résumé ensuite.' },
+    { id: 'europass', name: 'Europass', hint: 'Titres des rubriques à gauche, contenu à droite, à la manière du format européen.' },
+    { id: 'infographie', name: 'Infographique', hint: 'Chiffres clés en haut et grandes barres de compétences : très visuel.' },
+    { id: 'centre', name: 'En-tête centré', hint: 'Photo et nom centrés, deux colonnes dessous : équilibré et élégant.' },
+    { id: 'minimal', name: 'Minimaliste', hint: 'Sans aplat de couleur, grandes marges, filets fins : sobre et chic.' },
+    { id: 'asym', name: 'Original asymétrique', hint: 'Bande verticale colorée, colonnes décalées : pour se démarquer.' }
   ];
 
   // Rubriques du CV. zone : main (parcours) ou side (atouts). type : text, list, tags, levels, refs.
@@ -117,6 +124,22 @@
     interets: ['Football en club', 'Musique', 'Bricolage électronique', 'Jeux vidéo', 'Cuisine', 'Randonnée', 'Mécanique']
   };
   const LEVEL_NAMES = ['', 'Notions', 'Intermédiaire', 'Bon niveau', 'Très bon niveau', 'Expert'];
+  // Langue des titres et mentions (le texte de l'élève n'est jamais traduit).
+  const LANGS = [['fr', 'Français'], ['en', 'Anglais'], ['es', 'Espagnol']];
+  const I18N = {
+    en: { profil: 'Profile', experiences: 'Work experience', formation: 'Education', projets: 'Projects', engagement: 'Volunteering', autre: 'Additional information', perso2: 'Additional information', perso3: 'Additional information', references: 'References',
+      habilitations: 'Certifications', competences: 'Technical skills', savoiretre: 'Soft skills', logiciels: 'Software and tools', langues: 'Languages', permis: 'Driving licence and mobility', interets: 'Interests', liens: 'Links',
+      levels: ['', 'Basic', 'Intermediate', 'Good', 'Very good', 'Expert'], keys: ['Key figures', 'experiences', 'certifications', 'skills', 'languages'], key: 'Key skills',
+      object: 'Subject: ', ref: 'Ref.: ', ps: 'P.S.: ', on: ', ', date: 'en-GB', blank: ['Name', 'Phone', 'Email', 'Address'] },
+    es: { profil: 'Perfil', experiences: 'Experiencia profesional', formation: 'Formación', projets: 'Proyectos', engagement: 'Voluntariado', autre: 'Otros datos', perso2: 'Otros datos', perso3: 'Otros datos', references: 'Referencias',
+      habilitations: 'Certificaciones', competences: 'Competencias técnicas', savoiretre: 'Cualidades', logiciels: 'Programas y herramientas', langues: 'Idiomas', permis: 'Permiso de conducir y movilidad', interets: 'Aficiones', liens: 'Enlaces',
+      levels: ['', 'Nociones', 'Intermedio', 'Buen nivel', 'Muy buen nivel', 'Experto'], keys: ['Datos clave', 'experiencias', 'certificaciones', 'competencias', 'idiomas'], key: 'Competencias clave',
+      object: 'Asunto: ', ref: 'Ref.: ', ps: 'P. D.: ', on: ', a ', date: 'es-ES', blank: ['Nombre', 'Teléfono', 'Correo', 'Dirección'] },
+    fr: { levels: LEVEL_NAMES, keys: ['Chiffres clés', 'expériences', 'habilitations', 'compétences', 'langues'], key: 'Compétences clés', object: 'Objet : ', ref: 'Réf. : ', ps: 'P.-S. : ', on: ', le ', date: 'fr-FR', blank: ['Nom et prénom', 'Téléphone', 'E-mail', 'Adresse'] }
+  };
+  const tr = d => I18N[d.lang] || I18N.fr;
+  // Pays visé : conseils propres à chaque marché du travail.
+  const COUNTRIES = [['fr', 'France'], ['uk', 'Royaume-Uni'], ['us', 'États-Unis'], ['ca', 'Canada'], ['ch', 'Suisse'], ['eu', 'Europe (Europass)']];
 
   // Lettre de motivation : organisations, types et blocs.
   const LETTER_LAYOUTS = [
@@ -230,7 +253,8 @@
     const themeIds = THEMES.map(t => t.id);
     const common = {
       v: 1, theme: pick(d.theme, themeIds, 'moderne'), accent: /^#[0-9a-f]{6}$/i.test(d.accent || '') ? d.accent : '',
-      ...cleanStyle(d)
+      ...cleanStyle(d),
+      lang: pick(d.lang, ['fr', 'en', 'es'], 'fr'), country: pick(d.country, COUNTRIES.map(c => c[0]), 'fr')
     };
     const p = d.person || {};
     if (kind === 'cv') {
@@ -313,6 +337,13 @@
     const lines = exps.flatMap(i => i.desc.split('\n').filter(l => /^\s*[-•*]/.test(l)).map(l => l.replace(/^\s*[-•*]\s*/, '')));
     if (lines.length) { const weak = lines.filter(l => /^(je|j’|j'|il|on|nous)\b/i.test(l) || /^[a-zà-ÿ]/.test(l) || l.split(/\s+/).length < 3); out.push([weak.length === 0, weak.length ? 'Rédigez chaque mission comme une action précise, sans « je » (« Câblage de 8 tableaux… »)' : 'Missions rédigées comme des actions précises']); }
     const p = d.person;
+    if (['uk', 'us', 'ca'].includes(d.country)) {
+      const ok = !d.photo && !p.birth;
+      out.push([ok, ok ? 'Sans photo ni âge, comme attendu au ' + (d.country === 'ca' ? 'Canada' : d.country === 'us' ? 'États-Unis' : 'Royaume-Uni') : 'Pour ce pays, retirez la photo et l’âge (risque de discrimination à l’embauche)']);
+      if (d.lang === 'fr' && d.country !== 'ca') out.push([false, 'Choisissez l’anglais comme langue des titres']);
+    }
+    if (d.country === 'ch') out.push([Boolean(d.photo && p.birth), d.photo && p.birth ? 'Photo et âge présents, comme attendu en Suisse' : 'En Suisse, ajoutez une photo, votre âge et votre nationalité ou permis de travail']);
+    if (d.country === 'eu') out.push([d.layout === 'europass', d.layout === 'europass' ? 'Organisation Europass' : 'Choisissez l’organisation « Europass »']);
     out.push([Boolean(p.email && p.phone), p.email && p.phone ? 'E-mail et téléphone présents' : 'E-mail et téléphone indispensables']);
     if (p.email && !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(p.email)) out.push([false, 'Adresse e-mail à vérifier']);
     return out;
@@ -408,9 +439,9 @@
     img.style.objectPosition = (d.photoPos?.x ?? 50) + '% ' + (d.photoPos?.y ?? 50) + '%';
     return img;
   }
-  function sectionTitle(d, s) { return (d.sections[s.id].title || '').trim() || s.label; }
+  function sectionTitle(d, s) { return (d.sections[s.id].title || '').trim() || tr(d)[s.id] || s.label; }
   function levelNode(d, l) {
-    const name = l.detail || LEVEL_NAMES[l.level];
+    const name = l.detail || tr(d).levels[l.level];
     if (d.levelStyle === 'text') return h('div', 'od-level od-keep', h('span', 'od-level-l', l.label), h('span', 'od-level-d', ' — ' + name));
     const meter = d.levelStyle === 'dots'
       ? h('div', 'od-dots', [1, 2, 3, 4, 5].map(i => h('span', 'od-dot' + (i <= l.level ? ' on' : ''))))
@@ -432,7 +463,7 @@
     if (s.type === 'levels') {
       const levels = x.levels.filter(l => l.label.trim());
       if (!levels.length) return null;
-      if (opts.inline) return h('p', 'od-p od-keep', levels.map(l => l.label + ' (' + (l.detail || LEVEL_NAMES[l.level]).toLowerCase() + ')').join(' · '));
+      if (opts.inline) return h('p', 'od-p od-keep', levels.map(l => l.label + ' (' + (l.detail || tr(d).levels[l.level]).toLowerCase() + ')').join(' · '));
       return h('div', 'od-levels', levels.map(l => levelNode(d, l)));
     }
     if (s.type === 'refs') {
@@ -442,7 +473,7 @@
     }
     const items = x.items.filter(i => i.title.trim() || i.org.trim() || i.desc.trim());
     if (!items.length) return null;
-    return h('div', 'od-items' + (opts.timeline ? ' od-timeline' : ''), items.map(i => h('div', 'od-item od-keep',
+    return h('div', 'od-items' + (opts.timeline ? ' od-timeline' : '') + (opts.compact ? ' od-compact' : ''), items.map(i => h('div', 'od-item od-keep',
       opts.timeline ? h('div', 'od-item-date', dates(i)) : null,
       h('div', 'od-item-body', opts.timeline ? h('span', 'od-tl-dot') : null,
         h('div', 'od-item-head', h('strong', 'od-item-t', i.title), !opts.timeline && dates(i) ? h('span', 'od-item-date', dates(i)) : null),
@@ -461,6 +492,7 @@
   function nameBlock(p, cls = '') {
     return h('div', 'od-namebox ' + cls, h('h1', 'od-name', h('span', 'od-first', p.first), p.first && p.last ? ' ' : '', h('span', 'od-last', p.last)), p.title ? h('p', 'od-title', p.title) : null);
   }
+  const TALL_FONTS = ['oswald', 'bigshoulders'];
   const SIZE = { s: 0.94, m: 1, l: 1.07 }, NAME = { s: 0.82, m: 1, l: 1.18 }, PHOTO = { s: 0.8, m: 1, l: 1.2 }, SIDE_W = { narrow: 232, normal: 268, wide: 304 };
   function applyVars(page, d, r) {
     page.style.setProperty('--a', r.accent);
@@ -473,6 +505,8 @@
     page.style.setProperty('--name-k', String(NAME[d.nameSize] || 1));
     page.style.setProperty('--photo-k', String(PHOTO[d.photoSize] || 1));
     page.style.setProperty('--side-w', (SIDE_W[d.sideWidth] || 268) + 'px');
+    // Polices hautes (Oswald, Big Shoulders) : un peu plus d'interligne pour les titres sur deux lignes.
+    page.style.setProperty('--lh-h', TALL_FONTS.includes(r.headKey) ? '1.5' : '1.34');
     page.dataset.size = String(SIZE[d.textSize] || 1);
     page.classList.toggle('od-side-dark', isDark(r.side));
     page.classList.toggle('od-side-tinted', r.side !== '#ffffff');
@@ -515,6 +549,39 @@
     } else if (L === 'frise') {
       page.append(h('header', 'od-head od-head-frise', photo(), nameBlock(p), h('div', 'od-contacts od-contacts-line', contactLines(p))),
         h('div', 'od-grid od-grid-frise', h('main', 'od-main', visibleSections(d, 'main').map(s => section(d, s, { timeline: s.type === 'list' }))), h('aside', 'od-side od-side-soft', sideSecs())));
+    } else if (L === 'hybride') {
+      const keyIds = ['competences', 'habilitations'];
+      const key = visibleSections(d, 'side').filter(s => keyIds.includes(s.id)).map(s => section(d, s, { card: true }));
+      const rest = visibleSections(d, 'side').filter(s => !keyIds.includes(s.id)).map(s => section(d, s, { inline: true }));
+      page.append(h('header', 'od-head od-head-two', nameBlock(p), photo(), h('div', 'od-contacts od-contacts-line', contactLines(p))),
+        h('div', 'od-hyb-key', key), h('main', 'od-main od-one', mainSecs(), h('div', 'od-hyb-rest', rest)));
+    } else if (L === 'competences') {
+      const skillIds = ['competences', 'habilitations', 'logiciels', 'savoiretre'];
+      const skills = visibleSections(d, 'side').filter(s => skillIds.includes(s.id)).map(s => section(d, s, { card: true }));
+      const profil = d.sections.profil.on ? section(d, CV_SECTIONS[0]) : null;
+      const main = visibleSections(d, 'main').filter(s => s.id !== 'profil').map(s => section(d, s, { compact: true }));
+      const rest = visibleSections(d, 'side').filter(s => !skillIds.includes(s.id)).map(s => section(d, s, { inline: true }));
+      page.append(h('header', 'od-head od-head-two', nameBlock(p), photo(), h('div', 'od-contacts od-contacts-line', contactLines(p))),
+        h('main', 'od-main od-one', profil, h('div', 'od-skill-grid', skills), main, h('div', 'od-hyb-rest', rest)));
+    } else if (L === 'europass') {
+      const rows = [...visibleSections(d, 'main'), ...visibleSections(d, 'side')].map(s => { const body = sectionBody(d, s, { inline: s.zone === 'side' && s.type !== 'levels' }); return body ? h('section', 'od-eu-row od-sec-' + s.id, h('h2', 'od-h od-eu-h od-keep od-keep-next', sectionTitle(d, s)), h('div', 'od-eu-body', body)) : null; });
+      page.append(h('header', 'od-eu-head', h('div', 'od-eu-left', photo()), h('div', 'od-eu-id', nameBlock(p), h('div', 'od-contacts', contactLines(p)))), h('main', 'od-eu-main', rows));
+    } else if (L === 'infographie') {
+      const S = d.sections, t = tr(d);
+      const count = (id, f) => S[id].on ? f(S[id]) : 0;
+      const figures = [[count('experiences', x => x.items.filter(i => i.title.trim()).length), t.keys[1]], [count('habilitations', x => x.tags.filter(v => v.trim()).length), t.keys[2]], [count('competences', x => x.levels.filter(v => v.label.trim()).length), t.keys[3]], [count('langues', x => x.levels.filter(v => v.label.trim()).length), t.keys[4]]].filter(f => f[0] > 0);
+      page.append(h('header', 'od-band od-band-info', photo(), h('div', 'od-band-txt', nameBlock(p), h('div', 'od-contacts od-contacts-line', contactLines(p)))),
+        figures.length ? h('div', 'od-figures od-keep', figures.map(([n, label]) => h('div', 'od-figure', h('strong', 'od-figure-n', String(n)), h('span', 'od-figure-l', label)))) : null,
+        h('div', 'od-grid od-grid-band', h('main', 'od-main', mainSecs()), h('aside', 'od-side od-side-plain', sideSecs())));
+    } else if (L === 'centre') {
+      page.append(h('header', 'od-head od-head-centre', photo(), nameBlock(p, 'od-center'), h('div', 'od-contacts od-contacts-line od-center', contactLines(p))),
+        h('div', 'od-grid od-grid-centre', h('main', 'od-main', mainSecs()), h('aside', 'od-side od-side-plain', sideSecs())));
+    } else if (L === 'minimal') {
+      page.append(h('header', 'od-head od-head-minimal', h('div', 'od-min-id', nameBlock(p), h('div', 'od-contacts od-contacts-line', contactLines(p, false))), photo()),
+        h('main', 'od-main od-one od-min-main', mainSecs(), h('div', 'od-min-side', sideSecs())));
+    } else if (L === 'asym') {
+      page.append(h('div', 'od-asym-band'), h('header', 'od-head od-head-asym', h('div', 'od-min-id', nameBlock(p), h('div', 'od-contacts od-contacts-line', contactLines(p))), photo()),
+        h('div', 'od-grid od-grid-asym', h('main', 'od-main', mainSecs()), h('aside', 'od-side od-side-soft', sideSecs())));
     } else {
       page.append(h('header', 'od-head od-head-bento', photo(), nameBlock(p), h('div', 'od-contacts od-contacts-line', contactLines(p))),
         h('div', 'od-grid od-grid-bento', h('div', 'od-col', mainSecs({ card: true })), h('div', 'od-col', sideSecs({ card: true }))));
@@ -523,9 +590,9 @@
   }
 
   // ───── Lettre de motivation ─────
-  function longDate(value) {
+  function longDate(value, locale = 'fr-FR') {
     if (value && value.trim()) return value;
-    return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+    return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
   }
   function renderLetter(d, options = {}) {
     d = clean('lm', d);
@@ -536,9 +603,10 @@
     const p = d.person, rc = d.recipient, show = d.show, L = d.layout;
     const sender = () => h('div', 'od-sender od-keep', h('strong', 'od-sender-n', [p.first, p.last].filter(Boolean).join(' ')), p.address ? h('div', '', p.address) : null, p.city ? h('div', '', p.city) : null, p.phone ? h('div', '', p.phone) : null, p.email ? h('div', '', p.email) : null);
     const recipient = () => show.destinataire && (rc.company || rc.contact || rc.address) ? h('div', 'od-recipient od-keep', rc.company ? h('strong', '', rc.company) : null, rc.service ? h('div', '', rc.service) : null, rc.contact ? h('div', '', rc.contact) : null, rc.address ? h('div', '', rc.address) : null, rc.city ? h('div', '', rc.city) : null) : null;
-    const date = () => show.date ? h('div', 'od-date od-keep', (d.place ? d.place + ', le ' : 'Le ') + longDate(d.date)) : null;
-    const object = () => show.objet && d.object ? h('div', 'od-object od-keep', h('strong', '', 'Objet : '), d.object) : null;
-    const ref = () => show.ref && d.ref ? h('div', 'od-ref-line od-keep', 'Réf. : ' + d.ref) : null;
+    const t = tr(d);
+    const date = () => show.date ? h('div', 'od-date od-keep', d.lang === 'fr' ? (d.place ? d.place + ', le ' : 'Le ') + longDate(d.date) : (d.place ? d.place + ', ' : '') + longDate(d.date, t.date)) : null;
+    const object = () => show.objet && d.object ? h('div', 'od-object od-keep', h('strong', '', t.object), d.object) : null;
+    const ref = () => show.ref && d.ref ? h('div', 'od-ref-line od-keep', t.ref + d.ref) : null;
     const body = d.order.filter(id => d.blocks[id].on && d.blocks[id].text.trim()).map(id => h('div', 'od-block od-block-' + id, richText(d.blocks[id].text, 'od-lp')));
     const fullName = [p.first, p.last].filter(Boolean).join(' ');
     let signature = null;
@@ -546,10 +614,10 @@
       const img = d.sign.mode !== 'typed' && d.sign.image ? Object.assign(document.createElement('img'), { className: 'od-sign-img', src: d.sign.image, alt: '' }) : null;
       signature = h('div', 'od-sign od-keep', img, h('div', 'od-sign-n' + (img ? '' : ' od-sign-typed'), fullName));
     }
-    const tail = [signature, show.ps && d.ps.trim() ? h('p', 'od-ps od-keep', 'P.-S. : ' + d.ps) : null, show.pj && d.pj.trim() && L !== 'mail' ? h('p', 'od-pj od-keep', d.pj) : null];
+    const tail = [signature, show.ps && d.ps.trim() ? h('p', 'od-ps od-keep', t.ps + d.ps) : null, show.pj && d.pj.trim() && L !== 'mail' ? h('p', 'od-pj od-keep', d.pj) : null];
     const contactsInline = () => h('div', 'od-contacts od-contacts-line', contactLines(p));
     if (L === 'mail') {
-      page.append(h('div', 'od-mail', object() ? h('div', 'od-mail-obj od-keep', h('span', 'od-mail-k', 'Objet'), d.object) : null, ref(), h('div', 'od-body', body), tail[0], h('div', 'od-mail-sig', p.phone ? h('div', '', p.phone) : null, p.email ? h('div', '', p.email) : null), tail[1]));
+      page.append(h('div', 'od-mail', object() ? h('div', 'od-mail-obj od-keep', h('span', 'od-mail-k', t.object.replace(/[ :]+$/, '')), d.object) : null, ref(), h('div', 'od-body', body), tail[0], h('div', 'od-mail-sig', p.phone ? h('div', '', p.phone) : null, p.email ? h('div', '', p.email) : null), tail[1]));
       return page;
     }
     let head = null;
@@ -567,9 +635,34 @@
     return page;
   }
 
+  // Versions vierges à imprimer et remplir à la main (mêmes couleurs et polices que le document).
+  function lines(n, cls = '') { return h('div', 'od-lines ' + cls, Array.from({ length: n }, () => h('div', 'od-line od-keep'))); }
+  function renderBlank(kind, style = {}) {
+    if (kind === 'lm') {
+      const d = clean('lm', { ...style, layout: 'fr' });
+      const r = resolved(d), t = tr(d);
+      const page = h('div', 'od-page od-lm od-blank od-t-' + r.t.id + ' od-title-' + r.titleStyle);
+      applyVars(page, d, r);
+      page.append(h('div', 'od-letter',
+        h('div', 'od-blank-sender', t.blank.map(l => h('div', 'od-blank-field', h('span', '', l), h('div', 'od-line')))),
+        h('div', 'od-recipient od-blank-to', lines(4)), h('div', 'od-date', lines(1)),
+        h('div', 'od-object', h('strong', '', t.object), h('div', 'od-line od-inline-line')), lines(20, 'od-lines-body'), h('div', 'od-sign', lines(2))));
+      return page;
+    }
+    const d = clean('cv', { ...style, layout: 'ats' });
+    const r = resolved(d), t = tr(d);
+    const page = h('div', 'od-page od-cv od-blank od-t-' + r.t.id + ' od-title-' + r.titleStyle);
+    applyVars(page, d, r);
+    const sec = (id, n) => h('section', 'od-sec', h('h2', 'od-h od-keep od-keep-next', t[id] || CV_SECTIONS.find(s => s.id === id).label), lines(n));
+    page.append(h('header', 'od-head od-blank-head', h('div', 'od-blank-photo', 'Photo'), h('div', 'od-blank-id', t.blank.map(l => h('div', 'od-blank-field', h('span', '', l), h('div', 'od-line'))))),
+      h('main', 'od-main od-one', sec('profil', 3), sec('experiences', 7), sec('formation', 4), h('div', 'od-blank-cols', sec('competences', 4), sec('habilitations', 4), sec('savoiretre', 2), sec('langues', 2), sec('permis', 2), sec('interets', 2))));
+    return page;
+  }
+
   window.MelecOutilsRendu = {
     PAGE_W, PAGE_H, FONTS, FONT_LABELS, FONT_LIST, SIDE_COLORS, PALETTES, TITLE_STYLES, STYLE_KEYS, styleWarnings, contrast, THEMES, THEME_LEVELS, ACCENTS, LAYOUTS, CV_SECTIONS, SUGGESTIONS, LEVEL_NAMES,
     LETTER_LAYOUTS, LETTER_TYPES, LETTER_BLOCKS, LETTER_OPTIONAL, cvChecks, letterChecks,
-    safe, clean, newCv, newLetter, emptyItem, letterWords, words, cvScore, resolved, renderCv, renderLetter, isDark
+    safe, clean, newCv, newLetter, emptyItem, letterWords, words, cvScore, resolved, renderCv, renderLetter, renderBlank, isDark, LANGS, COUNTRIES, I18N,
+    tr, sectionTitle, visibleSections, longDate
   };
 })();
