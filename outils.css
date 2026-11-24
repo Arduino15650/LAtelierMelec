@@ -1,0 +1,98 @@
+/* L'Atelier MELEC · Mes outils (CV et lettre de motivation) : l'éditeur, dans le style « sous tension » du site.
+   La page A4 elle-même est dans outils-page.css. */
+/* ───────── 2. Éditeur ───────── */
+.ot-space{display:grid;gap:14px;min-width:0;container-type:inline-size}
+.ot-teacher{container-type:inline-size}
+.ot-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.ot-toolbar h2,.ot-toolbar h3{margin:0;flex:1 1 auto}
+.ot-intro{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-new{display:grid;gap:4px;justify-items:start;text-align:left;min-height:0;padding:14px 16px;border-radius:10px;white-space:normal}
+.ot-new strong{font-size:1.05rem}
+.ot-new span{font-size:.88rem;opacity:.85}
+.ot-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.ot-doc{display:grid;gap:6px;padding:12px 14px;border-radius:10px;border:1px solid var(--st-line,#1e4569);background:rgba(8,24,46,.55);min-width:0}
+.ot-doc-title{font-weight:700;overflow-wrap:anywhere}
+.ot-doc-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:.84rem;opacity:.9}
+.ot-doc-actions{display:flex;flex-wrap:wrap;gap:6px}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-doc-actions button,html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-teacher .ot-doc-actions button{min-height:34px;padding:5px 10px;font-size:.86rem}
+.ot-chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;font-weight:700;white-space:nowrap;background:rgba(124,196,255,.16);color:#b6dcff}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-chip.ot-st-submitted{background:rgba(246,173,37,.2)!important;color:#ffd06c!important}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-chip.ot-st-changes{background:rgba(255,90,95,.18)!important;color:#ff9a9d!important}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-chip.ot-st-approved{background:rgba(63,224,138,.16)!important;color:#5fe8a0!important}
+.ot-editor{display:grid;grid-template-columns:minmax(330px,430px) minmax(0,1fr);gap:16px;align-items:start;min-width:0}
+.ot-panel{display:grid;gap:12px;min-width:0}
+.ot-tabs{display:flex;gap:6px;flex-wrap:wrap}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-tabs button{min-height:38px;padding:6px 14px}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-tabs button[aria-selected=true]{background:#ff8a1e!important;color:#1a0d00!important;border-color:#ff8a1e!important}
+.ot-group{display:grid;gap:10px;padding:12px;border-radius:10px;border:1px solid var(--st-line,#1e4569);background:rgba(5,15,30,.45);min-width:0}
+.ot-group > h3{margin:0;font-size:.95rem;letter-spacing:.04em}
+.ot-help{margin:0;font-size:.84rem;opacity:.85}
+.ot-field{display:grid;gap:4px;min-width:0}
+.ot-field > span{font-size:.76rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.85}
+.ot-field input,.ot-field textarea,.ot-field select{width:100%;box-sizing:border-box;min-height:38px;font:inherit}
+.ot-field textarea{min-height:84px;resize:vertical;line-height:1.45}
+.ot-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.ot-count{justify-self:end;font-size:.76rem;opacity:.8}
+.ot-count.over{color:#ff9a9d;opacity:1;font-weight:700}
+.ot-sec{border-radius:10px;border:1px solid var(--st-line,#1e4569);background:rgba(5,15,30,.45);min-width:0}
+.ot-sec.open{border-color:#ff8a1e}
+.ot-sec-head{display:flex;align-items:center;gap:6px;padding:7px 8px}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-sec-head button{min-height:32px;padding:3px 8px;font-size:.84rem}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-sec-head .ot-sec-name{flex:1;text-align:left;justify-content:flex-start;background:none!important;border:0!important;box-shadow:none!important;font-weight:700;color:inherit!important;white-space:normal}
+.ot-sec-body{display:grid;gap:10px;padding:4px 10px 12px}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-switch{position:relative;flex:none;width:44px!important;min-width:44px!important;height:24px!important;min-height:0!important;padding:0!important;border-radius:99px!important;border:2px solid #8ea3bd!important;cursor:pointer;background:#33475f!important;background-image:none!important;box-shadow:none!important}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-switch[aria-checked=true]{background:#2f855a!important;background-image:none!important;border-color:#5fe8a0!important}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-switch[aria-checked=true]::after{left:22px}
+.ot-item{display:grid;gap:8px;padding:10px;border-radius:8px;border:1px dashed var(--st-line,#1e4569)}
+.ot-item-tools{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-item-tools button,html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-mini{min-height:30px;padding:3px 9px;font-size:.82rem}
+.ot-chips{display:flex;flex-wrap:wrap;gap:6px}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-chips button{min-height:30px;padding:3px 10px;border-radius:99px;font-size:.82rem;white-space:normal;text-align:left}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-chips button[aria-pressed=true]{background:#ff8a1e!important;color:#1a0d00!important;border-color:#ff8a1e!important}
+.ot-level-row{display:grid;grid-template-columns:1fr 92px 120px auto;gap:6px;align-items:center}
+.ot-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-tile{display:grid;gap:6px;justify-items:stretch;min-height:0;padding:8px;border-radius:9px;white-space:normal;text-align:left;font-size:.84rem}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-tile[aria-pressed=true]{outline:3px solid #ff8a1e;outline-offset:1px}
+.ot-tile-sheet{position:relative;height:96px;border-radius:3px;background:#fff;overflow:hidden}
+.ot-tile-sheet span{position:absolute;border-radius:1px}
+.ot-tile small{display:block;opacity:.8;font-size:.74rem;line-height:1.3}
+.ot-swatches{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane button.ot-swatch{width:32px!important;height:32px!important;min-height:0!important;padding:0!important;border-radius:50%!important;border:2px solid #fff6!important;background:var(--sw)!important;color:#fff!important}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-swatch[aria-pressed=true]{outline:3px solid #ff8a1e;outline-offset:2px}
+.ot-swatches input[type=color]{width:42px;height:34px;padding:2px;border-radius:8px}
+.ot-preview{position:sticky;top:10px;display:grid;gap:8px;min-width:0}
+.ot-preview-bar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;font-size:.86rem}
+.ot-stage{position:relative;overflow:hidden;border-radius:8px;background:#5b6b80;padding:12px}
+.ot-scale{transform-origin:0 0}
+.ot-score{display:flex;align-items:center;gap:10px}
+.ot-meter{flex:1;height:8px;border-radius:99px;background:rgba(255,255,255,.15);overflow:hidden}
+.ot-meter span{display:block;height:100%;background:#2f855a}
+.ot-tips{margin:0;padding-left:1.1em;font-size:.84rem;display:grid;gap:2px}
+.ot-warn{margin:0;padding:8px 10px;border-radius:8px;background:rgba(246,173,37,.16);color:#ffd06c;font-size:.86rem}
+.ot-ok{margin:0;padding:8px 10px;border-radius:8px;background:rgba(63,224,138,.12);color:#8ff0bd;font-size:.86rem}
+.ot-review{display:grid;gap:6px;padding:12px;border-radius:10px;border:2px solid #f6ad25;background:rgba(246,173,37,.1)}
+.ot-review p{margin:0;white-space:pre-wrap}
+.ot-photo-box{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start}
+.ot-photo-prev{width:110px;height:110px;border-radius:10px;background:#fff1 center/cover no-repeat;border:1px dashed #9dbde0;display:grid;place-items:center;font-size:.78rem;text-align:center;overflow:hidden}
+.ot-photo-prev img{width:100%;height:100%;object-fit:cover;display:block}
+.ot-pad{width:100%;height:150px;border-radius:8px;background:#fff;touch-action:none;cursor:crosshair;display:block}
+/* Correcteur */
+.ot-spell{display:grid;gap:8px}
+.ot-spell-item{display:grid;gap:6px;padding:10px;border-radius:9px;border:1px solid var(--st-line,#1e4569);border-left:5px solid #ff5a5f;background:rgba(5,15,30,.55)}
+.ot-spell-item.k-grammar{border-left-color:#f6ad25}
+.ot-spell-item.k-style{border-left-color:#7cc4ff}
+.ot-spell-item.k-punct{border-left-color:#b794f4}
+.ot-spell-where{font-size:.76rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;opacity:.8}
+.ot-spell-ctx{margin:0;line-height:1.5}
+.ot-spell-ctx mark{background:#ff5a5f33;color:inherit;border-bottom:2px solid #ff5a5f;padding:0 1px}
+.ot-spell-msg{margin:0;font-size:.88rem}
+.ot-spell-fix{display:flex;flex-wrap:wrap;gap:6px}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-spell-fix button{min-height:30px;padding:3px 10px;font-size:.86rem}
+html body:not(#ot-a):not(#ot-b):not(#ot-c):not(#ot-d) .ot-pane .ot-spell-fix button.ot-fix{background:#2f855a!important;color:#fff!important;border-color:#2f855a!important}
+.ot-hidden-host{position:fixed;left:-20000px;top:0;width:794px;pointer-events:none;contain:layout paint}
+.ot-teacher{display:grid;gap:14px;min-width:0}
+.ot-teacher-view{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,380px);gap:16px;align-items:start}
+@container (max-width:900px){.ot-editor,.ot-teacher-view{grid-template-columns:1fr}.ot-preview{position:static}}
+@media (max-width:1000px){.ot-editor,.ot-teacher-view{grid-template-columns:1fr}.ot-preview{position:static}}
+@media (max-width:560px){.ot-level-row{grid-template-columns:1fr 1fr}.ot-photo-box{grid-template-columns:1fr}.ot-stage{padding:6px}}
