@@ -1,4 +1,16 @@
 (function () {
+  // Copie du message envoyée dans la boîte contact@melec-addict.fr (destinataire fixé côté serveur).
+  const RELAIS = 'https://ougnmqhsigsgxdiwormj.supabase.co/functions/v1/site-contact';
+  const relayer = data => fetch(RELAIS, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+      email: data.email || '',
+      subject: data.className ? `Message d’un élève (${data.className})` : 'Message depuis L’Atelier MELEC',
+      message: data.comment,
+      website: data.website || ''
+    })
+  }).catch(() => null);
   const form = document.getElementById('contactForm');
   if (!form) return;
   const counter = document.getElementById('contactCount');
@@ -20,6 +32,7 @@
     status.classList.remove('error');
     try {
       await MelecPortal.invoke('melec-contact', data, false);
+      if (data.email) await relayer(data);
       form.reset();
       counter.textContent = '0 / 500 caractères';
       status.textContent = 'Votre message a été transmis à l’enseignant.';
