@@ -75,6 +75,7 @@
     // Bouton « précédent » du navigateur ou geste retour du téléphone : chaque rubrique ouverte
     // crée une entrée d'historique, et revenir en arrière réaffiche la rubrique de l'adresse.
     let fromBrowser = false;
+    let shown = location.hash.slice(1) || 'home';
     const knownView = name => name === 'home' || !!document.getElementById(name + 'View') || name === 'quotes';
     if (typeof baseShow === 'function') {
       window.show = function (name) {
@@ -83,6 +84,7 @@
         if (name === 'home') api.reset();
         else if (!restoring && name !== from && !api.arrived(name) && from !== 'editor') api.push(from, () => window.show(from));
         editorOpen = false;
+        shown = name;
         const result = baseShow.apply(this, arguments);
         const after = location.href;
         if (!fromBrowser && after !== before) {
@@ -95,8 +97,11 @@
         if (document.body.classList.contains('cloud-locked')) return;
         const name = location.hash.slice(1) || 'home';
         if (!knownView(name)) return;
-        // L'adresse a déjà changé : l'étape du bouton « Retour » qui menait ici est consommée.
-        if (name === 'home') api.reset(); else api.arrived(name);
+        // L'adresse a déjà changé : l'étape du bouton « Retour » qui menait ici est consommée ;
+        // en allant vers l'avant (bouton « suivant »), la rubrique quittée devient l'étape précédente.
+        const from = shown;
+        if (name === 'home') api.reset();
+        else if (!api.arrived(name) && from !== name) api.push(from, () => window.show(from));
         fromBrowser = true;
         try { window.show(name); } finally { fromBrowser = false; }
       });
