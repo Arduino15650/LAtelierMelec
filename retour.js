@@ -72,14 +72,34 @@
     let editorOpen = false;
     const current = () => editorOpen ? 'editor' : (location.hash.slice(1) || 'home');
     const baseShow = window.show;
+    // Bouton « précédent » du navigateur ou geste retour du téléphone : chaque rubrique ouverte
+    // crée une entrée d'historique, et revenir en arrière réaffiche la rubrique de l'adresse.
+    let fromBrowser = false;
+    const knownView = name => name === 'home' || !!document.getElementById(name + 'View') || name === 'quotes';
     if (typeof baseShow === 'function') {
       window.show = function (name) {
         const from = current();
+        const before = location.href;
         if (name === 'home') api.reset();
         else if (!restoring && name !== from && !api.arrived(name) && from !== 'editor') api.push(from, () => window.show(from));
         editorOpen = false;
-        return baseShow.apply(this, arguments);
+        const result = baseShow.apply(this, arguments);
+        const after = location.href;
+        if (!fromBrowser && after !== before) {
+          history.replaceState(history.state, '', before);
+          history.pushState({ melecVue: name }, '', after);
+        }
+        return result;
       };
+      window.addEventListener('popstate', () => {
+        if (document.body.classList.contains('cloud-locked')) return;
+        const name = location.hash.slice(1) || 'home';
+        if (!knownView(name)) return;
+        // L'adresse a déjà changé : l'étape du bouton « Retour » qui menait ici est consommée.
+        if (name === 'home') api.reset(); else api.arrived(name);
+        fromBrowser = true;
+        try { window.show(name); } finally { fromBrowser = false; }
+      });
     }
     const baseRaw = window.showRaw;
     if (typeof baseRaw === 'function') {
