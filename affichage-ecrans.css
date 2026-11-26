@@ -32,6 +32,12 @@ html body:not(#fx-a):not(#fx-b) .ccf-pill{font-size:11px!important}
 html body:not(#fx-a):not(#fx-b) #referentialView summary span:not([class]),
 html body:not(#fx-a):not(#fx-b) #referentialView .autonomy,
 html body:not(#fx-a):not(#fx-b) #referentialView .attitudes span{font-size:11.5px!important}
+/* Audit du 26/11 : sous-titre de l'en-tête, pastilles CCF de l'élève et petites étiquettes (écran seulement, l'impression garde ses tailles). */
+@media screen{
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d):not(#fx-e) .topbar .brand-copy p{font-size:12px!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c) .student-ccf-pill{width:38px!important;height:38px!important;font-size:11px!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(.chip,.autonomy,.unit,.link-weight,.evaluated-count,.activity-list-student-count,.feedback-save-status,.page-head .official-reference,.activity-entry-summary>div>span,.referential-section>summary span,.referential-activity>summary span,.activity-list-fold>summary span){font-size:11px!important}
+}
 
 /* ───── Tablette et smartphone ───── */
 @media (max-width:900px){
