@@ -19,7 +19,8 @@ function monter() {
     state: null,
     replaceState(s, _t, u) { url.href = new URL(u, url).href; entrees[pos] = url.href; },
     pushState(s, _t, u) { url.href = new URL(u, url).href; entrees.splice(pos + 1); entrees.push(url.href); pos++; },
-    back() { if (pos > 0) { pos--; url.href = entrees[pos]; (listeners.popstate || []).forEach(f => f({})); } }
+    back() { if (pos > 0) { pos--; url.href = entrees[pos]; (listeners.popstate || []).forEach(f => f({})); } },
+    forward() { if (pos < entrees.length - 1) { pos++; url.href = entrees[pos]; (listeners.popstate || []).forEach(f => f({})); } }
   };
   const affiche = [];
   const button = { removeAttribute() {}, setAttribute() {}, addEventListener() {} };
@@ -71,4 +72,25 @@ test('adresse inconnue ou espace verrouillé : rien n’est affiché', () => {
   context.document.body.classList.add('cloud-locked');
   history.back();
   assert.strictEqual(affiche.length, avant);
+});
+
+test('après « suivant » puis le bouton « Retour » du site, on revient à la rubrique précédente', () => {
+  const { context, history, affiche } = monter();
+  context.show('students');
+  context.show('results');
+  history.back();
+  history.forward();
+  assert.strictEqual(affiche.at(-1), 'results');
+  assert.strictEqual(context.MelecRetour.size, 2);
+  context.MelecRetour.back();
+  assert.strictEqual(affiche.at(-1), 'students');
+});
+
+test('retour navigateur depuis l’accueil vers une rubrique : le bouton « Retour » du site reste disponible', () => {
+  const { context, history } = monter();
+  context.show('students');
+  context.show('home');
+  history.back();
+  assert.strictEqual(context.location.hash, '#students');
+  assert.strictEqual(context.MelecRetour.size, 1);
 });
