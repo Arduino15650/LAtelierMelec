@@ -4,7 +4,7 @@ Application web BAC PRO MELEC pour créer des activités en atelier, les attribu
 
 ## Accès
 
-L'application est publiée avec GitHub Pages. Ouvrez `index.html` pour une utilisation locale ou l'adresse du site publiée pour une utilisation en ligne.
+L'application est publiée sur Cloudflare Pages (projet `lateliermelec`, domaine latelier.melec-addict.fr). Ouvrez `index.html` pour une utilisation locale ou l'adresse du site publiée pour une utilisation en ligne.
 
 ## Données
 
@@ -30,7 +30,7 @@ Ils vérifient la syntaxe de chaque script, la présence des fichiers appelés p
 
 Le code source reste du HTML, du JavaScript et du CSS classiques : on les modifie directement, sans outil particulier, et le site fonctionne tel quel en local.
 
-À chaque envoi sur `main`, GitHub Actions (onglet « Actions » → « Publication ») lance les tests, puis `npm run build`, qui prépare le dossier `dist/` publié sur GitHub Pages :
+À chaque envoi sur `main`, Cloudflare Pages (projet `lateliermelec`, relié au dépôt par l'application GitHub « Cloudflare Workers and Pages ») lance `npm ci && npm test && npm run build`, puis publie le dossier `dist/` :
 
 - chaque suite de scripts ou de feuilles de style d'une page est regroupée en un fichier compressé, dans le même ordre (la page enseignant passe de 40 fichiers à 6) ;
 - le nom de chaque fichier assemblé contient l'empreinte de son contenu : les navigateurs prennent automatiquement la nouvelle version. Les numéros `?v=` n'ont plus besoin d'être mis à jour à la main ;
@@ -39,7 +39,7 @@ Le code source reste du HTML, du JavaScript et du CSS classiques : on les modifi
 
 Pour vérifier en local : `npm ci`, `npm test`, `npm run build`, puis ouvrir `dist/index.html`.
 
-Réglage nécessaire une seule fois : Settings → Pages → Source : « GitHub Actions ».
+Si les nouvelles versions n'arrivent plus en ligne, vérifier sur GitHub (Settings → Applications → Cloudflare Workers and Pages) que le dépôt LAtelierMelec fait partie des dépôts autorisés. Les tests tournent aussi sur GitHub (onglet « Actions » → « Tests »).
 
 ## Documents de TP volumineux
 
