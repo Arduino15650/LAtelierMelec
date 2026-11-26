@@ -19,8 +19,12 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   // Ne jamais mettre en cache les réponses privées de Supabase.
   if (new URL(event.request.url).origin !== self.location.origin) return;
+  // Un script ou une feuille de style reçus sous forme de page HTML (fichier absent pendant une mise en ligne)
+  // ne sont jamais gardés : sinon la page resterait blanche tant que le cache n'est pas vidé.
+  const attenduHtml = event.request.mode === 'navigate' || /\.html?$/.test(new URL(event.request.url).pathname);
   const refresh = () => fetch(event.request, event.request.mode === 'navigate' ? {cache:'no-store'} : undefined).then(response => {
-    if (response.ok) {
+    const htmlInattendu = !attenduHtml && /text\/html/.test(response.headers.get('content-type') || '') && /\.(?:js|css|json|webp|png|svg|woff2?)$/.test(new URL(event.request.url).pathname);
+    if (response.ok && !htmlInattendu) {
       const copy = response.clone();
       event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)));
     }
