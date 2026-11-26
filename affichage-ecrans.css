@@ -75,3 +75,29 @@ html body:not(#fx-a):not(#fx-b) #referentialView .attitudes span{font-size:11.5p
 .mdp-champ{position:relative;display:block;width:100%}
 html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) .mdp-champ>input{padding-right:92px!important}
 html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) .mdp-champ>.mdp-voir{position:absolute;top:50%;right:6px;transform:translateY(-50%);min-height:34px!important;width:auto!important;padding:4px 10px!important;margin:0!important;border-radius:5px!important;border:1px solid #9fb3c8!important;background:#e3ecf6!important;color:#14263d!important;-webkit-text-fill-color:#14263d!important;font:700 13px/1 system-ui,sans-serif!important;box-shadow:none!important}
+/* ───── Audit du 26/11 (3) : affichage compact, sans espace perdu (écran seulement). ───── */
+@media screen{
+  /* Titres de rubrique moins hauts. */
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(.page-head h1,.teach-head h1,#studentDashboard .student-pane>h2){font-size:clamp(26px,2.6vw,36px)!important;line-height:1.1!important;margin-bottom:4px!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(.page-head,.teach-head){margin-bottom:12px!important;padding-block:0!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(.page-head p,.teach-head p){margin:2px 0 0!important}
+  /* Cartes et panneaux : marges intérieures et espacements resserrés. */
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(.panel,.teach-card,.su-card,.class-fold,.activity-card){padding:14px 16px!important;margin-bottom:12px!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(.panel,.teach-card,.su-card)>:is(h2,h3):first-child{margin-top:0!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(#appShell,#studentDashboard,main) :is(h2,h3){margin-block:10px 8px!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(#appShell,#studentDashboard,main) p{margin-block:6px!important}
+  /* Grilles de cartes : chaque carte garde la hauteur de son contenu. */
+  html body:not(#fx-a):not(#fx-b):not(#fx-c) :is(.su-grid2,.su-grid,.teach-grid){align-items:start!important}
+  /* Chiffres clés (SUIVI › Tableau de bord, Administration) : titre devant le chiffre, sur une ligne. */
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) .su-kpis>article{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:2px 12px!important;padding:12px 16px!important;min-height:0!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) .su-kpis>article>span{grid-column:1;grid-row:1}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) .su-kpis>article>b{grid-column:2;grid-row:1;font-size:1.8rem!important;line-height:1!important;margin:0!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) .su-kpis>article>small{grid-column:1 / -1;margin:0!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) .mg-stat{min-height:0!important;padding:10px 14px!important}
+}
+@media screen and (max-width:600px){
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(.panel,.teach-card,.su-card,.class-fold,.activity-card){padding:12px!important;margin-bottom:10px!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(.page-head h1,.teach-head h1,#studentDashboard .student-pane>h2){font-size:clamp(22px,6.5vw,28px)!important}
+}
+/* SUIVI › niveaux N1–N4 : le pourcentage ne se coupe plus (« 33 / % »). */
+html body:not(#fx-a):not(#fx-b):not(#fx-c) #suiviView header>small{white-space:nowrap}
