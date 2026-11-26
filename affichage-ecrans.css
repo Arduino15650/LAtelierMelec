@@ -36,6 +36,7 @@ html body:not(#fx-a):not(#fx-b) #referentialView .attitudes span{font-size:11.5p
 @media screen{
   html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d):not(#fx-e) .topbar .brand-copy p{font-size:12px!important}
   html body:not(#fx-a):not(#fx-b):not(#fx-c) .student-ccf-pill{width:38px!important;height:38px!important;font-size:11px!important}
+  html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d):not(#fx-e) .space-badge{font-size:11px!important;letter-spacing:.04em!important}
   html body:not(#fx-a):not(#fx-b):not(#fx-c):not(#fx-d) :is(.chip,.autonomy,.unit,.link-weight,.evaluated-count,.activity-list-student-count,.feedback-save-status,.page-head .official-reference,.activity-entry-summary>div>span,.referential-section>summary span,.referential-activity>summary span,.activity-list-fold>summary span){font-size:11px!important}
 }
 
