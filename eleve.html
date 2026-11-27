@@ -6,6 +6,7 @@
   (function(){['sessionStorage','localStorage'].forEach(function(n){try{var s=window[n],k='__melec_test';s.setItem(k,'1');s.removeItem(k)}catch(e){try{var m={};Object.defineProperty(window,n,{configurable:true,value:{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null},setItem:function(k,v){m[k]=String(v)},removeItem:function(k){delete m[k]},clear:function(){m={}},key:function(i){return Object.keys(m)[i]||null},get length(){return Object.keys(m).length}}})}catch(e2){}}})})();</script>
   <meta charset="utf-8">
   <link rel="icon" href="icon-192.png"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="Espace élève de L&#39;Atelier MELEC : cours, TD, TP, référentiel et résultats du Bac Pro MELEC.">
   <meta name="theme-color" content="#071b34"><title>BAC PRO MELEC — Élève</title>
   <script>try{if(sessionStorage.getItem('melec-cloud-session-v1'))document.documentElement.classList.add('student-resuming')}catch{}</script>
   <script>if(!document.documentElement.classList.contains('student-resuming'))document.documentElement.classList.add('eleve-connexion')</script>
@@ -70,6 +71,7 @@
   <link rel="stylesheet" href="affichage-ecrans.css?v=20261124-2">
   <script src="melec-circuit.js?v=20261014-veille" defer></script>
   <link rel="stylesheet" href="sites-melec.css?v=20261124">
+  <link rel="stylesheet" href="cartes-chiffres.css?v=20261128">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
