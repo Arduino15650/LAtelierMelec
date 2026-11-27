@@ -9,3 +9,12 @@
 
 /service-worker.js
   Cache-Control: no-cache
+
+# Fichiers assemblés à la publication : leur nom contient l'empreinte de leur contenu,
+# ils peuvent donc rester un an en cache (un nouveau contenu porte un nouveau nom).
+/index-*
+  Cache-Control: public, max-age=31536000, immutable
+/enseignant-*
+  Cache-Control: public, max-age=31536000, immutable
+/eleve-*
+  Cache-Control: public, max-age=31536000, immutable

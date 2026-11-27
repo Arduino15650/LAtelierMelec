@@ -17,3 +17,18 @@ html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .mg-stat>div{di
 html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .mg-stat>div>strong{grid-area:n!important;font-size:1.5rem!important;line-height:1!important}
 html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .mg-stat>div>small:first-child{grid-area:t!important;font-weight:600!important}
 html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .mg-stat>div>small:nth-child(3){grid-area:s!important}
+
+/* Révision des cartes (28/11/2026) : épreuves et niveaux N1 à N4 compacts, sur une ligne si la largeur le permet. */
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-exam-cards{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))!important;gap:10px!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-exam-cards>article{min-height:0!important;padding:10px 14px!important;gap:4px!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-exam-cards>article>h4{margin:2px 0 0!important;font-size:.95rem!important;line-height:1.25!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-exam-cards>article>p{margin:0!important;font-size:.85rem!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-levels>div{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))!important;gap:10px!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-levels>div>article{min-height:0!important;padding:10px 12px!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-levels>div>article>header{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:6px!important;margin:0 0 4px!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-levels>div>article>p{margin:0!important;font-size:.82rem!important;line-height:1.35!important}
+
+/* Bouton « Retour » : même bouton carré (flèche seule) que sur les autres sites MELEC */
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .app-back-button{width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;align-items:center!important;justify-content:center!important;border-radius:8px!important;border:1.5px solid #ff8a1e!important;background:#0a1c33!important;color:#e9f1fb!important;-webkit-text-fill-color:#e9f1fb!important;font-size:20px!important;line-height:1!important;box-shadow:0 0 0 1px rgba(255,138,30,.18),0 0 14px rgba(255,138,30,.18)!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .app-back-button>span{display:none!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .app-back-button:hover{background:#11284a!important}
