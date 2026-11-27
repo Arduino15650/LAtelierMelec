@@ -32,3 +32,11 @@ html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-levels>div>
 html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .app-back-button{width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;align-items:center!important;justify-content:center!important;border-radius:8px!important;border:1.5px solid #ff8a1e!important;background:#0a1c33!important;color:#e9f1fb!important;-webkit-text-fill-color:#e9f1fb!important;font-size:20px!important;line-height:1!important;box-shadow:0 0 0 1px rgba(255,138,30,.18),0 0 14px rgba(255,138,30,.18)!important}
 html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .app-back-button>span{display:none!important}
 html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .app-back-button:hover{background:#11284a!important}
+
+/* Coupures de mots (28/11/2026) : un mot n'est plus jamais coupé au milieu pour gagner de la place.
+   « anywhere » et « break-all » laissaient les colonnes rétrécir jusqu'à hacher les mots ; « break-word »
+   ne coupe qu'un mot plus long que toute la ligne (adresse e-mail, lien). */
+html body:not(#ww-a):not(#ww-b):not(#ww-c):not(#ww-d):not(#ww-e):not(#ww-f):not(#ww-g) :is(p, li, span, strong, b, em, i, small, label, a, button, td, th, dd, dt, summary, legend, figcaption, blockquote, h1, h2, h3, h4, h5, h6, div, section, article, header, footer) {
+  overflow-wrap: break-word !important; word-break: normal !important; hyphens: manual !important; -webkit-hyphens: manual !important;
+}
+html body:not(#ww-a):not(#ww-b):not(#ww-c):not(#ww-d):not(#ww-e):not(#ww-f):not(#ww-g) :is(code, kbd, samp, pre, .mdp-apercu, a[href^="mailto:"]) { overflow-wrap: anywhere !important; }
