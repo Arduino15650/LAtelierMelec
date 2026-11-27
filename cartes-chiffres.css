@@ -1,0 +1,19 @@
+/* Cartes de chiffres compactes (27/11/2026) : le chiffre à gauche puis son titre,
+   largeur adaptée au contenu, retour à la ligne automatique. Chargée en dernier. */
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-kpis,html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .stats.bottom-stats,html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .mg-stats{display:flex!important;flex-wrap:wrap!important;gap:8px!important;grid-template-columns:none!important}
+/* Tableau de bord (suivi) : libellé, chiffre, précision */
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-kpis>article{flex:1 1 auto!important;display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;grid-template-areas:"n t" "n s"!important;column-gap:12px!important;row-gap:0!important;align-items:center!important;padding:8px 14px!important;min-height:0!important;border-radius:10px!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-kpis>article>b{grid-area:n!important;font-size:1.6rem!important;line-height:1!important;margin:0!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-kpis>article>span{grid-area:t!important;font-weight:600!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .su-kpis>article>small{grid-area:s!important;font-size:.78rem!important;margin:0!important}
+/* Activités : compteurs du bas de page */
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .stats.bottom-stats>.stat{flex:1 1 auto!important;display:flex!important;align-items:center!important;gap:10px!important;min-height:0!important;padding:8px 14px!important;border-radius:10px!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .stats.bottom-stats>.stat:not(.new-activity-stat)>strong{font-size:1.6rem!important;line-height:1!important;margin:0!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .stats.bottom-stats>.stat>span{margin:0!important}
+/* Magasin : statistiques */
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .mg-stat{flex:1 1 auto!important;min-height:0!important;padding:8px 14px!important;gap:10px!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .mg-stat>.mg-stat-icon{display:none!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .mg-stat>div{display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;grid-template-areas:"n t" "n s"!important;column-gap:10px!important;align-items:center!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .mg-stat>div>strong{grid-area:n!important;font-size:1.5rem!important;line-height:1!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .mg-stat>div>small:first-child{grid-area:t!important;font-weight:600!important}
+html body:not(#cc-a):not(#cc-b):not(#cc-c):not(#cc-d):not(#cc-e) .mg-stat>div>small:nth-child(3){grid-area:s!important}
