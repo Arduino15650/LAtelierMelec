@@ -26,8 +26,22 @@
       input.focus();
     });
     box.append(button);
+    // Le texte ne passe jamais sous le bouton : marge calculée sur la largeur réelle du bouton.
+    const adjust = () => input.style.setProperty('padding-right', (button.offsetWidth + 16) + 'px', 'important');
+    adjust();
+    if (window.ResizeObserver) new ResizeObserver(adjust).observe(button);
+    // Mot de passe affiché : recopié en entier sous le champ, sur plusieurs lignes s'il est long.
+    const preview = document.createElement('span');
+    preview.className = 'mdp-apercu';
+    preview.setAttribute('aria-hidden', 'true');
+    preview.hidden = true;
+    preview.style.cssText = 'display:block;margin-top:6px;padding:6px 10px;border-radius:6px;border:1px dashed rgba(127,140,160,.6);background:rgba(127,140,160,.14);color:inherit;font:600 14px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all;white-space:pre-wrap;text-align:left';
+    box.after(preview);
+    const refresh = () => { const show = input.type === 'text' && input.value !== ''; preview.hidden = !show; if (show) preview.textContent = input.value; preview.style.display = show ? 'block' : 'none'; };
+    input.addEventListener('input', refresh);
+    button.addEventListener('click', refresh);
     // Le mot de passe est toujours remasqué à l'envoi du formulaire.
-    input.form?.addEventListener('submit', () => { input.type = 'password'; button.textContent = 'Afficher'; button.setAttribute('aria-pressed', 'false'); }, true);
+    input.form?.addEventListener('submit', () => { input.type = 'password'; button.textContent = 'Afficher'; button.setAttribute('aria-pressed', 'false'); refresh(); }, true);
   }
   // Tous les champs mot de passe du site (connexion, inscription, accès équipe…), y compris ceux ajoutés plus tard.
   function scan() { document.querySelectorAll('input[type=password]:not([data-voir])').forEach(attach); }
