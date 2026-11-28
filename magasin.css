@@ -141,7 +141,7 @@ html body .mg-badge.blue{background:rgba(79,179,255,.2)!important;color:#8fd0ff!
 .mg-count-qty input{font:700 1.05rem var(--st-f-mono,ui-monospace,monospace)}
 .mg-inventory.list .mg-count{grid-template-columns:minmax(0,1fr) minmax(300px,1.1fr)}
 html body .mg-item.is-counted{border-color:rgba(63,224,138,.6)!important;box-shadow:inset 3px 0 0 #3fe08a!important}
-.mg-student-bar{position:sticky;bottom:8px;z-index:3;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;padding:10px 14px;border:1px solid rgba(255,138,30,.55);border-radius:10px;background:rgba(8,24,46,.94);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.mg-student-bar{position:sticky;top:8px;z-index:3;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;padding:10px 14px;border:1px solid rgba(255,138,30,.55);border-radius:10px;background:rgba(8,24,46,.94);box-shadow:0 10px 30px rgba(0,0,0,.4)}
 .mg-save{font-size:.8rem;opacity:.75;margin-left:8px}
 
 /* Menus du haut : Accès équipe et Administration dans la palette des autres rubriques. */
